@@ -1,67 +1,77 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./CollegePage.css";
 import { useNavigate, useParams } from "react-router";
-const collegeData = {
-  hunter: { name: "Hunter College" },
-  baruch: { name: "Baruch College" },
-  city: { name: "City College" },
-};
-const dummyCourses = [
-  {
-    code: "CSCI 135",
-    title: "Software Design & Analysis I",
-    syllabi: [
-      {
-        id: 1,
-        professor: "Prof. Adams",
-        semester: "Fall 2024",
-        url: "/syllabi/csci135-fall2024-adams.pdf",
-      },
-      {
-        id: 2,
-        professor: "Dr. Smith",
-        semester: "Spring 2023",
-        url: "/syllabi/csci135-spring2023-smith.pdf",
-      },
-    ],
-  },
-  {
-    code: "MATH 241",
-    title: "Linear Algebra",
-    syllabi: [
-      {
-        id: 3,
-        professor: "Dr. Patel",
-        semester: "Spring 2024",
-        url: "/syllabi/math241-spring2024-patel.pdf",
-      },
-    ],
-  },
-  {
-    code: "ENG 101",
-    title: "English Composition",
-    syllabi: [
-      {
-        id: 4,
-        professor: "Prof. Lee",
-        semester: "Fall 2023",
-        url: "/syllabi/eng101-fall2023-lee.pdf",
-      },
-    ],
-  },
-];
-
+import { db } from "../../../firebaseConfig";
+import { collection, getDocs } from "firebase/firestore";
+import { getStorage, ref, getDownloadURL } from "firebase/storage";
 export default function CollegePage() {
   const { collegeId } = useParams();
+  const [courses, setCourses] = useState([]);
+  const [syllabiMap, setSyllabiMap] = useState({});
   const [expanded, setExpanded] = useState({});
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("default");
   const navigate = useNavigate();
-  const toggleExpand = (code) => {
-    setExpanded((prev) => ({ ...prev, [code]: !prev[code] }));
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const courseRef = collection(db, "colleges", collegeId, "courses");
+        const snapshot = await getDocs(courseRef);
+        const courseList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setCourses(courseList);
+      } catch (err) {
+        console.error("Failed to fetch courses:", err);
+      }
+    };
+    fetchCourses();
+  }, [collegeId]);
+  const toggleExpand = async (courseId) => {
+    setExpanded((prev) => ({ ...prev, [courseId]: !prev[courseId] }));
+
+    if (!syllabiMap[courseId]) {
+      const syllabiRef = collection(
+        db,
+        "colleges",
+        collegeId,
+        "courses",
+        courseId,
+        "syllabi"
+      );
+      const snapshot = await getDocs(syllabiRef);
+      const storage = getStorage();
+
+      const syllabi = await Promise.all(
+        snapshot.docs
+          .map((doc) => ({ id: doc.id, ...doc.data() }))
+          .filter((s) => s.approved)
+          .map(async (s) => {
+            let url = s.pdf_url;
+            if (url.startsWith("gs://")) {
+              try {
+                const filePath = url.replace(
+                  "gs://syllabusdb-a9cc8.appspot.com/",
+                  ""
+                );
+                const storageRef = ref(storage, filePath);
+                url = await getDownloadURL(storageRef);
+              } catch (e) {
+                console.error("Failed to convert gs:// URL", e);
+                url = null; // fallback if URL can't be resolved
+              }
+            }
+            return { ...s, pdf_url: url };
+          })
+      );
+
+      setSyllabiMap((prev) => ({ ...prev, [courseId]: syllabi }));
+    }
   };
 
-  const filteredCourses = dummyCourses
+  const filteredCourses = courses
     .filter(
       (c) =>
         c.code.toLowerCase().includes(search.toLowerCase()) ||
@@ -72,12 +82,10 @@ export default function CollegePage() {
       if (sort === "title") return a.title.localeCompare(b.title);
       return 0;
     });
-  const college = collegeData[collegeId];
 
-  if (!college) return <div className="not-found">College not found.</div>;
   return (
     <div className="college-page">
-      <div className="college-title">{college.name}</div>
+      <div className="college-title">{collegeId.replace(/-/g, " ")}</div>
       <div className="college-subtitle">Search for syllabi</div>
 
       <div className="search-and-controls">
@@ -108,6 +116,7 @@ export default function CollegePage() {
           </select>
         </div>
       </div>
+
       {filteredCourses.length === 0 && (
         <div className="no-courses-found">
           <p>We couldn’t find that course.</p>
@@ -118,28 +127,28 @@ export default function CollegePage() {
 
       <div className="course-list">
         {filteredCourses.map((course) => (
-          <div className="course-card" key={course.code}>
+          <div className="course-card" key={course.id}>
             <div
               className="course-header"
-              onClick={() => toggleExpand(course.code)}
+              onClick={() => toggleExpand(course.id)}
             >
               <div>
                 <div className="course-code">{course.code}</div>
                 <div className="course-title">{course.title}</div>
               </div>
               <div className="expand-icon">
-                {expanded[course.code] ? "▼" : "▶"}
+                {expanded[course.id] ? "▼" : "▶"}
               </div>
             </div>
 
-            {expanded[course.code] && (
+            {expanded[course.id] && (
               <div className="syllabi-list">
-                {course.syllabi.map((s) => (
+                {(syllabiMap[course.id] || []).map((s) => (
                   <div key={s.id} className="syllabus-item">
                     <div>
-                      {s.semester} – {s.professor}
+                      {s.term} {s.year} – Professor {s.professor}
                     </div>
-                    <a href={s.url} target="_blank" rel="noreferrer">
+                    <a href={s.pdf_url} target="_blank" rel="noreferrer">
                       View PDF
                     </a>
                   </div>

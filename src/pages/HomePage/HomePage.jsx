@@ -1,57 +1,25 @@
-import { useState } from "react";
-import "./HomePage.css";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-
-const dummyColleges = [
-  {
-    id: "hunter",
-    name: "Hunter College",
-    image:
-      "https://s29068.pcdn.co/wp-content/uploads/campus-shot-768x432.jpg.optimal.jpg",
-    uploads: 421,
-  },
-  {
-    id: "baruch",
-    name: "Baruch College",
-    image:
-      "https://enrollmentmanagement.baruch.cuny.edu/wp-content/uploads/sites/18/2020/07/VerticalCampus2_002.jpg",
-    uploads: 392,
-  },
-  {
-    id: "city",
-    name: "City College",
-    image:
-      "https://harlemonestop.com/images/organizations/1542.jpg?v=1587326290",
-    uploads: 281,
-  },
-  {
-    id: "brooklyn",
-    name: "Brooklyn College",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/2016_Brooklyn_College_Library.jpg/250px-2016_Brooklyn_College_Library.jpg",
-    uploads: 210,
-  },
-  {
-    id: "queens",
-    name: "Queens College",
-    image:
-      "https://macaulay.cuny.edu/wp-content/uploads/2016/07/qc10_bg_000056-1920x1080.jpg",
-    uploads: 198,
-  },
-  {
-    id: "lehman",
-    name: "Lehman College",
-    image:
-      "https://www.lehman.cuny.edu/media/Lehman-College-Website/Content-Assets-2024/Images/About.jpg",
-    uploads: 174,
-  },
-];
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../../firebaseConfig"; // adjust the path if needed
+import "./HomePage.css";
 
 export default function HomePage() {
+  const [colleges, setColleges] = useState([]);
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
 
-  const filtered = dummyColleges.filter((college) =>
+  useEffect(() => {
+    const fetchColleges = async () => {
+      const snapshot = await getDocs(collection(db, "colleges"));
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setColleges(data);
+    };
+
+    fetchColleges();
+  }, []);
+
+  const filtered = colleges.filter((college) =>
     college.name.toLowerCase().includes(query.toLowerCase())
   );
 
@@ -71,12 +39,15 @@ export default function HomePage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-
           {query && (
             <div className="resultsBox">
               {filtered.length > 0 ? (
                 filtered.map((college) => (
-                  <div key={college.id} className="collegeResult">
+                  <div
+                    key={college.id}
+                    onClick={() => navigate(`/college/${college.id}`)}
+                    className="collegeResult"
+                  >
                     {college.name}
                   </div>
                 ))
@@ -91,7 +62,7 @@ export default function HomePage() {
       <div className="collegeScrollWrapper">
         <div className="scrollTitle">Colleges</div>
         <div className="collegeScroll">
-          {dummyColleges
+          {colleges
             .sort((a, b) => b.uploads - a.uploads)
             .map((college) => (
               <div
@@ -100,7 +71,7 @@ export default function HomePage() {
                 onClick={() => navigate(`/college/${college.id}`)}
               >
                 <img
-                  src={college.image}
+                  src={college.image_url}
                   alt={college.name}
                   className="collegeImage"
                 />
