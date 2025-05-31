@@ -97,7 +97,7 @@ export default function CollegePage() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <div className="filters">
+        {/* <div className="filters">
           <select
             className="filter-dropdown"
             value={sort}
@@ -114,14 +114,15 @@ export default function CollegePage() {
             <option value="fall">Fall</option>
             <option value="summer">Summer</option>
           </select>
-        </div>
+        </div> */}
       </div>
 
       {filteredCourses.length === 0 && (
         <div className="no-courses-found">
-          <p>We couldn’t find that course.</p>
-          <button onClick={() => navigate("/upload")}>Upload Syllabus</button>
-          <button onClick={() => navigate("/request")}>Request Course</button>
+          <p>Sorry, We couldn’t find that course.</p>
+          <button onClick={() => navigate("/uploadsyllabus")}>
+            Upload Syllabus
+          </button>
         </div>
       )}
 
