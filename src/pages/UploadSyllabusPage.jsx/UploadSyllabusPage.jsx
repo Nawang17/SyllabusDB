@@ -16,7 +16,9 @@ export default function UploadSyllabus() {
   const [status, setStatus] = useState("");
   const [courseOptions, setCourseOptions] = useState([]);
   const [filteredCourseOptions, setFilteredCourseOptions] = useState([]);
-
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   // Load colleges
   useEffect(() => {
     const fetchColleges = async () => {

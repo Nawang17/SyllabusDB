@@ -8,21 +8,58 @@ export default function HomePage() {
   const [colleges, setColleges] = useState([]);
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const fetchCollegesWithCounts = async () => {
+    const collegesSnapshot = await getDocs(collection(db, "colleges"));
+    const collegesData = await Promise.all(
+      collegesSnapshot.docs.map(async (collegeDoc) => {
+        const collegeId = collegeDoc.id;
+        const coursesSnapshot = await getDocs(
+          collection(db, "colleges", collegeId, "courses")
+        );
 
+        let totalApproved = 0;
+
+        for (const courseDoc of coursesSnapshot.docs) {
+          const syllabiSnapshot = await getDocs(
+            collection(
+              db,
+              "colleges",
+              collegeId,
+              "courses",
+              courseDoc.id,
+              "syllabi"
+            )
+          );
+          syllabiSnapshot.forEach((syllabus) => {
+            if (syllabus.data().approved === true) {
+              totalApproved += 1;
+            }
+          });
+        }
+
+        return {
+          id: collegeId,
+          name: collegeDoc.data().name,
+          image_url: collegeDoc.data().image_url,
+          uploads: totalApproved,
+        };
+      })
+    );
+
+    setColleges(collegesData);
+    setLoading(false);
+  };
   useEffect(() => {
-    const fetchColleges = async () => {
-      const snapshot = await getDocs(collection(db, "colleges"));
-      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setColleges(data);
-    };
-
-    fetchColleges();
+    fetchCollegesWithCounts();
   }, []);
 
   const filtered = colleges.filter((college) =>
     college.name.toLowerCase().includes(query.toLowerCase())
   );
-
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   return (
     <div className="home-page">
       <div className="searchSection">
@@ -62,23 +99,35 @@ export default function HomePage() {
       <div className="collegeScrollWrapper">
         <div className="scrollTitle">Colleges</div>
         <div className="collegeScroll">
-          {colleges
-            .sort((a, b) => b.uploads - a.uploads)
-            .map((college) => (
-              <div
-                key={college.id}
-                className="collegeCard"
-                onClick={() => navigate(`/college/${college.id}`)}
-              >
-                <img
-                  src={college.image_url}
-                  alt={college.name}
-                  className="collegeImage"
-                />
-                <div className="collegeName">{college.name}</div>
-                <div className="collegeCount">{college.uploads} syllabi</div>
-              </div>
-            ))}
+          {loading
+            ? [...Array(3)].map((_, i) => (
+                <div key={i} className="collegeCard skeletonCard">
+                  <div className="skeletonImage" />
+                  <div className="skeletonText short" />
+                  <div className="skeletonText long" />
+                </div>
+              ))
+            : colleges
+                .sort((a, b) => b.uploads - a.uploads)
+                .map((college) => (
+                  <div
+                    key={college.id}
+                    className="collegeCard"
+                    onClick={() => navigate(`/college/${college.id}`)}
+                  >
+                    <img
+                      src={college.image_url}
+                      alt={college.name}
+                      className="collegeImage"
+                    />
+                    <div className="collegeName">{college.name}</div>
+                    {college.uploads > 0 && (
+                      <div className="collegeCount">
+                        {college.uploads} syllabi
+                      </div>
+                    )}
+                  </div>
+                ))}
         </div>
       </div>
     </div>

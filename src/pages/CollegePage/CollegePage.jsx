@@ -12,7 +12,9 @@ export default function CollegePage() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("default");
   const navigate = useNavigate();
-
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -119,7 +121,7 @@ export default function CollegePage() {
 
       {filteredCourses.length === 0 && (
         <div className="no-courses-found">
-          <p>Sorry, We couldn’t find that course.</p>
+          <p>Sorry, we could not find any syllabuses</p>
           <button onClick={() => navigate("/uploadsyllabus")}>
             Upload Syllabus
           </button>

@@ -147,3 +147,49 @@
   color: #64748b;
   text-align: center;
 }
+.skeletonCard {
+  background: #f3f3f3;
+  border-radius: 10px;
+  padding: 1rem;
+  width: 250px;
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  animation: pulse 1.2s infinite ease-in-out;
+}
+
+.skeletonImage {
+  width: 100%;
+  height: 100px;
+  background: #ddd;
+  border-radius: 8px;
+}
+
+.skeletonText {
+  width: 100%;
+  height: 14px;
+  background: #ddd;
+  border-radius: 6px;
+}
+
+.skeletonText.short {
+  width: 60%;
+}
+
+.skeletonText.long {
+  width: 80%;
+}
+
+@keyframes pulse {
+  0% {
+    background-color: #eee;
+  }
+  50% {
+    background-color: #ddd;
+  }
+  100% {
+    background-color: #eee;
+  }
+}
