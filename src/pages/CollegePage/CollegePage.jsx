@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router";
 import { db } from "../../../firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
+import { IconChevronDown, IconChevronRight } from "@tabler/icons-react";
 export default function CollegePage() {
   const { collegeId } = useParams();
   const [courses, setCourses] = useState([]);
@@ -20,17 +21,44 @@ export default function CollegePage() {
       try {
         const courseRef = collection(db, "colleges", collegeId, "courses");
         const snapshot = await getDocs(courseRef);
-        const courseList = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setCourses(courseList);
+
+        const filteredCourses = [];
+        for (const docSnap of snapshot.docs) {
+          const syllabiRef = collection(
+            db,
+            "colleges",
+            collegeId,
+            "courses",
+            docSnap.id,
+            "syllabi"
+          );
+          const syllabiSnap = await getDocs(syllabiRef);
+          const hasApproved = syllabiSnap.docs.some(
+            (doc) => doc.data().approved
+          );
+          if (hasApproved) {
+            filteredCourses.push({
+              id: docSnap.id,
+              ...docSnap.data(),
+            });
+          }
+        }
+        setCourses(filteredCourses);
+        console.log("Fetched courses:", filteredCourses);
       } catch (err) {
         console.error("Failed to fetch courses:", err);
       }
     };
+
     fetchCourses();
   }, [collegeId]);
+  const termOrder = {
+    Spring: 1,
+    Summer: 2,
+    Fall: 3,
+    Winter: 4,
+  };
+
   const toggleExpand = async (courseId) => {
     setExpanded((prev) => ({ ...prev, [courseId]: !prev[courseId] }));
 
@@ -62,12 +90,17 @@ export default function CollegePage() {
                 url = await getDownloadURL(storageRef);
               } catch (e) {
                 console.error("Failed to convert gs:// URL", e);
-                url = null; // fallback if URL can't be resolved
+                url = null;
               }
             }
             return { ...s, pdf_url: url };
           })
       );
+
+      syllabi.sort((a, b) => {
+        if (b.year !== a.year) return b.year - a.year;
+        return termOrder[b.term] - termOrder[a.term];
+      });
 
       setSyllabiMap((prev) => ({ ...prev, [courseId]: syllabi }));
     }
@@ -87,8 +120,11 @@ export default function CollegePage() {
 
   return (
     <div className="college-page">
-      <div className="college-title">{collegeId.replace(/-/g, " ")}</div>
-      <div className="college-subtitle">Search for syllabi</div>
+      <div className="college-title">
+        {collegeId
+          .replace(/-/g, " ")
+          .replace(/\b\w/g, (char) => char.toUpperCase())}
+      </div>
 
       <div className="search-and-controls">
         <input
@@ -140,7 +176,11 @@ export default function CollegePage() {
                 <div className="course-title">{course.title}</div>
               </div>
               <div className="expand-icon">
-                {expanded[course.id] ? "▼" : "▶"}
+                {expanded[course.id] ? (
+                  <IconChevronDown />
+                ) : (
+                  <IconChevronRight />
+                )}
               </div>
             </div>
 
@@ -161,6 +201,14 @@ export default function CollegePage() {
           </div>
         ))}
       </div>
+      {filteredCourses.length !== 0 && (
+        <button
+          className="upload-button"
+          onClick={() => navigate("/uploadsyllabus")}
+        >
+          + Upload Syllabus
+        </button>
+      )}
     </div>
   );
 }

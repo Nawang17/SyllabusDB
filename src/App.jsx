@@ -6,6 +6,8 @@ import HomePage from "./pages/HomePage/HomePage";
 import Header from "./components/Header";
 import CollegePage from "./pages/CollegePage/CollegePage";
 import UploadSyllabusPage from "./pages/UploadSyllabusPage.jsx/UploadSyllabusPage";
+import AdminApprovalPage from "./pages/Admin/AdminApprovalPage";
+import LoginPage from "./pages/Login/LoginPage.jsx";
 function App() {
   return (
     <BrowserRouter>
@@ -15,6 +17,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/college/:collegeId" element={<CollegePage />} />
           <Route path="/uploadSyllabus" element={<UploadSyllabusPage />} />
+          <Route path="/admin" element={<AdminApprovalPage />} />
+          <Route path="/login" element={<LoginPage />} />
         </Routes>
       </MantineProvider>
     </BrowserRouter>

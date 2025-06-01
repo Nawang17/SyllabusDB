@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { db, storage } from "../../../firebaseConfig";
 import { doc, setDoc, collection, getDoc, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { useNavigate } from "react-router";
 import "./UploadSyllabusPage.css";
 
 export default function UploadSyllabus() {
@@ -14,12 +15,16 @@ export default function UploadSyllabus() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [pdfFile, setPdfFile] = useState(null);
   const [status, setStatus] = useState("");
+  const [showModal, setShowModal] = useState(false); // NEW
   const [courseOptions, setCourseOptions] = useState([]);
-  const [filteredCourseOptions, setFilteredCourseOptions] = useState([]);
+  const [courseSuggestions, setCourseSuggestions] = useState([]);
+
+  const navigate = useNavigate();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-  // Load colleges
+
   useEffect(() => {
     const fetchColleges = async () => {
       const snapshot = await getDocs(collection(db, "colleges"));
@@ -32,7 +37,6 @@ export default function UploadSyllabus() {
     fetchColleges();
   }, []);
 
-  // Load courses when college changes
   useEffect(() => {
     const fetchCourses = async () => {
       if (!collegeId) return;
@@ -50,12 +54,15 @@ export default function UploadSyllabus() {
     setCourseTitle("");
   }, [collegeId]);
 
-  // Handle course code typing
   useEffect(() => {
-    const matches = courseOptions.filter((c) =>
-      c.code.toLowerCase().includes(courseCode.toLowerCase())
+    if (courseCode.trim() === "") {
+      setCourseSuggestions([]);
+      return;
+    }
+    const filtered = courseOptions.filter((c) =>
+      c.code.toLowerCase().startsWith(courseCode.toLowerCase())
     );
-    setFilteredCourseOptions(matches);
+    setCourseSuggestions(filtered);
 
     const exactMatch = courseOptions.find((c) => c.code === courseCode);
     if (exactMatch) {
@@ -65,18 +72,19 @@ export default function UploadSyllabus() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (pdfFile.size > 5 * 1024 * 1024) {
+      setStatus("❌ PDF file is too large. Maximum size is 5 MB.");
+      return;
+    }
+
     setStatus("Uploading...");
 
     try {
-      // Upload file
-      const storageRef = ref(
-        storage,
-        `syllabi/${collegeId}/${courseCode}/${pdfFile.name}`
-      );
+      const filePath = `syllabi/${collegeId}/${courseCode}/${pdfFile.name}`;
+      const storageRef = ref(storage, filePath);
       await uploadBytes(storageRef, pdfFile);
       const pdfUrl = await getDownloadURL(storageRef);
 
-      // Create course if it doesn't exist
       const courseRef = doc(db, "colleges", collegeId, "courses", courseCode);
       const courseSnap = await getDoc(courseRef);
       if (!courseSnap.exists()) {
@@ -86,7 +94,6 @@ export default function UploadSyllabus() {
         });
       }
 
-      // Upload syllabus
       const syllabiRef = collection(
         db,
         "colleges",
@@ -100,47 +107,27 @@ export default function UploadSyllabus() {
         term,
         year,
         pdf_url: pdfUrl,
+        file_path: filePath,
         approved: false,
       });
 
-      setStatus("✅ Syllabus submitted for review!");
+      setShowModal(true); // SHOW MODAL
+      setStatus("");
     } catch (err) {
       console.error("Upload failed:", err);
       setStatus("❌ Upload failed.");
     }
   };
-  const [courseSuggestions, setCourseSuggestions] = useState([]);
-  const [allCourses, setAllCourses] = useState([]);
-
-  useEffect(() => {
-    const fetchCourses = async () => {
-      if (!collegeId) return;
-      const courseSnapshot = await getDocs(
-        collection(db, "colleges", collegeId, "courses")
-      );
-      const courseList = courseSnapshot.docs.map((doc) => ({
-        code: doc.id,
-        ...doc.data(),
-      }));
-      setAllCourses(courseList);
-    };
-    fetchCourses();
-  }, [collegeId]);
-
-  useEffect(() => {
-    if (courseCode.trim() === "") {
-      setCourseSuggestions([]);
-      return;
-    }
-    const filtered = courseOptions.filter((c) =>
-      c.code.toLowerCase().startsWith(courseCode.toLowerCase())
-    );
-    setCourseSuggestions(filtered);
-  }, [courseCode, courseOptions]);
 
   return (
     <div className="upload-page">
       <h2>Upload a Syllabus</h2>
+      <p className="upload-warning">
+        📌 Before uploading, please make sure there is not already a syllabus
+        available for the <strong>same course and term</strong>. This helps
+        avoid duplicates and keeps things clean for other students. Thank you!.
+      </p>
+
       <form className="upload-form" onSubmit={handleSubmit}>
         <label>
           Choose College:
@@ -159,10 +146,11 @@ export default function UploadSyllabus() {
         </label>
 
         <label>
-          Course Code:
+          Course Code (e.g. Math 150):
           <div className="course-input-wrapper">
             <input
               type="text"
+              className="full-width"
               value={courseCode}
               onChange={(e) => setCourseCode(e.target.value)}
               required
@@ -174,11 +162,9 @@ export default function UploadSyllabus() {
                   <li
                     key={course.code}
                     onClick={() => {
-                      setCourseSuggestions([]);
-                      setCourseSuggestions([]);
-
                       setCourseCode(course.code);
                       setCourseTitle(course.title);
+                      setCourseSuggestions([]);
                     }}
                   >
                     {course.code} – {course.title}
@@ -190,7 +176,7 @@ export default function UploadSyllabus() {
         </label>
 
         <label>
-          Course Title:
+          Course Title (e.g. Calculus 2):
           <input
             type="text"
             value={courseTitle}
@@ -231,7 +217,7 @@ export default function UploadSyllabus() {
         </label>
 
         <label>
-          PDF File:
+          PDF File (Max 5 MB):
           <input
             type="file"
             accept="application/pdf"
@@ -244,6 +230,24 @@ export default function UploadSyllabus() {
       </form>
 
       {status && <div className="upload-status">{status}</div>}
+
+      {showModal && (
+        <div className="upload-modal">
+          <div className="modal-content">
+            <h3>🎉 Thank you for your submission!</h3>
+            <p>
+              Your syllabus has been submitted and will be available on the site
+              once approved.
+            </p>
+            <div className="modal-buttons">
+              <button onClick={() => navigate("/")}>🏠 Go to Home</button>
+              <button onClick={() => window.location.reload()}>
+                ➕ Upload Another
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
