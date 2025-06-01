@@ -4,6 +4,7 @@ import { doc, setDoc, collection, getDoc, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router";
 import "./UploadSyllabusPage.css";
+import { Select } from "@mantine/core";
 
 export default function UploadSyllabus() {
   const [collegeId, setCollegeId] = useState("");
@@ -131,18 +132,21 @@ export default function UploadSyllabus() {
       <form className="upload-form" onSubmit={handleSubmit}>
         <label>
           Choose College:
-          <select
+          <Select
+            data={colleges.map((col) => ({
+              value: col.id,
+              label: col.name,
+            }))}
             value={collegeId}
-            onChange={(e) => setCollegeId(e.target.value)}
+            onChange={setCollegeId}
+            placeholder="Select College"
             required
-          >
-            <option value="">-- Select College --</option>
-            {colleges.map((col) => (
-              <option key={col.id} value={col.id}>
-                {col.name}
-              </option>
-            ))}
-          </select>
+            size="md"
+            searchable
+            style={{
+              marginTop: "0.5rem",
+            }}
+          />
         </label>
 
         <label>
@@ -198,12 +202,21 @@ export default function UploadSyllabus() {
 
         <label>
           Term:
-          <select value={term} onChange={(e) => setTerm(e.target.value)}>
-            <option>Fall</option>
-            <option>Spring</option>
-            <option>Summer</option>
-            <option>Winter</option>
-          </select>
+          <Select
+            data={["Fall", "Spring", "Summer", "Winter"].map((term) => ({
+              value: term,
+              label: term,
+            }))}
+            value={term}
+            onChange={setTerm}
+            placeholder="Select College"
+            required
+            size="md"
+            searchable
+            style={{
+              marginTop: "0.5rem",
+            }}
+          />
         </label>
 
         <label>
