@@ -150,21 +150,6 @@
   gap: 1rem;
 }
 
-.modal-buttons button {
-  padding: 10px 16px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.95rem;
-  background-color: #2563eb;
-  color: white;
-  transition: background 0.2s ease;
-}
-
-.modal-buttons button:hover {
-  background-color: #1e40af;
-}
 .upload-warning {
   background-color: #fff7ed;
   border-left: 4px solid #f97316;
@@ -173,4 +158,17 @@
   border-radius: 8px;
   font-size: 0.95rem;
   color: #7c2d12;
+}
+.upload-status {
+  text-align: center;
+  font-weight: 500;
+  color: #10b981;
+  font-size: 0.95rem;
+  margin-top: -0.5rem;
+  margin-bottom: -0.5rem;
+}
+
+.upload-form button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
 }

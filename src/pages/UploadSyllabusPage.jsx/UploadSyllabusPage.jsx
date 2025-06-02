@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { db, storage } from "../../../firebaseConfig";
 import { doc, setDoc, collection, getDoc, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router";
 import "./UploadSyllabusPage.css";
-import { Select } from "@mantine/core";
+import { Button, Select } from "@mantine/core";
 
 export default function UploadSyllabus() {
   const [collegeId, setCollegeId] = useState("");
@@ -16,9 +16,11 @@ export default function UploadSyllabus() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [pdfFile, setPdfFile] = useState(null);
   const [status, setStatus] = useState("");
-  const [showModal, setShowModal] = useState(false); // NEW
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [courseOptions, setCourseOptions] = useState([]);
   const [courseSuggestions, setCourseSuggestions] = useState([]);
+  const fileInputRef = useRef();
 
   const navigate = useNavigate();
 
@@ -37,6 +39,22 @@ export default function UploadSyllabus() {
     };
     fetchColleges();
   }, []);
+  const resetForm = () => {
+    setCollegeId("");
+    setCourseCode("");
+    setCourseTitle("");
+    setProfessor("");
+    setTerm("Fall");
+    setYear(new Date().getFullYear());
+    setPdfFile(null);
+    setStatus("");
+    setCourseSuggestions([]);
+
+    // 👇 Clear file input visually
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -73,12 +91,13 @@ export default function UploadSyllabus() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (pdfFile.size > 5 * 1024 * 1024) {
+    if (!pdfFile || pdfFile.size > 5 * 1024 * 1024) {
       setStatus("❌ PDF file is too large. Maximum size is 5 MB.");
       return;
     }
 
-    setStatus("Uploading...");
+    setStatus("");
+    setIsSubmitting(true);
 
     try {
       const filePath = `syllabi/${collegeId}/${courseCode}/${pdfFile.name}`;
@@ -112,11 +131,12 @@ export default function UploadSyllabus() {
         approved: false,
       });
 
-      setShowModal(true); // SHOW MODAL
-      setStatus("");
+      setShowModal(true);
     } catch (err) {
       console.error("Upload failed:", err);
       setStatus("❌ Upload failed.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -126,13 +146,14 @@ export default function UploadSyllabus() {
       <p className="upload-warning">
         📌 Before uploading, please make sure there is not already a syllabus
         available for the <strong>same course and term</strong>. This helps
-        avoid duplicates and keeps things clean for other students. Thank you!.
+        avoid duplicates and keeps things clean for other students.
       </p>
 
       <form className="upload-form" onSubmit={handleSubmit}>
         <label>
           Choose College:
           <Select
+            key={collegeId}
             data={colleges.map((col) => ({
               value: col.id,
               label: col.name,
@@ -143,14 +164,12 @@ export default function UploadSyllabus() {
             required
             size="md"
             searchable
-            style={{
-              marginTop: "0.5rem",
-            }}
+            style={{ marginTop: "0.5rem" }}
           />
         </label>
 
         <label>
-          Course Code (e.g. Math 150):
+          Course Code :
           <div className="course-input-wrapper">
             <input
               type="text"
@@ -159,6 +178,7 @@ export default function UploadSyllabus() {
               onChange={(e) => setCourseCode(e.target.value)}
               required
               autoComplete="off"
+              placeholder="e.g. Math 150"
             />
             {courseSuggestions.length > 0 && (
               <ul className="suggestions-dropdown">
@@ -180,13 +200,14 @@ export default function UploadSyllabus() {
         </label>
 
         <label>
-          Course Title (e.g. Calculus 2):
+          Course Title:
           <input
             type="text"
             value={courseTitle}
             onChange={(e) => setCourseTitle(e.target.value)}
             required
             disabled={!!courseOptions.find((c) => c.code === courseCode)}
+            placeholder="e.g. Calculus I"
           />
         </label>
 
@@ -203,19 +224,16 @@ export default function UploadSyllabus() {
         <label>
           Term:
           <Select
+            key={term}
             data={["Fall", "Spring", "Summer", "Winter"].map((term) => ({
               value: term,
               label: term,
             }))}
             value={term}
             onChange={setTerm}
-            placeholder="Select College"
             required
             size="md"
-            searchable
-            style={{
-              marginTop: "0.5rem",
-            }}
+            style={{ marginTop: "0.5rem" }}
           />
         </label>
 
@@ -232,6 +250,7 @@ export default function UploadSyllabus() {
         <label>
           PDF File (Max 5 MB):
           <input
+            ref={fileInputRef}
             type="file"
             accept="application/pdf"
             onChange={(e) => setPdfFile(e.target.files[0])}
@@ -239,10 +258,12 @@ export default function UploadSyllabus() {
           />
         </label>
 
-        <button type="submit">Submit</button>
-      </form>
+        {status && <div className="upload-status">{status}</div>}
 
-      {status && <div className="upload-status">{status}</div>}
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Submitting..." : "Submit"}
+        </button>
+      </form>
 
       {showModal && (
         <div className="upload-modal">
@@ -253,10 +274,18 @@ export default function UploadSyllabus() {
               once approved.
             </p>
             <div className="modal-buttons">
-              <button onClick={() => navigate("/")}>🏠 Go to Home</button>
-              <button onClick={() => window.location.reload()}>
-                ➕ Upload Another
-              </button>
+              <Button color="cyan" fullWidth onClick={() => navigate("/")}>
+                Go to Home
+              </Button>
+              <Button
+                fullWidth
+                onClick={() => {
+                  setShowModal(false);
+                  resetForm();
+                }}
+              >
+                Upload Another
+              </Button>
             </div>
           </div>
         </div>
