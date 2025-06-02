@@ -100,7 +100,7 @@ export default function HomePage() {
         <h2 className="scroll-title">Explore Colleges</h2>
         <div className="college-scroll">
           {loading
-            ? [...Array(3)].map((_, i) => (
+            ? [...Array(4)].map((_, i) => (
                 <div key={i} className="college-card skeleton">
                   <div className="skeleton-img" />
                   <div className="skeleton-line short" />
