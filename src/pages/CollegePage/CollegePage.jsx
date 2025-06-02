@@ -4,7 +4,12 @@ import { useNavigate, useParams } from "react-router";
 import { db } from "../../../firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
-import { IconChevronDown, IconChevronRight } from "@tabler/icons-react";
+import {
+  IconChevronDown,
+  IconChevronRight,
+  IconMapPin,
+} from "@tabler/icons-react";
+import { Button, Flex } from "@mantine/core";
 
 export default function CollegePage() {
   const [loading, setLoading] = useState(true);
@@ -17,15 +22,31 @@ export default function CollegePage() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("default");
   const navigate = useNavigate();
+  const [collegeName, setCollegeName] = useState("");
+  const [collegeLocation, setCollegeLocation] = useState("");
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchCollegeAndCourses = async () => {
       try {
         setLoading(true);
+
+        // Get college doc itself
+        const collegeDocSnap = await getDocs(collection(db, "colleges"));
+        const collegeDoc = collegeDocSnap.docs.find(
+          (doc) => doc.id === collegeId
+        );
+        if (collegeDoc) {
+          setCollegeName(collegeDoc.data().name);
+          setCollegeLocation(
+            collegeDoc.data().city + ", " + collegeDoc.data().state || ""
+          );
+        }
+
+        // Now fetch its courses
         const courseRef = collection(db, "colleges", collegeId, "courses");
         const snapshot = await getDocs(courseRef);
 
@@ -50,16 +71,16 @@ export default function CollegePage() {
             });
           }
         }
+
         setCourses(filteredCourses);
-        console.log("Fetched courses:", filteredCourses);
       } catch (err) {
-        console.error("Failed to fetch courses:", err);
+        console.error("Failed to fetch college or courses:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCourses();
+    fetchCollegeAndCourses();
   }, [collegeId]);
 
   const termOrder = {
@@ -137,10 +158,18 @@ export default function CollegePage() {
 
   return (
     <div className="college-page">
-      <div className="college-title">
-        {collegeId
-          .replace(/-/g, " ")
-          .replace(/\b\w/g, (char) => char.toUpperCase())}
+      <div className="college-header">
+        <div>
+          <div className="college-title">{collegeName}</div>
+          <Flex align={"center"} gap={"0.5rem"}>
+            <IconMapPin color="#888" />
+
+            <div className="college-location"> {collegeLocation}</div>
+          </Flex>
+        </div>
+        <Button onClick={() => navigate("/uploadsyllabus")}>
+          Upload Syllabus
+        </Button>
       </div>
 
       <div className="search-and-controls">
@@ -161,9 +190,9 @@ export default function CollegePage() {
       {!loading && filteredCourses.length === 0 && (
         <div className="no-courses-found">
           <p>No courses match your search. Try a different name or code.</p>
-          <button onClick={() => navigate("/uploadsyllabus")}>
+          <Button size="md" onClick={() => navigate("/uploadsyllabus")}>
             Upload Syllabus
-          </button>
+          </Button>
         </div>
       )}
 
@@ -215,15 +244,6 @@ export default function CollegePage() {
           <div className="spinner"></div>
           <p>Loading courses...</p>
         </div>
-      )}
-
-      {!loading && filteredCourses.length !== 0 && (
-        <button
-          className="upload-button"
-          onClick={() => navigate("/uploadsyllabus")}
-        >
-          + Upload Syllabus
-        </button>
       )}
     </div>
   );

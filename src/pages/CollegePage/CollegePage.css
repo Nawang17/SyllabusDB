@@ -196,3 +196,23 @@
   text-align: right;
   margin-top: -0.5rem;
 }
+.college-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.college-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.college-location {
+  font-size: 1rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
