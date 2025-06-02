@@ -186,13 +186,10 @@
   display: block;
   margin: 0.5rem 0;
   color: #0056b3;
-  text-decoration: none;
+  text-decoration: underline;
   font-weight: 500;
 }
 
-.syllabus-link:hover {
-  text-decoration: underline;
-}
 .course-count {
   font-size: 0.95rem;
   color: #6b7280;
