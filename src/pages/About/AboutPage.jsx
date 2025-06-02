@@ -1,0 +1,29 @@
+import "./AboutPage.css";
+
+export default function AboutPage() {
+  return (
+    <div className="about-page">
+      <h1>About SyllabusDB</h1>
+      <p>
+        I’m a student at CUNY Hunter College, and I always wished I could see a
+        course syllabus before enrolling. I wanted to know what the grading
+        breakdown was like, how the professor structured the class, and whether
+        it would be a good fit for me.
+      </p>
+      <p>
+        Thats is why I built <strong>SyllabusDB</strong>, a simple platform
+        where students can upload and browse real course syllabi. It is meant to
+        help you make smarter decisions when picking classes, especially when
+        course descriptions just are not enough.
+      </p>
+      <p>
+        There’s no login, no paywall just open, student powered access to info
+        that actually helps.
+      </p>
+      <p>
+        If you have a syllabus from a course you have taken, please hit upload
+        and pay it forward.
+      </p>
+    </div>
+  );
+}
