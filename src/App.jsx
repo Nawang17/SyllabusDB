@@ -10,7 +10,20 @@ import AdminApprovalPage from "./pages/Admin/AdminApprovalPage";
 import LoginPage from "./pages/Login/LoginPage.jsx";
 import Footer from "./components/Footer.jsx";
 import AboutPage from "./pages/About/AboutPage.jsx";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { useEffect } from "react";
 function App() {
+  const auth = getAuth();
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // Not logged in yet — sign in anonymously
+        signInAnonymously(auth);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
   return (
     <BrowserRouter>
       <MantineProvider>

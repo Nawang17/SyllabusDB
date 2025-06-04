@@ -8,11 +8,15 @@ import {
   deleteDoc,
   getDoc,
   collection,
+  query,
+  where,
+  increment,
 } from "firebase/firestore";
 import { ref as storageRef, deleteObject } from "firebase/storage";
 import "./AdminApprovalPage.css";
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router";
+import { Button } from "@mantine/core";
 const allowedAdminEmail = "nawangsherpa1010@gmail.com"; //
 export default function AdminApprovalPage() {
   const [syllabi, setSyllabi] = useState([]);
@@ -20,29 +24,26 @@ export default function AdminApprovalPage() {
   const navigate = useNavigate();
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currUser) => {
-      console.log("Current user:", currUser);
       if (!currUser || currUser.email !== allowedAdminEmail) {
-        navigate("/login"); // or back to home
+        navigate("/login");
       } else {
-        if (!currUser) {
-          navigate("/login");
-        }
+        fetchUnapprovedSyllabi(); // ✅ now fetch after confirming admin user
       }
     });
-    fetchUnapprovedSyllabi();
 
     return () => unsubscribe();
   }, [navigate]);
 
-  useEffect(() => {
-    fetchUnapprovedSyllabi();
-  }, []);
-
   const fetchUnapprovedSyllabi = async () => {
     setLoading(true);
-    const snapshot = await getDocs(collectionGroup(db, "syllabi"));
-    const unapproved = [];
 
+    const q = query(
+      collectionGroup(db, "syllabi"),
+      where("approved", "==", false)
+    );
+    const snapshot = await getDocs(q);
+
+    const unapproved = [];
     for (const docSnap of snapshot.docs) {
       const data = docSnap.data();
       if (!data.approved) {
@@ -83,8 +84,15 @@ export default function AdminApprovalPage() {
     setLoading(false);
   };
 
-  const approveSyllabus = async (ref) => {
+  const approveSyllabus = async (ref, collegeId, courseId) => {
     await updateDoc(ref, { approved: true });
+
+    const courseRef = doc(db, "colleges", collegeId, "courses", courseId);
+    await updateDoc(courseRef, {
+      approved: true,
+      approvedSyllabiCount: increment(1),
+    });
+
     setSyllabi((prev) => prev.filter((s) => s.ref.id !== ref.id));
   };
 
@@ -119,7 +127,7 @@ export default function AdminApprovalPage() {
       );
 
       if (syllabiSnapshot.empty) {
-        // 4. If no syllabi remain, delete the course document too
+        // No syllabi left → delete the course
         const courseDocRef = doc(
           db,
           "colleges",
@@ -128,6 +136,23 @@ export default function AdminApprovalPage() {
           syllabus.courseId
         );
         await deleteDoc(courseDocRef);
+      } else {
+        // Update course approved status + count
+        const approvedCount = syllabiSnapshot.docs.filter(
+          (d) => d.data().approved
+        ).length;
+
+        const courseDocRef = doc(
+          db,
+          "colleges",
+          syllabus.collegeId,
+          "courses",
+          syllabus.courseId
+        );
+        await updateDoc(courseDocRef, {
+          approved: approvedCount > 0,
+          approvedSyllabiCount: approvedCount,
+        });
       }
 
       alert("Syllabus disapproved and deleted.");
@@ -140,6 +165,15 @@ export default function AdminApprovalPage() {
 
   return (
     <div className="admin-approval-page">
+      <Button
+        onClick={() => {
+          auth.signOut();
+          navigate("/login");
+        }}
+      >
+        {" "}
+        Logout{" "}
+      </Button>
       <h2>Pending Syllabi for Approval</h2>
       {loading ? (
         <p>Loading...</p>
@@ -163,7 +197,11 @@ export default function AdminApprovalPage() {
                 <a href={s.pdf_url} target="_blank" rel="noreferrer">
                   View PDF
                 </a>
-                <button onClick={() => approveSyllabus(s.ref)}>
+                <button
+                  onClick={() =>
+                    approveSyllabus(s.ref, s.collegeId, s.courseId)
+                  }
+                >
                   ✅ Approve
                 </button>
                 <button onClick={() => disapproveSyllabus(s)}>

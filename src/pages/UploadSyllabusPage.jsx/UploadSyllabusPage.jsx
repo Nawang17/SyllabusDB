@@ -1,10 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { db, storage } from "../../../firebaseConfig";
-import { doc, setDoc, collection, getDoc, getDocs } from "firebase/firestore";
+import {
+  doc,
+  setDoc,
+  collection,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router";
 import "./UploadSyllabusPage.css";
 import { Button, Select } from "@mantine/core";
+import { getAuth } from "firebase/auth";
 
 export default function UploadSyllabus() {
   const [collegeId, setCollegeId] = useState("");
@@ -15,11 +24,13 @@ export default function UploadSyllabus() {
   const [term, setTerm] = useState("Fall");
   const [year, setYear] = useState(new Date().getFullYear());
   const [pdfFile, setPdfFile] = useState(null);
-  const [status, setStatus] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [courseOptions, setCourseOptions] = useState([]);
   const [courseSuggestions, setCourseSuggestions] = useState([]);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [uploadError, setUploadError] = useState(""); // error shown in modal
+
   const fileInputRef = useRef();
 
   const navigate = useNavigate();
@@ -47,7 +58,7 @@ export default function UploadSyllabus() {
     setTerm("Fall");
     setYear(new Date().getFullYear());
     setPdfFile(null);
-    setStatus("");
+    setUploadError("");
     setCourseSuggestions([]);
 
     // 👇 Clear file input visually
@@ -59,9 +70,12 @@ export default function UploadSyllabus() {
   useEffect(() => {
     const fetchCourses = async () => {
       if (!collegeId) return;
-      const courseSnap = await getDocs(
-        collection(db, "colleges", collegeId, "courses")
+      const courseQuery = query(
+        collection(db, "colleges", collegeId, "courses"),
+        where("approved", "==", true)
       );
+
+      const courseSnap = await getDocs(courseQuery);
       const courseList = courseSnap.docs.map((doc) => ({
         code: doc.id,
         title: doc.data().title,
@@ -89,17 +103,30 @@ export default function UploadSyllabus() {
     }
   }, [courseCode, courseOptions]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (!pdfFile || pdfFile.size > 5 * 1024 * 1024) {
-      setStatus("❌ PDF file is too large. Maximum size is 5 MB.");
-      return;
-    }
+    setUploadError("");
+    setShowReviewModal(true); // Open confirmation modal
+  };
 
-    setStatus("");
+  const handleSubmitUpload = async () => {
+    setUploadError("");
     setIsSubmitting(true);
 
     try {
+      const auth = getAuth();
+      const uid = auth.currentUser?.uid;
+
+      if (!uid) {
+        setUploadError("❌ Please refresh and try again.");
+        setIsSubmitting(false);
+        return;
+      }
+      if (!pdfFile || pdfFile.size > 5 * 1024 * 1024) {
+        setUploadError("❌ PDF file is too large. Maximum size is 5 MB.");
+        return;
+      }
+
       const filePath = `syllabi/${collegeId}/${courseCode}/${pdfFile.name}`;
       const storageRef = ref(storage, filePath);
       await uploadBytes(storageRef, pdfFile);
@@ -107,11 +134,32 @@ export default function UploadSyllabus() {
 
       const courseRef = doc(db, "colleges", collegeId, "courses", courseCode);
       const courseSnap = await getDoc(courseRef);
+
       if (!courseSnap.exists()) {
         await setDoc(courseRef, {
           code: courseCode,
           title: courseTitle,
+          approved: false, // Initially not approved
         });
+      }
+      // Step: Check if syllabus already exists for course + term + year
+      const existingQuery = query(
+        collection(db, "colleges", collegeId, "courses", courseCode, "syllabi"),
+        where("term", "==", term),
+        where("year", "==", year),
+        where("professor", "==", professor),
+        where("approved", "==", true) // Only check for approved syllabi
+      );
+
+      const existingSnapshot = await getDocs(existingQuery);
+
+      if (!existingSnapshot.empty) {
+        setUploadError(
+          "⚠️ A syllabus for this course, term, and year already exists."
+        );
+
+        setIsSubmitting(false);
+        return;
       }
 
       const syllabiRef = collection(
@@ -122,6 +170,7 @@ export default function UploadSyllabus() {
         courseCode,
         "syllabi"
       );
+
       await setDoc(doc(syllabiRef), {
         professor,
         term,
@@ -129,12 +178,14 @@ export default function UploadSyllabus() {
         pdf_url: pdfUrl,
         file_path: filePath,
         approved: false,
+        owner: uid || null, // Useful for admin view
       });
 
+      setShowReviewModal(false);
       setShowModal(true);
     } catch (err) {
       console.error("Upload failed:", err);
-      setStatus("❌ Upload failed.");
+      setUploadError("❌ Upload failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -285,6 +336,63 @@ export default function UploadSyllabus() {
                 }}
               >
                 Upload Another
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showReviewModal && (
+        <div className="upload-modal">
+          <div className="modal-content">
+            <h3>📄 Confirm Your Submission</h3>
+
+            <ul className="confirm-list">
+              <li>
+                <strong>College:</strong>{" "}
+                {colleges.find((c) => c.id === collegeId)?.name}
+              </li>
+              <li>
+                <strong>Course Code:</strong> {courseCode}
+              </li>
+              <li>
+                <strong>Course Title:</strong> {courseTitle}
+              </li>
+              <li>
+                <strong>Professor:</strong> {professor}
+              </li>
+              <li>
+                <strong>Term:</strong> {term}
+              </li>
+              <li>
+                <strong>Year:</strong> {year}
+              </li>
+              <li>
+                <strong>File:</strong> {pdfFile?.name}
+              </li>
+            </ul>
+
+            {uploadError && (
+              <div className="upload-status error">{uploadError}</div>
+            )}
+
+            <div className="modal-buttons">
+              <Button
+                variant="default"
+                fullWidth
+                onClick={() => {
+                  setShowReviewModal(false);
+                }}
+                disabled={isSubmitting}
+              >
+                Edit
+              </Button>
+              <Button
+                color="green"
+                fullWidth
+                onClick={handleSubmitUpload}
+                loading={isSubmitting}
+              >
+                Confirm & Submit
               </Button>
             </div>
           </div>

@@ -1,43 +1,40 @@
 // HomePage.js
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
 import "./HomePage.css";
 import studentImage from "../../assets/studentshangingout.jpg";
 export default function HomePage() {
   const [colleges, setColleges] = useState([]);
-  const [query, setQuery] = useState("");
+  const [Searchquery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
   useEffect(() => {
     const fetchCollegesWithCounts = async () => {
+      // Fetch all colleges from the top-level "colleges" collection
       const collegesSnapshot = await getDocs(collection(db, "colleges"));
+
+      // For each college, get its approved courses and approved syllabi count
       const collegesData = await Promise.all(
         collegesSnapshot.docs.map(async (collegeDoc) => {
           const collegeId = collegeDoc.id;
-          const coursesSnapshot = await getDocs(
-            collection(db, "colleges", collegeId, "courses")
+
+          // Query only approved courses within the current college
+          const coursesQuery = query(
+            collection(db, "colleges", collegeId, "courses"),
+            where("approved", "==", true)
           );
+          const coursesSnapshot = await getDocs(coursesQuery);
 
           let totalApproved = 0;
+
+          // For each approved course, query only approved syllabi
           for (const courseDoc of coursesSnapshot.docs) {
-            const syllabiSnapshot = await getDocs(
-              collection(
-                db,
-                "colleges",
-                collegeId,
-                "courses",
-                courseDoc.id,
-                "syllabi"
-              )
-            );
-            totalApproved += syllabiSnapshot.docs.filter(
-              (doc) => doc.data().approved
-            ).length;
+            totalApproved += courseDoc.data().approvedSyllabiCount || 0;
           }
 
+          // Return college data with total approved uploads
           return {
             id: collegeId,
             name: collegeDoc.data().name,
@@ -47,16 +44,20 @@ export default function HomePage() {
         })
       );
 
+      // Update state with colleges and their respective uploads
       setColleges(collegesData);
       setLoading(false);
     };
 
+    // Call the data-fetching function on component mount
     fetchCollegesWithCounts();
+
+    // Scroll to top on initial load
     window.scrollTo(0, 0);
   }, []);
 
   const filtered = colleges.filter((college) =>
-    college.name.toLowerCase().includes(query.toLowerCase())
+    college.name.toLowerCase().includes(Searchquery.toLowerCase())
   );
 
   return (
@@ -72,11 +73,11 @@ export default function HomePage() {
             type="text"
             className="search-input"
             placeholder="Search for your college..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            value={Searchquery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
 
-          {query && (
+          {Searchquery && (
             <div className="results-box">
               {filtered.length > 0 ? (
                 filtered.map((college) => (

@@ -140,7 +140,6 @@
 /* --- Skeleton Loading --- */
 .skeleton {
   background: #f3f3f3;
-  animation: pulse 1.5s infinite ease-in-out;
 }
 
 .skeleton-img {

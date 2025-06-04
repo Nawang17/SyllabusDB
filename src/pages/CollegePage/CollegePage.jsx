@@ -2,14 +2,20 @@ import { useEffect, useState } from "react";
 import "./CollegePage.css";
 import { useNavigate, useParams } from "react-router";
 import { db } from "../../../firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
-import { getStorage, ref, getDownloadURL } from "firebase/storage";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 import {
   IconChevronDown,
   IconChevronRight,
   IconMapPin,
 } from "@tabler/icons-react";
-import { Button, Flex } from "@mantine/core";
+import { Button, Flex, Image, Skeleton } from "@mantine/core";
 
 export default function CollegePage() {
   const [loading, setLoading] = useState(true);
@@ -20,10 +26,11 @@ export default function CollegePage() {
   const [syllabiMap, setSyllabiMap] = useState({});
   const [expanded, setExpanded] = useState({});
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("default");
   const navigate = useNavigate();
   const [collegeName, setCollegeName] = useState("");
   const [collegeLocation, setCollegeLocation] = useState("");
+  const [collegeImage, setCollegeImage] = useState("");
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -34,46 +41,35 @@ export default function CollegePage() {
       try {
         setLoading(true);
 
-        // Get college doc itself
-        const collegeDocSnap = await getDocs(collection(db, "colleges"));
-        const collegeDoc = collegeDocSnap.docs.find(
-          (doc) => doc.id === collegeId
+        // Fetch the specific college document by ID
+        const collegeDocRef = doc(db, "colleges", collegeId);
+        const collegeDocSnap = await getDoc(collegeDocRef);
+
+        if (collegeDocSnap.exists()) {
+          const data = collegeDocSnap.data();
+          setCollegeImage(data.image_url || null);
+          setCollegeName(data.name || "");
+          setCollegeLocation(`${data.city || ""}, ${data.state || ""}`);
+        } else {
+          setError("College not found. Please check the URL.");
+          return;
+        }
+
+        // Query only approved courses
+        const courseQuery = query(
+          collection(db, "colleges", collegeId, "courses"),
+          where("approved", "==", true)
         );
-        if (collegeDoc) {
-          setCollegeName(collegeDoc.data().name);
-          setCollegeLocation(
-            collegeDoc.data().city + ", " + collegeDoc.data().state || ""
-          );
-        }
+        const courseSnapshot = await getDocs(courseQuery);
 
-        // Now fetch its courses
-        const courseRef = collection(db, "colleges", collegeId, "courses");
-        const snapshot = await getDocs(courseRef);
-
-        const filteredCourses = [];
-        for (const docSnap of snapshot.docs) {
-          const syllabiRef = collection(
-            db,
-            "colleges",
-            collegeId,
-            "courses",
-            docSnap.id,
-            "syllabi"
-          );
-          const syllabiSnap = await getDocs(syllabiRef);
-          const hasApproved = syllabiSnap.docs.some(
-            (doc) => doc.data().approved
-          );
-          if (hasApproved) {
-            filteredCourses.push({
-              id: docSnap.id,
-              ...docSnap.data(),
-            });
-          }
-        }
-
-        setCourses(filteredCourses);
+        setCourses(
+          courseSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+        );
       } catch (err) {
+        setError("Failed to fetch college or courses. Please try again later.");
         console.error("Failed to fetch college or courses:", err);
       } finally {
         setLoading(false);
@@ -91,50 +87,34 @@ export default function CollegePage() {
   };
 
   const toggleExpand = async (courseId) => {
+    // Toggle the expanded state for this course
     setExpanded((prev) => ({ ...prev, [courseId]: !prev[courseId] }));
 
+    // If syllabi for this course haven't been fetched yet
     if (!syllabiMap[courseId]) {
       setLoadingCourseId(courseId);
+
       try {
-        const syllabiRef = collection(
-          db,
-          "colleges",
-          collegeId,
-          "courses",
-          courseId,
-          "syllabi"
+        // Query only approved syllabi to avoid Firestore permission errors
+        const syllabiQuery = query(
+          collection(db, "colleges", collegeId, "courses", courseId, "syllabi"),
+          where("approved", "==", true)
         );
-        const snapshot = await getDocs(syllabiRef);
-        const storage = getStorage();
+        const snapshot = await getDocs(syllabiQuery);
 
-        const syllabi = await Promise.all(
-          snapshot.docs
-            .map((doc) => ({ id: doc.id, ...doc.data() }))
-            .filter((s) => s.approved)
-            .map(async (s) => {
-              let url = s.pdf_url;
-              if (url.startsWith("gs://")) {
-                try {
-                  const filePath = url.replace(
-                    "gs://syllabusdb-a9cc8.appspot.com/",
-                    ""
-                  );
-                  const storageRef = ref(storage, filePath);
-                  url = await getDownloadURL(storageRef);
-                } catch (e) {
-                  console.error("Failed to convert gs:// URL", e);
-                  url = null;
-                }
-              }
-              return { ...s, pdf_url: url };
-            })
-        );
+        //get  syllabus data
+        const syllabi = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
+        // Sort syllabi by year and term
         syllabi.sort((a, b) => {
           if (b.year !== a.year) return b.year - a.year;
           return termOrder[b.term] - termOrder[a.term];
         });
 
+        // Store result in state map
         setSyllabiMap((prev) => ({ ...prev, [courseId]: syllabi }));
       } catch (err) {
         console.error("Error fetching syllabi:", err);
@@ -144,107 +124,130 @@ export default function CollegePage() {
     }
   };
 
-  const filteredCourses = courses
-    .filter(
-      (c) =>
-        c.code.toLowerCase().includes(search.toLowerCase()) ||
-        c.title.toLowerCase().includes(search.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sort === "code") return a.code.localeCompare(b.code);
-      if (sort === "title") return a.title.localeCompare(b.title);
-      return 0;
-    });
+  const filteredCourses = courses.filter(
+    (c) =>
+      c.code.toLowerCase().includes(search.toLowerCase()) ||
+      c.title.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="college-page">
-      <div className="college-header">
-        <div>
-          <div className="college-title">{collegeName}</div>
-          <Flex align={"center"} gap={"0.5rem"}>
-            <IconMapPin color="#888" />
+    <>
+      {!loading && error ? (
+        <Flex gap={"1rem"} direction="column" align="center" justify="center">
+          <Image
+            src="/src/assets/5203299.jpg"
+            alt="Error"
+            style={{ width: "300px", height: "300px" }}
+          />
+          <p>{error}</p>
+          <Button onClick={() => navigate("/")}>Go to Home</Button>
+        </Flex>
+      ) : (
+        <div className="college-page">
+          {collegeImage ? (
+            <Image
+              style={{
+                width: "100%",
+                height: "200px",
+                objectFit: "cover",
+                borderRadius: "8px",
+                marginBottom: "1rem",
+              }}
+              src={collegeImage}
+            />
+          ) : (
+            <Skeleton height={"200px"} mb="1rem" radius="md" />
+          )}
 
-            <div className="college-location"> {collegeLocation}</div>
-          </Flex>
-        </div>
-        <Button onClick={() => navigate("/uploadsyllabus")}>
-          Upload Syllabus
-        </Button>
-      </div>
+          <div className="college-header">
+            <div>
+              <div className="college-title">{collegeName}</div>
+              <Flex align={"center"} gap={"0.5rem"}>
+                <IconMapPin color="#888" />
 
-      <div className="search-and-controls">
-        <input
-          type="text"
-          className="syllabus-search"
-          placeholder="Search course by code or name..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        {!loading && (
-          <div className="course-count">
-            {filteredCourses.length} courses available
-          </div>
-        )}
-      </div>
-
-      {!loading && filteredCourses.length === 0 && (
-        <div className="no-courses-found">
-          <p>No courses match your search. Try a different name or code.</p>
-          <Button size="md" onClick={() => navigate("/uploadsyllabus")}>
-            Upload Syllabus
-          </Button>
-        </div>
-      )}
-
-      <div className="course-list">
-        {filteredCourses.map((course) => (
-          <div className="course-card" key={course.id}>
-            <div
-              className="course-header"
-              onClick={() => toggleExpand(course.id)}
-            >
-              <div>
-                <div className="course-code">{course.code}</div>
-                <div className="course-title">{course.title}</div>
-              </div>
-              <div className="expand-icon">
-                {expanded[course.id] ? (
-                  <IconChevronDown />
-                ) : (
-                  <IconChevronRight />
-                )}
-              </div>
+                <div className="college-location"> {collegeLocation}</div>
+              </Flex>
             </div>
+            <Button onClick={() => navigate("/uploadsyllabus")}>
+              Upload Syllabus
+            </Button>
+          </div>
 
-            {expanded[course.id] && (
-              <div className="syllabi-list">
-                {loadingCourseId === course.id ? (
-                  <div className="loading-syllabi">Loading syllabi...</div>
-                ) : (
-                  (syllabiMap[course.id] || []).map((s) => (
-                    <a
-                      key={s.id}
-                      href={s.pdf_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="syllabus-link"
-                    >
-                      {s.term} {s.year} – {s.professor}
-                    </a>
-                  ))
-                )}
+          <div className="search-and-controls">
+            <input
+              type="text"
+              className="syllabus-search"
+              placeholder="Search course by code or name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {!loading && (
+              <div className="course-count">
+                {filteredCourses.length} courses available
               </div>
             )}
           </div>
-        ))}
-      </div>
 
-      {loading && (
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading courses...</p>
+          {!loading && filteredCourses.length === 0 && (
+            <div className="no-courses-found">
+              <p>No courses match your search. Try a different name or code.</p>
+              <Button size="md" onClick={() => navigate("/uploadsyllabus")}>
+                Upload Syllabus
+              </Button>
+            </div>
+          )}
+
+          <div className="course-list">
+            {filteredCourses.map((course) => (
+              <div className="course-card" key={course.id}>
+                <div
+                  className="course-header"
+                  onClick={() => toggleExpand(course.id)}
+                >
+                  <div>
+                    <div className="course-code">{course.code}</div>
+                    <div className="course-title">{course.title}</div>
+                  </div>
+                  <div className="expand-icon">
+                    {expanded[course.id] ? (
+                      <IconChevronDown />
+                    ) : (
+                      <IconChevronRight />
+                    )}
+                  </div>
+                </div>
+
+                {expanded[course.id] && (
+                  <div className="syllabi-list">
+                    {loadingCourseId === course.id ? (
+                      <div className="loading-syllabi">Loading syllabi...</div>
+                    ) : (
+                      (syllabiMap[course.id] || []).map((s) => (
+                        <a
+                          key={s.id}
+                          href={s.pdf_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="syllabus-link"
+                        >
+                          {s.term} {s.year} – {s.professor}
+                        </a>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {loading && (
+            <div className="loading-spinner">
+              <div className="spinner"></div>
+              <p>Loading courses...</p>
+            </div>
+          )}
         </div>
       )}
-    </div>
+    </>
   );
 }
