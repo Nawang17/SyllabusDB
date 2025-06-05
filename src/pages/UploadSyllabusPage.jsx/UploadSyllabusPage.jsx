@@ -8,12 +8,14 @@ import {
   getDocs,
   query,
   where,
+  collectionGroup,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Link, useNavigate } from "react-router";
 import "./UploadSyllabusPage.css";
 import { Button, Select } from "@mantine/core";
 import { getAuth } from "firebase/auth";
+import { Timestamp } from "firebase/firestore";
 
 export default function UploadSyllabus() {
   const [collegeId, setCollegeId] = useState("");
@@ -51,7 +53,6 @@ export default function UploadSyllabus() {
     fetchColleges();
   }, []);
   const resetForm = () => {
-    setCollegeId("");
     setCourseCode("");
     setCourseTitle("");
     setProfessor("");
@@ -129,6 +130,29 @@ export default function UploadSyllabus() {
 
       const filePath = `syllabi/${collegeId}/${courseCode}/${pdfFile.name}`;
       const storageRef = ref(storage, filePath);
+      // Rate limit check
+
+      // Query across all syllabi (any course, any college)
+      const syllabiRef = collectionGroup(db, "syllabi");
+
+      const oneMinuteAgo = Timestamp.fromDate(new Date(Date.now() - 60 * 1000));
+
+      const rateLimitQuery = query(
+        syllabiRef,
+        where("owner", "==", uid),
+        where("createdAt", ">", oneMinuteAgo)
+      );
+
+      const recentUploadsSnap = await getDocs(rateLimitQuery);
+
+      if (recentUploadsSnap.size >= 2) {
+        setUploadError(
+          "⚠️ You can only upload 2 syllabi per minute. Please wait a bit. Thank you!"
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
       await uploadBytes(storageRef, pdfFile);
       const pdfUrl = await getDownloadURL(storageRef);
 
@@ -162,24 +186,28 @@ export default function UploadSyllabus() {
         return;
       }
 
-      const syllabiRef = collection(
-        db,
-        "colleges",
-        collegeId,
-        "courses",
-        courseCode,
-        "syllabi"
+      await setDoc(
+        doc(
+          collection(
+            db,
+            "colleges",
+            collegeId,
+            "courses",
+            courseCode,
+            "syllabi"
+          )
+        ),
+        {
+          professor,
+          term,
+          year,
+          pdf_url: pdfUrl,
+          file_path: filePath,
+          approved: false,
+          owner: uid || null,
+          createdAt: Timestamp.now(), // ✅ Required for rate limiting
+        }
       );
-
-      await setDoc(doc(syllabiRef), {
-        professor,
-        term,
-        year,
-        pdf_url: pdfUrl,
-        file_path: filePath,
-        approved: false,
-        owner: uid || null, // Useful for admin view
-      });
 
       setShowReviewModal(false);
       setShowModal(true);
