@@ -1,0 +1,46 @@
+.all-colleges-page {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+  font-family: Arial, sans-serif;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #1f2937;
+}
+
+.college-count {
+  color: #6b7280;
+  margin-bottom: 2rem;
+}
+
+.state-group {
+  margin-bottom: 2rem;
+}
+
+.state-title {
+  font-size: 1.25rem;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.college-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.college-link {
+  padding: 6px 0;
+  color: #2563eb;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.college-link:hover {
+  color: #1d4ed8;
+}

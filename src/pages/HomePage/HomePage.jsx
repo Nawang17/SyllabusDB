@@ -5,6 +5,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
 import "./HomePage.css";
 import studentImage from "../../assets/studentshangingout.jpg";
+import verifiedImage from "../../assets/verified-illustration.jpg"; // Adjust the path as needed
 export default function HomePage() {
   const [colleges, setColleges] = useState([]);
   const [Searchquery, setSearchQuery] = useState("");
@@ -98,7 +99,7 @@ export default function HomePage() {
       </section>
 
       <section className="college-scroll-wrapper">
-        <h2 className="scroll-title">Explore Colleges</h2>
+        <h2 className="scroll-title">Most Shared Syllabi</h2>
         <div className="college-scroll">
           {loading
             ? [...Array(4)].map((_, i) => (
@@ -110,6 +111,7 @@ export default function HomePage() {
               ))
             : colleges
                 .sort((a, b) => b.uploads - a.uploads)
+                .slice(0, 10)
                 .map((college) => (
                   <div
                     key={college.id}
@@ -129,6 +131,14 @@ export default function HomePage() {
                     )}
                   </div>
                 ))}
+          {!loading && (
+            <div
+              className="college-card view-all-card-link"
+              onClick={() => navigate("/colleges")}
+            >
+              <span className="view-all-link">View All Colleges</span>
+            </div>
+          )}
         </div>
       </section>
       <section className="why-section">
@@ -148,6 +158,26 @@ export default function HomePage() {
             Upload a Syllabus
           </button>
         </div>
+      </section>
+      <section className="trust-section">
+        <div className="trust-content">
+          <h3>Trusted & Verified</h3>
+          <p>How we keep things safe and reliable:</p>
+          <ul className="trust-list">
+            <li>✅ Every syllabus is reviewed before approval</li>
+            <li>🛡️ PDF uploads are scanned with antivirus tools</li>
+            <li>📅 Most uploads are approved within 24 hours</li>
+          </ul>
+          <p>
+            We’re committed to creating a trusted, helpful resource for all
+            students.
+          </p>
+        </div>
+        <img
+          src={verifiedImage}
+          alt="Verified submission process"
+          className="trust-image"
+        />
       </section>
     </div>
   );

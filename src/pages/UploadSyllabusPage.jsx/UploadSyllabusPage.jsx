@@ -265,6 +265,7 @@ export default function UploadSyllabus() {
         <label>
           Professor Name:
           <input
+            placeholder="e.g. John Smith"
             type="text"
             value={professor}
             onChange={(e) => setProfessor(e.target.value)}

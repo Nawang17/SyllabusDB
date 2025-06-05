@@ -12,6 +12,7 @@ import Footer from "./components/Footer.jsx";
 import AboutPage from "./pages/About/AboutPage.jsx";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 import { useEffect } from "react";
+import AllCollegesPage from "./pages/AllColleges/AllCollgesPage.jsx";
 function App() {
   const auth = getAuth();
   useEffect(() => {
@@ -32,6 +33,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/college/:collegeId" element={<CollegePage />} />
           <Route path="/uploadSyllabus" element={<UploadSyllabusPage />} />
+          <Route path="/colleges" element={<AllCollegesPage />} />
           <Route path="/admin" element={<AdminApprovalPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/aboutpage" element={<AboutPage />} />

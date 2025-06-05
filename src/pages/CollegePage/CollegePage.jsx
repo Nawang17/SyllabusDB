@@ -16,7 +16,7 @@ import {
   IconMapPin,
 } from "@tabler/icons-react";
 import { Button, Flex, Image, Skeleton } from "@mantine/core";
-
+import errorImage from "../../assets/5203299.jpg"; // Error image for not found
 export default function CollegePage() {
   const [loading, setLoading] = useState(true);
   const [loadingCourseId, setLoadingCourseId] = useState(null);
@@ -31,6 +31,7 @@ export default function CollegePage() {
   const [collegeLocation, setCollegeLocation] = useState("");
   const [collegeImage, setCollegeImage] = useState("");
   const [error, setError] = useState(null);
+  const [totalSyllabiCount, setTotalSyllabiCount] = useState(0);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -68,6 +69,13 @@ export default function CollegePage() {
             ...doc.data(),
           }))
         );
+        let syllabiCount = 0;
+
+        for (const doc of courseSnapshot.docs) {
+          syllabiCount += doc.data().approvedSyllabiCount || 0;
+        }
+
+        setTotalSyllabiCount(syllabiCount);
       } catch (err) {
         setError("Failed to fetch college or courses. Please try again later.");
         console.error("Failed to fetch college or courses:", err);
@@ -135,7 +143,7 @@ export default function CollegePage() {
       {!loading && error ? (
         <Flex gap={"1rem"} direction="column" align="center" justify="center">
           <Image
-            src="/src/assets/5203299.jpg"
+            src={errorImage}
             alt="Error"
             style={{ width: "300px", height: "300px" }}
           />
@@ -145,33 +153,34 @@ export default function CollegePage() {
       ) : (
         <div className="college-page">
           {collegeImage ? (
-            <Image
-              style={{
-                width: "100%",
-                height: "200px",
-                objectFit: "cover",
-                borderRadius: "8px",
-                marginBottom: "1rem",
-              }}
-              src={collegeImage}
-            />
+            <div className="college-hero">
+              <Image
+                src={collegeImage}
+                className="college-hero-img"
+                alt={collegeName}
+              />
+              <div className="college-hero-overlay">
+                <div className="college-hero-title">{collegeName}</div>
+                <div className="college-hero-location">
+                  <IconMapPin size={16} /> {collegeLocation}
+                </div>
+              </div>
+            </div>
           ) : (
             <Skeleton height={"200px"} mb="1rem" radius="md" />
           )}
 
           <div className="college-header">
-            <div>
-              <div className="college-title">{collegeName}</div>
-              <Flex align={"center"} gap={"0.5rem"}>
-                <IconMapPin color="#888" />
-
-                <div className="college-location"> {collegeLocation}</div>
-              </Flex>
-            </div>
             <Button onClick={() => navigate("/uploadsyllabus")}>
               Upload Syllabus
             </Button>
           </div>
+          {!loading && courses.length > 0 && (
+            <div className="total-syllabi-banner">
+              Browse <span className="syllabi-count">{totalSyllabiCount}</span>{" "}
+              course syllabi
+            </div>
+          )}
 
           <div className="search-and-controls">
             <input
@@ -181,18 +190,23 @@ export default function CollegePage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            {!loading && (
-              <div className="course-count">
-                {filteredCourses.length} courses available
-              </div>
-            )}
           </div>
 
           {!loading && filteredCourses.length === 0 && (
             <div className="no-courses-found">
-              <p>No courses match your search. Try a different name or code.</p>
+              {courses.length > 0 ? (
+                <p>
+                  No courses matched your search. Try a different name or course
+                  code.
+                </p>
+              ) : (
+                <>
+                  <p>No courses have been added for this college yet.</p>
+                  <p> Be the first to share a syllabus!</p>
+                </>
+              )}
               <Button size="md" onClick={() => navigate("/uploadsyllabus")}>
-                Upload Syllabus
+                Upload a Syllabus
               </Button>
             </div>
           )}

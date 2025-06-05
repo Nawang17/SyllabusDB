@@ -216,3 +216,52 @@
   color: #6b7280;
   margin-top: 0.25rem;
 }
+.college-hero {
+  position: relative;
+  height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.college-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(65%); /* Darken the image slightly */
+}
+
+.college-hero-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  padding: 1rem;
+  width: 100%;
+  color: white;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
+}
+
+.college-hero-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.college-hero-location {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  margin-top: 4px;
+}
+.total-syllabi-banner {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+.syllabi-count {
+  font-size: 1.5rem;
+  color: #38bdf8;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
