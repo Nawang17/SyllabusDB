@@ -169,12 +169,14 @@ export default function CollegePage() {
           ) : (
             <Skeleton height={"200px"} mb="1rem" radius="md" />
           )}
+          {courses.length > 0 && (
+            <div className="college-header">
+              <Button onClick={() => navigate("/uploadsyllabus")}>
+                Upload Syllabus
+              </Button>
+            </div>
+          )}
 
-          <div className="college-header">
-            <Button onClick={() => navigate("/uploadsyllabus")}>
-              Upload Syllabus
-            </Button>
-          </div>
           {!loading && courses.length > 0 && (
             <div className="total-syllabi-banner">
               Browse <span className="syllabi-count">{totalSyllabiCount}</span>{" "}

@@ -10,7 +10,7 @@ import {
   where,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import "./UploadSyllabusPage.css";
 import { Button, Select } from "@mantine/core";
 import { getAuth } from "firebase/auth";
@@ -311,6 +311,11 @@ export default function UploadSyllabus() {
         </label>
 
         {status && <div className="upload-status">{status}</div>}
+        <p className="upload-guideline-reminder">
+          By uploading, you agree to follow our{" "}
+          <Link to="/guidelines">community guidelines</Link>. Only upload real
+          syllabi (PDF, max 5MB). No personal info or spam.
+        </p>
 
         <button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Submitting..." : "Submit"}

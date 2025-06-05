@@ -228,3 +228,12 @@
   font-weight: 500;
   text-align: center;
 }
+.upload-guideline-reminder {
+  font-size: 0.95rem;
+  color: #374151;
+  margin-top: 1rem;
+}
+.upload-guideline-reminder a {
+  color: #2563eb;
+  text-decoration: underline;
+}

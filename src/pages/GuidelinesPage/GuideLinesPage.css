@@ -1,0 +1,49 @@
+.guidelines-page {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  color: #1f2937;
+}
+
+.guidelines-page h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.guidelines-page h2 {
+  font-size: 1.25rem;
+  margin-top: 2rem;
+  color: #2563eb;
+}
+
+.guidelines-page p {
+  margin: 1rem 0;
+  font-size: 1rem;
+}
+
+.guidelines-list {
+  list-style: none;
+  padding-left: 1rem;
+  margin-top: 0.5rem;
+}
+
+.guidelines-list li {
+  margin-bottom: 0.5rem;
+  position: relative;
+  padding-left: 1.2rem;
+}
+
+.guidelines-list li::before {
+  content: "•";
+  color: #2563eb;
+  position: absolute;
+  left: 0;
+}
+
+.guidelines-footer {
+  margin-top: 2rem;
+  font-weight: 500;
+}

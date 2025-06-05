@@ -7,8 +7,13 @@ export default function Footer() {
       <div className="footer-content">
         <div className="footer-links">
           <Link to="/aboutpage">About</Link>
-          <Link to="/uploadsyllabus">Upload</Link>
+
+          <Link to="/guidelines">Read the Guidelines</Link>
           <Link to="/colleges">All colleges</Link>
+        </div>
+        <div className="footer-links">
+          <Link to="/uploadsyllabus">Upload</Link>
+
           <Link to="https://nawang.xyz/">Developer</Link>
         </div>
         <p>Built by students, for students</p>
