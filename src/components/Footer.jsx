@@ -14,7 +14,7 @@ export default function Footer() {
         <div className="footer-links">
           <Link to="/uploadsyllabus">Upload</Link>
 
-          <Link to="https://nawang.xyz/">Developer</Link>
+          <Link to="https://nawangs-portfolio.netlify.app/">Developer</Link>
         </div>
         <p>Built by students, for students</p>
       </div>
