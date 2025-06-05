@@ -32,10 +32,31 @@ export default function CollegePage() {
   const [collegeImage, setCollegeImage] = useState("");
   const [error, setError] = useState(null);
   const [totalSyllabiCount, setTotalSyllabiCount] = useState(0);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    scrollToTop();
+  }, []);
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  {
+    showScrollTop && (
+      <button className="scroll-to-top" onClick={scrollToTop}>
+        ↑ Top
+      </button>
+    );
+  }
 
   useEffect(() => {
     const fetchCollegeAndCourses = async () => {
@@ -261,6 +282,11 @@ export default function CollegePage() {
               <div className="spinner"></div>
               <p>Loading courses...</p>
             </div>
+          )}
+          {showScrollTop && (
+            <button className="scroll-to-top" onClick={scrollToTop}>
+              ↑ Scroll to Top
+            </button>
           )}
         </div>
       )}

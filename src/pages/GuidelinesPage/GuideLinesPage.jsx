@@ -3,7 +3,7 @@ import "./GuideLinesPage.css";
 
 export default function GuidelinesPage() {
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
   return (
     <div className="guidelines-page">

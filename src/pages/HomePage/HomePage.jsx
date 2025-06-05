@@ -54,7 +54,8 @@ export default function HomePage() {
     fetchCollegesWithCounts();
 
     // Scroll to top on initial load
-    window.scrollTo(0, 0);
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   const filtered = colleges.filter((college) =>

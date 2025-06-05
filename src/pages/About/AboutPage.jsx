@@ -3,7 +3,7 @@ import "./AboutPage.css";
 
 export default function AboutPage() {
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
   return (
     <div className="about-page">

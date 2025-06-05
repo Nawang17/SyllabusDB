@@ -8,8 +8,9 @@ export default function AllCollegesPage() {
   const [collegesByState, setCollegesByState] = useState({});
   const [totalColleges, setTotalColleges] = useState(0);
   const navigate = useNavigate();
+
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
   useEffect(() => {
     const fetchColleges = async () => {
