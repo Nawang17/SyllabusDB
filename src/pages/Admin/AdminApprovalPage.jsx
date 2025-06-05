@@ -21,7 +21,33 @@ const allowedAdminEmail = "nawangsherpa1010@gmail.com"; //
 export default function AdminApprovalPage() {
   const [syllabi, setSyllabi] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [scanResults, setScanResults] = useState({});
+  const [scanningIds, setScanningIds] = useState({});
+
   const navigate = useNavigate();
+  const scanPDF = async (syllabus) => {
+    const { pdf_url, id } = syllabus;
+
+    setScanningIds((prev) => ({ ...prev, [id]: true }));
+    try {
+      const res = await fetch(
+        `https://syllabusdbserver.onrender.com/scan?url=${encodeURIComponent(
+          pdf_url
+        )}`
+      );
+      const data = await res.json();
+      setScanResults((prev) => ({ ...prev, [id]: data }));
+    } catch (err) {
+      console.error("Scan failed:", err);
+      setScanResults((prev) => ({
+        ...prev,
+        [id]: { error: "Scan failed. Try again." },
+      }));
+    } finally {
+      setScanningIds((prev) => ({ ...prev, [id]: false }));
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currUser) => {
       if (!currUser || currUser.email !== allowedAdminEmail) {
@@ -197,6 +223,9 @@ export default function AdminApprovalPage() {
                 <a href={s.pdf_url} target="_blank" rel="noreferrer">
                   View PDF
                 </a>
+                <button onClick={() => scanPDF(s)} disabled={scanningIds[s.id]}>
+                  {scanningIds[s.id] ? "🔍 Scanning..." : "🔍 Scan PDF"}
+                </button>
                 <button
                   onClick={() =>
                     approveSyllabus(s.ref, s.collegeId, s.courseId)
@@ -208,6 +237,24 @@ export default function AdminApprovalPage() {
                   ❌ Disapprove
                 </button>
               </div>
+
+              {scanResults[s.id] && (
+                <div className="scan-result">
+                  {scanResults[s.id].error ? (
+                    <span className="error">{scanResults[s.id].error}</span>
+                  ) : (
+                    <>
+                      🛡️ <strong>Malicious:</strong>{" "}
+                      {scanResults[s.id].malicious},{" "}
+                      <strong>Suspicious:</strong>{" "}
+                      {scanResults[s.id].suspicious} <strong>harmless:</strong>{" "}
+                      {scanResults[s.id].harmless}, <strong>timeout:</strong>{" "}
+                      {scanResults[s.id].timeout}, <strong>undetected:</strong>{" "}
+                      {scanResults[s.id].undetected}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
