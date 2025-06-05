@@ -8,7 +8,9 @@ export default function AllCollegesPage() {
   const [collegesByState, setCollegesByState] = useState({});
   const [totalColleges, setTotalColleges] = useState(0);
   const navigate = useNavigate();
-
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   useEffect(() => {
     const fetchColleges = async () => {
       const snapshot = await getDocs(collection(db, "colleges"));

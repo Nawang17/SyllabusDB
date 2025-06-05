@@ -1,6 +1,10 @@
+import { useEffect } from "react";
 import "./GuideLinesPage.css";
 
 export default function GuidelinesPage() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   return (
     <div className="guidelines-page">
       <h1>Community Guidelines</h1>

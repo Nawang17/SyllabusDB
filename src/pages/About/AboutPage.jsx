@@ -1,6 +1,10 @@
+import { useEffect } from "react";
 import "./AboutPage.css";
 
 export default function AboutPage() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   return (
     <div className="about-page">
       <h1>About SyllabusDB</h1>
@@ -11,18 +15,23 @@ export default function AboutPage() {
         it would be a good fit for me.
       </p>
       <p>
-        Thats is why I built <strong>SyllabusDB</strong>, a simple platform
-        where students can upload and browse real course syllabi. It is meant to
-        help you make smarter decisions when picking classes, especially when
-        course descriptions just are not enough.
+        That's why I built <strong>SyllabusDB</strong>, a simple platform where
+        students can upload and browse real course syllabi. It’s meant to help
+        you make smarter decisions when picking classes, especially when course
+        descriptions just aren’t enough.
       </p>
       <p>
-        There’s no login, no paywall just open, student powered access to info
+        There’s no login, no paywall, just open, student-powered access to info
         that actually helps.
       </p>
       <p>
-        If you have a syllabus from a course you have taken, please hit upload
-        and pay it forward.
+        If you have a syllabus from a course you’ve taken, please hit upload and
+        pay it forward.
+      </p>
+      <p>
+        If you have any questions, spot issues with the data, want to suggest a
+        feature, or just have feedback, feel free to reach out at{" "}
+        <a href="mailto:nawang.sherpa99@login.cuny.edu">katophh@gmail.com</a>.
       </p>
     </div>
   );
