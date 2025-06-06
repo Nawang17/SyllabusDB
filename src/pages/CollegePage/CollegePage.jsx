@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "./CollegePage.css";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { db } from "../../../firebaseConfig";
 import {
   collection,
@@ -10,21 +10,15 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import {
-  IconChevronDown,
-  IconChevronRight,
-  IconMapPin,
-} from "@tabler/icons-react";
+import { IconChevronRight, IconMapPin } from "@tabler/icons-react";
 import { Button, Flex, Image, Skeleton } from "@mantine/core";
 import errorImage from "../../assets/5203299.jpg"; // Error image for not found
 export default function CollegePage() {
   const [loading, setLoading] = useState(true);
-  const [loadingCourseId, setLoadingCourseId] = useState(null);
 
   const { collegeId } = useParams();
   const [courses, setCourses] = useState([]);
-  const [syllabiMap, setSyllabiMap] = useState({});
-  const [expanded, setExpanded] = useState({});
+
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
   const [collegeName, setCollegeName] = useState("");
@@ -33,6 +27,7 @@ export default function CollegePage() {
   const [error, setError] = useState(null);
   const [totalSyllabiCount, setTotalSyllabiCount] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [subjectMap, setSubjectMap] = useState({});
 
   useEffect(() => {
     const handleScroll = () => {
@@ -50,56 +45,55 @@ export default function CollegePage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  {
-    showScrollTop && (
-      <button className="scroll-to-top" onClick={scrollToTop}>
-        ↑ Top
-      </button>
-    );
-  }
-
   useEffect(() => {
     const fetchCollegeAndCourses = async () => {
       try {
         setLoading(true);
-
-        // Fetch the specific college document by ID
         const collegeDocRef = doc(db, "colleges", collegeId);
         const collegeDocSnap = await getDoc(collegeDocRef);
 
-        if (collegeDocSnap.exists()) {
-          const data = collegeDocSnap.data();
-          setCollegeImage(data.image_url || null);
-          setCollegeName(data.name || "");
-          setCollegeLocation(`${data.city || ""}, ${data.state || ""}`);
-        } else {
-          setError("College not found. Please check the URL.");
+        if (!collegeDocSnap.exists()) {
+          setError("College not found.");
           return;
         }
 
-        // Query only approved courses
+        const data = collegeDocSnap.data();
+        setCollegeImage(data.image_url || null);
+        setCollegeName(data.name || "");
+        setCollegeLocation(`${data.city || ""}, ${data.state || ""}`);
+
         const courseQuery = query(
           collection(db, "colleges", collegeId, "courses"),
           where("approved", "==", true)
         );
         const courseSnapshot = await getDocs(courseQuery);
+        const courseList = courseSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setCourses(courseList);
 
-        setCourses(
-          courseSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }))
-        );
-        let syllabiCount = 0;
+        let syllabiTotal = 0;
+        const grouped = {};
 
-        for (const doc of courseSnapshot.docs) {
-          syllabiCount += doc.data().approvedSyllabiCount || 0;
+        for (const course of courseList) {
+          const subjectCode = course.code.split(" ")[0].toUpperCase(); // get e.g., 'CSCI'
+          const count = course.approvedSyllabiCount || 0;
+          syllabiTotal += count;
+
+          if (!grouped[subjectCode]) {
+            grouped[subjectCode] = { syllabiCount: 0, courses: [] };
+          }
+
+          grouped[subjectCode].syllabiCount += count;
+          grouped[subjectCode].courses.push(course);
         }
 
-        setTotalSyllabiCount(syllabiCount);
+        setSubjectMap(grouped);
+        setTotalSyllabiCount(syllabiTotal);
       } catch (err) {
-        setError("Failed to fetch college or courses. Please try again later.");
-        console.error("Failed to fetch college or courses:", err);
+        console.error("Error:", err);
+        setError("Something went wrong.");
       } finally {
         setLoading(false);
       }
@@ -108,55 +102,8 @@ export default function CollegePage() {
     fetchCollegeAndCourses();
   }, [collegeId]);
 
-  const termOrder = {
-    Spring: 1,
-    Summer: 2,
-    Fall: 3,
-    Winter: 4,
-  };
-
-  const toggleExpand = async (courseId) => {
-    // Toggle the expanded state for this course
-    setExpanded((prev) => ({ ...prev, [courseId]: !prev[courseId] }));
-
-    // If syllabi for this course haven't been fetched yet
-    if (!syllabiMap[courseId]) {
-      setLoadingCourseId(courseId);
-
-      try {
-        // Query only approved syllabi to avoid Firestore permission errors
-        const syllabiQuery = query(
-          collection(db, "colleges", collegeId, "courses", courseId, "syllabi"),
-          where("approved", "==", true)
-        );
-        const snapshot = await getDocs(syllabiQuery);
-
-        //get  syllabus data
-        const syllabi = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        // Sort syllabi by year and term
-        syllabi.sort((a, b) => {
-          if (b.year !== a.year) return b.year - a.year;
-          return termOrder[b.term] - termOrder[a.term];
-        });
-
-        // Store result in state map
-        setSyllabiMap((prev) => ({ ...prev, [courseId]: syllabi }));
-      } catch (err) {
-        console.error("Error fetching syllabi:", err);
-      } finally {
-        setLoadingCourseId(null);
-      }
-    }
-  };
-
-  const filteredCourses = courses.filter(
-    (c) =>
-      c.code.toLowerCase().includes(search.toLowerCase()) ||
-      c.title.toLowerCase().includes(search.toLowerCase())
+  const filteredSubjects = Object.entries(subjectMap).filter(([subject]) =>
+    subject.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -190,8 +137,21 @@ export default function CollegePage() {
           ) : (
             <Skeleton height={"200px"} mb="1rem" radius="md" />
           )}
+
           {courses.length > 0 && (
             <div className="college-header">
+              <div className="breadcrumb-nav">
+                <Link to={`/`} className="breadcrumb-link">
+                  Home
+                </Link>
+                <IconChevronRight size={16} />
+                <Link
+                  to={`/college/${collegeId}`}
+                  className="breadcrumb-current"
+                >
+                  {collegeName} Subjects
+                </Link>
+              </div>
               <Button onClick={() => navigate("/uploadsyllabus")}>
                 Upload Syllabus
               </Button>
@@ -199,88 +159,71 @@ export default function CollegePage() {
           )}
 
           {!loading && courses.length > 0 && (
-            <div className="total-syllabi-banner">
-              Browse <span className="syllabi-count">{totalSyllabiCount}</span>{" "}
-              course syllabi
-            </div>
+            <>
+              <div className="total-syllabi-banner">
+                Browse{" "}
+                <span className="syllabi-count">{totalSyllabiCount}</span>{" "}
+                course syllabi
+              </div>
+            </>
           )}
 
           <div className="search-and-controls">
+            <label htmlFor="subject-search" className="search-label">
+              Search for your subject
+            </label>
             <input
+              id="subject-search"
               type="text"
               className="syllabus-search"
-              placeholder="Search course by code or name..."
+              placeholder="e.g. CSCI, ACC, MATH..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
 
-          {!loading && filteredCourses.length === 0 && (
-            <div className="no-courses-found">
-              {courses.length > 0 ? (
-                <p>
-                  No courses matched your search. Try a different name or course
-                  code.
-                </p>
-              ) : (
-                <>
-                  <p>No courses have been added for this college yet.</p>
-                  <p> Be the first to share a syllabus!</p>
-                </>
-              )}
-              <Button size="md" onClick={() => navigate("/uploadsyllabus")}>
-                Upload a Syllabus
-              </Button>
-            </div>
-          )}
-
-          <div className="course-list">
-            {filteredCourses.map((course) => (
-              <div className="course-card" key={course.id}>
+          <div className="subject-list">
+            {filteredSubjects.length === 0 && !loading ? (
+              <div className="no-courses-found">
+                {courses.length > 0 ? (
+                  <p>No subjects matched your search. Try a different name .</p>
+                ) : (
+                  <>
+                    <p>No syllabi have been added for this college yet.</p>
+                    <p> Be the first to share a syllabus!</p>
+                  </>
+                )}
+                <Button onClick={() => navigate("/uploadsyllabus")}>
+                  Upload Syllabus
+                </Button>
+              </div>
+            ) : (
+              filteredSubjects.map(([subject, data]) => (
                 <div
-                  className="course-header"
-                  onClick={() => toggleExpand(course.id)}
+                  key={subject}
+                  className="subject-card"
+                  onClick={() =>
+                    navigate(`/college/${collegeId}/subject/${subject}`)
+                  }
                 >
-                  <div>
-                    <div className="course-code">{course.code}</div>
-                    <div className="course-title">{course.title}</div>
+                  <div className="subject-main">
+                    <div className="subject-title">{subject}</div>
+                    <div className="subject-count">
+                      {data.syllabiCount} syllabi
+                    </div>
                   </div>
                   <div className="expand-icon">
-                    {expanded[course.id] ? (
-                      <IconChevronDown />
-                    ) : (
-                      <IconChevronRight />
-                    )}
+                    <IconChevronRight />
                   </div>
                 </div>
-
-                {expanded[course.id] && (
-                  <div className="syllabi-list">
-                    {loadingCourseId === course.id ? (
-                      <div className="loading-syllabi">Loading syllabi...</div>
-                    ) : (
-                      (syllabiMap[course.id] || []).map((s) => (
-                        <a
-                          key={s.id}
-                          href={s.pdf_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="syllabus-link"
-                        >
-                          {s.term} {s.year} – {s.professor}
-                        </a>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           {loading && (
             <div className="loading-spinner">
               <div className="spinner"></div>
-              <p>Loading courses...</p>
+              <p>Loading subjects...</p>
             </div>
           )}
           {showScrollTop && (

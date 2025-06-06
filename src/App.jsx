@@ -14,6 +14,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 import { useEffect } from "react";
 import AllCollegesPage from "./pages/AllColleges/AllCollegesPage.jsx";
 import GuidelinesPage from "./pages/GuidelinesPage/GuideLinesPage.jsx";
+import SubjectPage from "./pages/Subjects/SubjectPage.jsx";
 
 function App() {
   const auth = getAuth();
@@ -36,6 +37,11 @@ function App() {
           <Route path="/college/:collegeId" element={<CollegePage />} />
           <Route path="/uploadSyllabus" element={<UploadSyllabusPage />} />
           <Route path="/colleges" element={<AllCollegesPage />} />
+          <Route
+            path="/college/:collegeId/subject/:subject"
+            element={<SubjectPage />}
+          />
+
           <Route path="/guidelines" element={<GuidelinesPage />} />
 
           <Route path="/admin" element={<AdminApprovalPage />} />
