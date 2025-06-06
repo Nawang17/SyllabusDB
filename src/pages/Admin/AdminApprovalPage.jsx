@@ -73,7 +73,7 @@ export default function AdminApprovalPage() {
     for (const docSnap of snapshot.docs) {
       const data = docSnap.data();
       if (!data.approved) {
-        const { term, year, professor, pdf_url, file_path } = data;
+        const { term, year, professor, pdf_url, file_path, createdAt } = data;
 
         // Extract college and course from path
         const pathParts = docSnap.ref.path.split("/");
@@ -102,11 +102,21 @@ export default function AdminApprovalPage() {
           courseId,
           courseTitle,
           file_path,
+          createdAt: createdAt?.toDate?.() || null,
         });
       }
     }
 
     setSyllabi(unapproved);
+    // Sort by createdAt (newest first)
+    const sorted = unapproved.sort((a, b) => {
+      const timeA = a.createdAt?.getTime?.() || 0;
+      const timeB = b.createdAt?.getTime?.() || 0;
+      return timeB - timeA;
+    });
+
+    setSyllabi(sorted);
+
     setLoading(false);
   };
 
@@ -210,9 +220,14 @@ export default function AdminApprovalPage() {
         <p>No pending syllabi.</p>
       ) : (
         <div className="syllabus-list">
+          <h3>Total Pending: {syllabi.length}</h3>
+
           {syllabi.map((s) => (
             <div className="syllabus-card" key={s.id}>
               <div className="syllabus-info">
+                {s.createdAt && (
+                  <div>📅 Uploaded: {s.createdAt.toLocaleString()}</div>
+                )}
                 <strong>
                   {s.term} {s.year}
                 </strong>{" "}
