@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import "./TakedownPage.css";
+import "./TakeDownPage.css";
 
 export default function TakedownPage() {
   useEffect(() => {
