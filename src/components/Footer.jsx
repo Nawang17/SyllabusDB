@@ -8,11 +8,12 @@ export default function Footer() {
         <div className="footer-links">
           <Link to="/aboutpage">About</Link>
 
-          <Link to="/guidelines">Read the Guidelines</Link>
-          <Link to="/colleges">All colleges</Link>
+          <Link to="/guidelines">Guidelines</Link>
+          <Link to="/takedown">Takedown Policy</Link>
         </div>
         <div className="footer-links">
-          <Link to="/uploadsyllabus">Upload</Link>
+          <Link to="/colleges">All colleges</Link>
+          <Link to="/uploadsyllabus">Upload Syllabus</Link>
 
           <Link to="https://nawangs-portfolio.netlify.app/">Developer</Link>
         </div>

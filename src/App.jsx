@@ -14,6 +14,7 @@ import AboutPage from "./pages/About/AboutPage.jsx";
 import AllCollegesPage from "./pages/AllColleges/AllCollegesPage.jsx";
 import GuidelinesPage from "./pages/GuidelinesPage/GuideLinesPage.jsx";
 import SubjectPage from "./pages/Subjects/SubjectPage.jsx";
+import TakedownPage from "./pages/TakeDown/TakeDownPage.jsx";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           />
 
           <Route path="/guidelines" element={<GuidelinesPage />} />
+          <Route path="/takedown" element={<TakedownPage />} />
 
           <Route path="/admin" element={<AdminApprovalPage />} />
           <Route path="/login" element={<LoginPage />} />
