@@ -149,7 +149,7 @@ export default function CollegePage() {
                   to={`/college/${collegeId}`}
                   className="breadcrumb-current"
                 >
-                  {collegeName} Subjects
+                  {collegeName}
                 </Link>
               </div>
               <Button onClick={() => navigate("/uploadsyllabus")}>

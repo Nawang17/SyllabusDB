@@ -163,14 +163,12 @@ export default function SubjectPage() {
         </Link>
         <IconChevronRight className="breadcrumb-home" size={16} />
         <Link to={`/college/${collegeId}`} className="breadcrumb-link">
-          {formatCollegeName(collegeId)} Subjects
+          {formatCollegeName(collegeId)}
         </Link>
 
         <IconChevronRight size={16} />
 
-        <div className="breadcrumb-current">
-          {subject?.toUpperCase()} syllabi
-        </div>
+        <div className="breadcrumb-current">{subject?.toUpperCase()}</div>
       </div>
       <div
         style={{

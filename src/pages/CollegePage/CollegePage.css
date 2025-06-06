@@ -323,7 +323,6 @@
 .breadcrumb-nav {
   display: flex;
   align-items: center;
-  gap: 0rem;
   margin: 1rem 0;
   font-size: 0.9rem;
   color: #374151;
