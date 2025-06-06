@@ -118,7 +118,10 @@ export default function AdminApprovalPage() {
       approved: true,
       approvedSyllabiCount: increment(1),
     });
-
+    const collegeRef = doc(db, "colleges", collegeId);
+    await updateDoc(collegeRef, {
+      approvedSyllabiTotal: increment(1),
+    });
     setSyllabi((prev) => prev.filter((s) => s.ref.id !== ref.id));
   };
 

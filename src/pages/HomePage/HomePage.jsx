@@ -1,7 +1,7 @@
 // HomePage.js
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
 import "./HomePage.css";
 import studentImage from "../../assets/studentshangingout.jpg";
@@ -12,50 +12,29 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   useEffect(() => {
+    // Scroll to top on load
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
     const fetchCollegesWithCounts = async () => {
-      // Fetch all colleges from the top-level "colleges" collection
-      const collegesSnapshot = await getDocs(collection(db, "colleges"));
+      try {
+        const snapshot = await getDocs(collection(db, "colleges"));
 
-      // For each college, get its approved courses and approved syllabi count
-      const collegesData = await Promise.all(
-        collegesSnapshot.docs.map(async (collegeDoc) => {
-          const collegeId = collegeDoc.id;
+        const collegesData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          name: doc.data().name,
+          image_url: doc.data().image_url,
+          uploads: doc.data().approvedSyllabiTotal || 0,
+        }));
 
-          // Query only approved courses within the current college
-          const coursesQuery = query(
-            collection(db, "colleges", collegeId, "courses"),
-            where("approved", "==", true)
-          );
-          const coursesSnapshot = await getDocs(coursesQuery);
-
-          let totalApproved = 0;
-
-          // For each approved course, query only approved syllabi
-          for (const courseDoc of coursesSnapshot.docs) {
-            totalApproved += courseDoc.data().approvedSyllabiCount || 0;
-          }
-
-          // Return college data with total approved uploads
-          return {
-            id: collegeId,
-            name: collegeDoc.data().name,
-            image_url: collegeDoc.data().image_url,
-            uploads: totalApproved,
-          };
-        })
-      );
-
-      // Update state with colleges and their respective uploads
-      setColleges(collegesData);
-      setLoading(false);
+        setColleges(collegesData);
+      } catch (error) {
+        console.error("Error fetching colleges:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    // Call the data-fetching function on component mount
     fetchCollegesWithCounts();
-
-    // Scroll to top on initial load
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   const filtered = colleges.filter((college) =>
