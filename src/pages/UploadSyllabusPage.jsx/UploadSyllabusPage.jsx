@@ -13,7 +13,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Link, useNavigate } from "react-router";
 import "./UploadSyllabusPage.css";
 import { Button, Select } from "@mantine/core";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 
 export default function UploadSyllabus() {
@@ -35,7 +35,17 @@ export default function UploadSyllabus() {
   const fileInputRef = useRef();
 
   const navigate = useNavigate();
+  const auth = getAuth();
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // Not logged in yet — sign in anonymously
+        signInAnonymously(auth);
+      }
+    });
 
+    return () => unsubscribe();
+  }, []);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
