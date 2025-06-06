@@ -132,29 +132,17 @@ export default function SubjectPage() {
   return (
     <div className="college-page">
       <div className="college-header">
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
+        <div style={{ display: "flex", flexDirection: "column" }}>
           <div className="college-title">
             <strong>{subject?.toUpperCase()}</strong> syllabi
           </div>
           <div
             onClick={() => navigate(`/college/${collegeId}`)}
-            style={{
-              fontSize: "0.9rem",
-              fontWeight: "500",
-              cursor: "pointer",
-            }}
+            style={{ fontSize: "0.9rem", fontWeight: "500", cursor: "pointer" }}
           >
             {formatCollegeName(collegeId)}
           </div>
         </div>
-        <Button onClick={() => navigate("/uploadsyllabus")}>
-          Upload a Syllabus
-        </Button>
       </div>
 
       <div className="breadcrumb-nav">
@@ -165,27 +153,17 @@ export default function SubjectPage() {
         <Link to={`/college/${collegeId}`} className="breadcrumb-link">
           {formatCollegeName(collegeId)}
         </Link>
-
         <IconChevronRight size={16} />
-
         <div className="breadcrumb-current">{subject?.toUpperCase()}</div>
       </div>
-      <div
-        style={{
-          fontSize: "1.2rem",
-          fontWeight: "500",
-        }}
-      >
-        <span
-          style={{
-            fontWeight: "bold",
-            color: "#007bff",
-          }}
-        >
+
+      <div style={{ fontSize: "1.2rem", fontWeight: "500" }}>
+        <span style={{ fontWeight: "bold", color: "#007bff" }}>
           {totalSyllabiCount}
         </span>{" "}
         course syllabi available
       </div>
+
       <div className="search-and-controls">
         <input
           id="course-search"
@@ -205,9 +183,6 @@ export default function SubjectPage() {
       ) : filteredCourses.length === 0 ? (
         <div className="no-courses-found">
           <p>No courses found for this search</p>
-          <Button onClick={() => navigate("/uploadsyllabus")}>
-            Upload a Syllabus
-          </Button>
         </div>
       ) : (
         <div className="course-list">
@@ -253,6 +228,13 @@ export default function SubjectPage() {
           ))}
         </div>
       )}
+
+      <div className="upload-banner">
+        <p>Have a syllabus for a {subject?.toUpperCase()} course?</p>
+        <Button onClick={() => navigate("/uploadsyllabus")}>
+          Upload a Syllabus
+        </Button>
+      </div>
 
       {showScrollTop && (
         <button className="scroll-to-top" onClick={scrollToTop}>

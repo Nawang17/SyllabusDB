@@ -355,3 +355,17 @@
     display: none;
   }
 }
+.upload-banner {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f0f9ff;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.upload-banner button {
+  margin-top: 0.75rem;
+}
