@@ -148,7 +148,7 @@ export default function UploadSyllabus() {
 
       if (!courseSnap.exists()) {
         await setDoc(courseRef, {
-          code: courseCode.toUpperCase(), // Ensure code is uppercase
+          code: courseCode,
           title: courseTitle,
           approved: false, // Initially not approved
         });
@@ -235,11 +235,11 @@ export default function UploadSyllabus() {
             <input
               type="text"
               className="full-width"
-              value={courseCode}
-              onChange={(e) => setCourseCode(e.target.value)}
+              value={courseCode.toUpperCase()}
+              onChange={(e) => setCourseCode(e.target.value.toUpperCase())}
               required
               autoComplete="off"
-              placeholder="e.g. MATH 150"
+              placeholder="e.g. Math 150"
             />
             {courseSuggestions.length > 0 && (
               <ul className="suggestions-dropdown">
