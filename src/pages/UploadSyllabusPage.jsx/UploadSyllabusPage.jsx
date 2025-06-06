@@ -148,7 +148,7 @@ export default function UploadSyllabus() {
 
       if (!courseSnap.exists()) {
         await setDoc(courseRef, {
-          code: courseCode,
+          code: courseCode.toUpperCase(), // Ensure code is uppercase
           title: courseTitle,
           approved: false, // Initially not approved
         });
@@ -239,7 +239,7 @@ export default function UploadSyllabus() {
               onChange={(e) => setCourseCode(e.target.value)}
               required
               autoComplete="off"
-              placeholder="e.g. Math 150"
+              placeholder="e.g. MATH 150"
             />
             {courseSuggestions.length > 0 && (
               <ul className="suggestions-dropdown">
