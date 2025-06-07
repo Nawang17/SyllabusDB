@@ -280,38 +280,45 @@
   background-color: #1864ab;
 }
 .subject-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
   margin-top: 2rem;
 }
 
 .subject-card {
+  background-color: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 1rem;
-  background-color: #f9fafb;
-  transition: box-shadow 0.2s ease;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  cursor: pointer;
+  gap: 0.75rem;
 }
 
 .subject-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
 }
 
 .subject-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1e293b;
+  color: #1f2937;
 }
 
 .subject-count {
-  font-size: 0.95rem;
-  color: #475569;
+  background-color: #dbeafe;
+  color: #1e3a8a;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 50px;
 }
+
 .expand-icon {
   font-size: 1.2rem;
   margin-right: 1rem;
