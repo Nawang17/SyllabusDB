@@ -5,33 +5,32 @@ export default function AboutPage() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
   return (
     <div className="about-page">
       <h1>About SyllabusDB</h1>
       <p>
-        I’m a student at CUNY Hunter College, and I always wished I could see a
-        course syllabus before enrolling. I wanted to know what the grading
-        breakdown was like, how the professor structured the class, and whether
-        it would be a good fit for me.
+        SyllabusDB was created to solve a common problem students face: not
+        knowing what to expect from a class before registering. Course
+        descriptions are often vague, and there’s rarely a way to see things
+        like grading breakdowns, workload, or course structure in advance.
       </p>
       <p>
-        That's why I built <strong>SyllabusDB</strong>, a simple platform where
-        students can upload and browse real course syllabi. It’s meant to help
-        you make smarter decisions when picking classes, especially when course
-        descriptions just aren’t enough.
+        That’s why I built <strong>SyllabusDB</strong>, a simple, open-access
+        platform where students can upload and browse real course syllabi. It's
+        designed to make course planning smarter and more transparent.
       </p>
       <p>
-        There’s no login, no paywall, just open, student-powered access to info
-        that actually helps.
+        There’s no login, no paywall, just student-powered access to the
+        information we all wish we had before choosing classes.
       </p>
       <p>
-        If you have a syllabus from a course you’ve taken, please hit upload and
-        pay it forward.
+        If you’ve taken a course and have a syllabus, consider uploading it to
+        help others. A small contribution can make a big difference.
       </p>
       <p>
-        If you have any questions, spot issues with the data, want to suggest a
-        feature, or just have feedback, feel free to reach out at{" "}
-        <a href="mailto:nawang.sherpa99@login.cuny.edu">katophh@gmail.com</a>.
+        If you have questions, feedback, or spot an issue, feel free to reach
+        out at <a href="mailto:katophh@gmail.com">katophh@gmail.com</a>.
       </p>
     </div>
   );

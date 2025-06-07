@@ -323,8 +323,9 @@ export default function UploadSyllabus() {
         {status && <div className="upload-status">{status}</div>}
         <p className="upload-guideline-reminder">
           By uploading, you agree to follow our{" "}
-          <Link to="/guidelines">community guidelines</Link>. Only upload real
-          syllabi (PDF, max 5MB). No personal info or spam.
+          <Link to="/guidelines">Community Guidelines</Link> and{" "}
+          <Link to="/termsofservice">Terms of Service</Link>. Only upload real
+          syllabi. No private materials, personal info, or spam.
         </p>
 
         <button type="submit" disabled={isSubmitting}>

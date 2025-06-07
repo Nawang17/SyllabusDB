@@ -15,6 +15,7 @@ import AllCollegesPage from "./pages/AllColleges/AllCollegesPage.jsx";
 import GuidelinesPage from "./pages/GuidelinesPage/GuideLinesPage.jsx";
 import SubjectPage from "./pages/Subjects/SubjectPage.jsx";
 import TakedownPage from "./pages/TakeDown/TakeDownPage.jsx";
+import TermsOfService from "./pages/TermsOfService/TermsOfService.jsx";
 
 function App() {
   return (
@@ -30,7 +31,7 @@ function App() {
             path="/college/:collegeId/subject/:subject"
             element={<SubjectPage />}
           />
-
+          <Route path="/termsofservice" element={<TermsOfService />} />
           <Route path="/guidelines" element={<GuidelinesPage />} />
           <Route path="/takedown" element={<TakedownPage />} />
 
