@@ -11,17 +11,10 @@ export default function Footer() {
           <Link to="/termsofservice">Terms of Service</Link>
           <Link to="/guidelines">Guidelines</Link>
         </div>
-        <div className="footer-links">
+        {/* <div className="footer-links">
           <Link to="/colleges">All Colleges</Link>
           <Link to="/uploadsyllabus">Upload Syllabus</Link>
-          <a
-            href="https://nawangs-portfolio.netlify.app/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Developer
-          </a>
-        </div>
+        </div> */}
         <p>Built by students, for students.</p>
       </div>
     </footer>
