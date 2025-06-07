@@ -103,9 +103,9 @@ export default function CollegePage() {
     fetchCollegeAndCourses();
   }, [collegeId]);
 
-  const filteredSubjects = Object.entries(subjectMap).filter(([subject]) =>
-    subject.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredSubjects = Object.entries(subjectMap)
+    .filter(([subject]) => subject.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => b[1].syllabiCount - a[1].syllabiCount);
 
   return (
     <>
