@@ -2,7 +2,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router";
 import { db } from "../../../firebaseConfig";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 import { IconChevronDown, IconChevronRight } from "@tabler/icons-react";
 import { Button } from "@mantine/core";
 import "./SubjectPage.css";
@@ -18,6 +25,7 @@ export default function SubjectPage() {
   const [loadingCourseId, setLoadingCourseId] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [totalSyllabiCount, setTotalSyllabiCount] = useState(0);
+  const [collegeNickname, setCollegeNickname] = useState("");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -88,6 +96,23 @@ export default function SubjectPage() {
 
     fetchCourses();
   }, [collegeId, subject]);
+  useEffect(() => {
+    const fetchCollegeNickname = async () => {
+      try {
+        const collegeDocRef = doc(db, "colleges", collegeId);
+        const collegeDocSnap = await getDoc(collegeDocRef);
+
+        if (collegeDocSnap.exists()) {
+          const data = collegeDocSnap.data();
+          setCollegeNickname(data.nickname || "");
+        }
+      } catch (err) {
+        console.error("Failed to fetch college nickname:", err);
+      }
+    };
+
+    fetchCollegeNickname();
+  }, [collegeId]);
 
   useEffect(() => {
     setFilteredCourses(
@@ -151,7 +176,7 @@ export default function SubjectPage() {
         </Link>
         <IconChevronRight className="breadcrumb-home" size={16} />
         <Link to={`/college/${collegeId}`} className="breadcrumb-link">
-          {formatCollegeName(collegeId)}
+          {collegeNickname || formatCollegeName(collegeId)}
         </Link>
         <IconChevronRight size={16} />
         <div className="breadcrumb-current">{subject?.toUpperCase()}</div>

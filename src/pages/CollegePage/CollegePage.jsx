@@ -28,7 +28,7 @@ export default function CollegePage() {
   const [totalSyllabiCount, setTotalSyllabiCount] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [subjectMap, setSubjectMap] = useState({});
-
+  const [nickname, setNickname] = useState("");
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
@@ -58,6 +58,7 @@ export default function CollegePage() {
         }
 
         const data = collegeDocSnap.data();
+        setNickname(data.nickname || "");
         setCollegeImage(data.image_url || null);
         setCollegeName(data.name || "");
         setCollegeLocation(`${data.city || ""}, ${data.state || ""}`);
@@ -138,25 +139,22 @@ export default function CollegePage() {
             <Skeleton height={"200px"} mb="1rem" radius="md" />
           )}
 
-          {courses.length > 0 && (
-            <div className="college-header">
-              <div className="breadcrumb-nav">
-                <Link to={`/`} className="breadcrumb-link">
-                  Home
-                </Link>
-                <IconChevronRight size={16} />
-                <Link
-                  to={`/college/${collegeId}`}
-                  className="breadcrumb-current"
-                >
-                  {collegeName}
-                </Link>
-              </div>
+          <div className="college-header">
+            <div className="breadcrumb-nav">
+              <Link to={`/`} className="breadcrumb-link">
+                Home
+              </Link>
+              <IconChevronRight size={16} />
+              <Link to={`/college/${collegeId}`} className="breadcrumb-current">
+                {nickname ? nickname : collegeName}
+              </Link>
+            </div>
+            {courses.length > 0 && (
               <Button onClick={() => navigate("/uploadsyllabus")}>
                 Upload Syllabus
               </Button>
-            </div>
-          )}
+            )}
+          </div>
 
           {!loading && courses.length > 0 && (
             <>
@@ -165,22 +163,21 @@ export default function CollegePage() {
                 <span className="syllabi-count">{totalSyllabiCount}</span>{" "}
                 course syllabi
               </div>
+              <div className="search-and-controls">
+                <label htmlFor="subject-search" className="search-label">
+                  Search for your subject
+                </label>
+                <input
+                  id="subject-search"
+                  type="text"
+                  className="syllabus-search"
+                  placeholder="e.g. CSCI, ACC, MATH..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
             </>
           )}
-
-          <div className="search-and-controls">
-            <label htmlFor="subject-search" className="search-label">
-              Search for your subject
-            </label>
-            <input
-              id="subject-search"
-              type="text"
-              className="syllabus-search"
-              placeholder="e.g. CSCI, ACC, MATH..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
 
           <div className="subject-list">
             {filteredSubjects.length === 0 && !loading ? (
