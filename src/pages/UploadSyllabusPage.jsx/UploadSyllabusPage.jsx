@@ -219,8 +219,8 @@ export default function UploadSyllabus() {
       <h2>Upload a Syllabus</h2>
       <p className="upload-warning">
         📌 Before uploading, please make sure there is not already a syllabus
-        available for the <strong>same course and term</strong>. This helps
-        avoid duplicates and keeps things clean for other students.
+        available for the <strong>same course, term, and professor</strong>.
+        This helps avoid duplicates and keeps things clean for other students.
       </p>
 
       <form className="upload-form" onSubmit={handleSubmit}>
