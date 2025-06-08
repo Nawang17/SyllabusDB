@@ -12,10 +12,24 @@ import { useDisclosure } from "@mantine/hooks";
 import classes from "./styles/Header.module.css";
 import { useNavigate } from "react-router";
 import appLogo from "../assets/app_logo.png";
+import { useEffect, useState } from "react";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 export default function Header() {
   const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] =
     useDisclosure(false);
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user?.email === "nawangsherpa1010@gmail.com") {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
   return (
     <Box>
       <header className={classes.header}>
@@ -34,6 +48,11 @@ export default function Header() {
             >
               Upload Syllabus
             </Button>
+            {isAdmin && (
+              <Button variant="outline" onClick={() => navigate("/admin")}>
+                Admin
+              </Button>
+            )}
             {/* <Button onClick={() => (window.location.href = "/login")}>
               Log in
             </Button> */}
@@ -97,6 +116,18 @@ export default function Header() {
           >
             About
           </p>
+          {isAdmin && (
+            <p
+              onClick={() => {
+                navigate("/admin");
+                closeDrawer();
+              }}
+              className={classes.link}
+            >
+              Admin
+            </p>
+          )}
+
           {/* <a href="/login" className={classes.link}>
             Log in
           </a> */}

@@ -13,7 +13,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Link, useNavigate } from "react-router";
 import "./UploadSyllabusPage.css";
 import { Button, Select } from "@mantine/core";
-import { getAuth, onAuthStateChanged, signInAnonymously } from "firebase/auth";
+import { getAuth, signInAnonymously } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 
 export default function UploadSyllabus() {
@@ -35,17 +35,7 @@ export default function UploadSyllabus() {
   const fileInputRef = useRef();
 
   const navigate = useNavigate();
-  const auth = getAuth();
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        // Not logged in yet — sign in anonymously
-        signInAnonymously(auth);
-      }
-    });
 
-    return () => unsubscribe();
-  }, []);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
@@ -125,10 +115,17 @@ export default function UploadSyllabus() {
 
     try {
       const auth = getAuth();
-      const uid = auth.currentUser?.uid;
 
+      // ✅ Check login status and sign in anonymously if not logged in
+      let user = auth.currentUser;
+      if (!user) {
+        const result = await signInAnonymously(auth);
+        user = result.user;
+      }
+
+      const uid = user?.uid;
       if (!uid) {
-        setUploadError("❌ Please refresh and try again.");
+        setUploadError("❌ Could not authenticate. Please try again.");
         setIsSubmitting(false);
         return;
       }
@@ -136,29 +133,45 @@ export default function UploadSyllabus() {
         setUploadError("❌ PDF file is too large. Maximum size is 5 MB.");
         return;
       }
+      const cleanedCourseCode = courseCode.trim();
+      const cleanedCourseTitle = courseTitle.trim();
+      const cleanedProfessor = professor.trim();
 
-      const filePath = `syllabi/${collegeId}/${courseCode}/${pdfFile.name}`;
+      const filePath = `syllabi/${collegeId}/${cleanedCourseCode}/${pdfFile.name}`;
       const storageRef = ref(storage, filePath);
 
       await uploadBytes(storageRef, pdfFile);
       const pdfUrl = await getDownloadURL(storageRef);
 
-      const courseRef = doc(db, "colleges", collegeId, "courses", courseCode);
+      const courseRef = doc(
+        db,
+        "colleges",
+        collegeId,
+        "courses",
+        cleanedCourseCode
+      );
       const courseSnap = await getDoc(courseRef);
 
       if (!courseSnap.exists()) {
         await setDoc(courseRef, {
-          code: courseCode,
-          title: courseTitle,
+          code: cleanedCourseCode,
+          title: cleanedCourseTitle,
           approved: false, // Initially not approved
         });
       }
       // Step: Check if syllabus already exists for course + term + year
       const existingQuery = query(
-        collection(db, "colleges", collegeId, "courses", courseCode, "syllabi"),
+        collection(
+          db,
+          "colleges",
+          collegeId,
+          "courses",
+          cleanedCourseCode,
+          "syllabi"
+        ),
         where("term", "==", term),
         where("year", "==", year),
-        where("professor", "==", professor),
+        where("professor", "==", cleanedProfessor),
         where("approved", "==", true) // Only check for approved syllabi
       );
 
@@ -177,11 +190,11 @@ export default function UploadSyllabus() {
         "colleges",
         collegeId,
         "courses",
-        courseCode,
+        cleanedCourseCode,
         "syllabi"
       );
       await setDoc(doc(sylabbiRef), {
-        professor,
+        professor: cleanedProfessor,
         term,
         year,
         pdf_url: pdfUrl,
@@ -236,7 +249,9 @@ export default function UploadSyllabus() {
               type="text"
               className="full-width"
               value={courseCode.toUpperCase()}
-              onChange={(e) => setCourseCode(e.target.value.toUpperCase())}
+              onChange={(e) =>
+                setCourseCode(e.target.value.toUpperCase().trimStart())
+              }
               required
               autoComplete="off"
               placeholder="e.g. Math 150"
@@ -265,7 +280,7 @@ export default function UploadSyllabus() {
           <input
             type="text"
             value={courseTitle}
-            onChange={(e) => setCourseTitle(e.target.value)}
+            onChange={(e) => setCourseTitle(e.target.value.trimStart())}
             required
             disabled={!!courseOptions.find((c) => c.code === courseCode)}
             placeholder="e.g. Calculus I"
@@ -278,7 +293,7 @@ export default function UploadSyllabus() {
             placeholder="e.g. John Smith"
             type="text"
             value={professor}
-            onChange={(e) => setProfessor(e.target.value)}
+            onChange={(e) => setProfessor(e.target.value.trimStart())}
             required
           />
         </label>
@@ -304,7 +319,14 @@ export default function UploadSyllabus() {
           <input
             type="number"
             value={year}
-            onChange={(e) => setYear(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val.length <= 4) {
+                setYear(val);
+              }
+            }}
+            max={9999}
+            min={1000}
             required
           />
         </label>
@@ -369,13 +391,13 @@ export default function UploadSyllabus() {
                 {colleges.find((c) => c.id === collegeId)?.name}
               </li>
               <li>
-                <strong>Course Code:</strong> {courseCode}
+                <strong>Course Code:</strong> {courseCode.trim()}
               </li>
               <li>
-                <strong>Course Title:</strong> {courseTitle}
+                <strong>Course Title:</strong> {courseTitle.trim()}
               </li>
               <li>
-                <strong>Professor:</strong> {professor}
+                <strong>Professor:</strong> {professor.trim()}
               </li>
               <li>
                 <strong>Term:</strong> {term}
