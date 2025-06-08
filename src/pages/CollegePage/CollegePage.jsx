@@ -178,44 +178,47 @@ export default function CollegePage() {
               </div>
             </>
           )}
-
-          <div className="subject-list">
-            {filteredSubjects.length === 0 && !loading ? (
-              <div className="no-courses-found">
-                {courses.length > 0 ? (
-                  <p>No subjects matched your search. Try a different name .</p>
-                ) : (
-                  <>
-                    <p>No syllabi have been added for this college yet.</p>
-                    <p> Be the first to share a syllabus!</p>
-                  </>
-                )}
-                <Button onClick={() => navigate("/uploadsyllabus")}>
-                  Upload Syllabus
-                </Button>
-              </div>
-            ) : (
-              filteredSubjects.map(([subject, data]) => (
-                <div
-                  key={subject}
-                  className="subject-card"
-                  onClick={() =>
-                    navigate(`/college/${collegeId}/subject/${subject}`)
-                  }
-                >
-                  <div className="subject-main">
-                    <div className="subject-title">{subject}</div>
-                    <div className="subject-count">
-                      {data.syllabiCount} syllabi
+          {!loading && (
+            <div className="subject-list">
+              {filteredSubjects.length === 0 && !loading ? (
+                <div className="no-courses-found">
+                  {courses.length > 0 ? (
+                    <p>
+                      No subjects matched your search. Try a different name .
+                    </p>
+                  ) : (
+                    <>
+                      <p>No syllabi have been added for this college yet.</p>
+                      <p> Be the first to share a syllabus!</p>
+                    </>
+                  )}
+                  <Button onClick={() => navigate("/uploadsyllabus")}>
+                    Upload Syllabus
+                  </Button>
+                </div>
+              ) : (
+                filteredSubjects.map(([subject, data]) => (
+                  <div
+                    key={subject}
+                    className="subject-card"
+                    onClick={() =>
+                      navigate(`/college/${collegeId}/subject/${subject}`)
+                    }
+                  >
+                    <div className="subject-main">
+                      <div className="subject-title">{subject}</div>
+                      <div className="subject-count">
+                        {data.syllabiCount} syllabi
+                      </div>
+                    </div>
+                    <div className="expand-icon">
+                      <IconChevronRight />
                     </div>
                   </div>
-                  <div className="expand-icon">
-                    <IconChevronRight />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                ))
+              )}
+            </div>
+          )}
 
           {loading && (
             <div className="loading-spinner">

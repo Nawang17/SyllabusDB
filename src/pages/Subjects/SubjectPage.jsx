@@ -209,24 +209,27 @@ export default function SubjectPage() {
         <IconChevronRight size={16} />
         <div className="breadcrumb-current">{subject?.toUpperCase()}</div>
       </div>
+      {!loading && (
+        <>
+          <div style={{ fontSize: "1.2rem", fontWeight: "500" }}>
+            <span style={{ fontWeight: "bold", color: "#007bff" }}>
+              {totalSyllabiCount}
+            </span>{" "}
+            course syllabi available
+          </div>
 
-      <div style={{ fontSize: "1.2rem", fontWeight: "500" }}>
-        <span style={{ fontWeight: "bold", color: "#007bff" }}>
-          {totalSyllabiCount}
-        </span>{" "}
-        course syllabi available
-      </div>
-
-      <div className="search-and-controls">
-        <input
-          id="course-search"
-          type="text"
-          className="syllabus-search"
-          placeholder="Search by course code or name..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+          <div className="search-and-controls">
+            <input
+              id="course-search"
+              type="text"
+              className="syllabus-search"
+              placeholder="Search by course code or name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </>
+      )}
 
       {loading ? (
         <div className="loading-spinner">
@@ -281,13 +284,14 @@ export default function SubjectPage() {
           ))}
         </div>
       )}
-
-      <div className="upload-banner">
-        <p>Have a syllabus for a {subject?.toUpperCase()} course?</p>
-        <Button onClick={() => navigate("/uploadsyllabus")}>
-          Upload a Syllabus
-        </Button>
-      </div>
+      {!loading && (
+        <div className="upload-banner">
+          <p>Have a syllabus for a {subject?.toUpperCase()} course?</p>
+          <Button onClick={() => navigate("/uploadsyllabus")}>
+            Upload a Syllabus
+          </Button>
+        </div>
+      )}
 
       {showScrollTop && (
         <button className="scroll-to-top" onClick={scrollToTop}>
