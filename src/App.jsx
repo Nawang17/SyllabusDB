@@ -16,11 +16,13 @@ import GuidelinesPage from "./pages/GuidelinesPage/GuideLinesPage.jsx";
 import SubjectPage from "./pages/Subjects/SubjectPage.jsx";
 import TakedownPage from "./pages/TakeDown/TakeDownPage.jsx";
 import TermsOfService from "./pages/TermsOfService/TermsOfService.jsx";
+import { Notifications } from "@mantine/notifications";
 
 function App() {
   return (
     <BrowserRouter>
       <MantineProvider>
+        <Notifications />
         <Header />
         <Routes>
           <Route path="/" element={<HomePage />} />

@@ -10,10 +10,15 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
-import { IconChevronDown, IconChevronRight } from "@tabler/icons-react";
-import { Button } from "@mantine/core";
+import {
+  IconChevronDown,
+  IconChevronRight,
+  IconCopy,
+} from "@tabler/icons-react";
+import { ActionIcon, Button } from "@mantine/core";
 import "./SubjectPage.css";
 import { useLocation } from "react-router";
+import { notifications } from "@mantine/notifications";
 
 export default function SubjectPage() {
   const { collegeId, subject } = useParams();
@@ -267,15 +272,36 @@ export default function SubjectPage() {
                     <div className="loading-syllabi">Loading syllabi...</div>
                   ) : (
                     (syllabiMap[course.id] || []).map((s) => (
-                      <a
-                        key={s.id}
-                        href={s.pdf_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="syllabus-link"
-                      >
-                        {s.term} {s.year} – {s.professor}
-                      </a>
+                      <div key={s.id} className="syllabus-item">
+                        <a
+                          href={s.pdf_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="syllabus-link"
+                        >
+                          {s.term} {s.year} – {s.professor}
+                        </a>
+                        <ActionIcon
+                          className="share-button"
+                          variant="subtle"
+                          color="black"
+                          aria-label="Copy Link"
+                          onClick={() => {
+                            const shareUrl = `${window.location.origin}${
+                              window.location.pathname
+                            }?course=${encodeURIComponent(course.code)}`;
+                            navigator.clipboard.writeText(shareUrl).then(() => {
+                              notifications.show({
+                                position: "top-center",
+                                title: "Link Copied to Clipboard",
+                                message: shareUrl,
+                              });
+                            });
+                          }}
+                        >
+                          <IconCopy size={16} />
+                        </ActionIcon>
+                      </div>
                     ))
                   )}
                 </div>

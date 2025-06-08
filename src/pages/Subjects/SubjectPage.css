@@ -104,7 +104,7 @@
 
 .syllabus-item a {
   color: #2563eb;
-  text-decoration: none;
+  text-decoration: underline;
   font-weight: 500;
 }
 
@@ -176,13 +176,6 @@
   to {
     transform: rotate(360deg);
   }
-}
-.syllabus-link {
-  display: block;
-  margin: 0.5rem 0;
-  color: #0056b3;
-  text-decoration: underline;
-  font-weight: 500;
 }
 
 .course-count {
@@ -375,4 +368,9 @@
 
 .upload-banner button {
   margin-top: 0.75rem;
+}
+.share-button {
+  font-size: 1rem;
+  cursor: pointer;
+  margin-right: 1.3rem;
 }
