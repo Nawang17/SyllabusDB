@@ -10,7 +10,7 @@ export default function TermsOfService() {
     <div className="terms-container">
       <h1>Terms of Service</h1>
       <p>
-        <strong>Last Updated:</strong> June 6, 2024
+        <strong>Last Updated:</strong> June 8, 2025
       </p>
 
       <section>
@@ -69,9 +69,15 @@ export default function TermsOfService() {
       <section>
         <h2>5. No Warranty</h2>
         <p>
-          We do our best to keep SyllabusDB accurate, safe, and up to date but
+          We do our best to keep SyllabusDB accurate, safe, and up to date, but
           we do not guarantee that all content is error-free, complete, or
           available at all times.
+        </p>
+        <p>
+          Syllabi provided on this site are for reference only. We do not
+          guarantee their accuracy, completeness, or applicability to future
+          semesters. Instructors may update, revise, or change their syllabi at
+          any time without notice.
         </p>
       </section>
 
@@ -99,6 +105,21 @@ export default function TermsOfService() {
         <p>
           Have questions or concerns? Email us at:{" "}
           <strong>katophh@gmail.com</strong>
+        </p>
+      </section>
+      <section>
+        <h2>9. Fair Use Disclaimer</h2>
+        <p>
+          SyllabusDB operates under the fair use provisions of Section 107 of
+          the U.S. Copyright Act. The materials shared on this site are used for
+          non-commercial, educational purposes to help students make informed
+          course decisions.
+        </p>
+        <p>
+          We do not claim ownership of any uploaded syllabi and will promptly
+          remove any content if requested by the rights holder. Our goal is to
+          provide academic transparency and equitable access to course planning
+          resources.
         </p>
       </section>
     </div>

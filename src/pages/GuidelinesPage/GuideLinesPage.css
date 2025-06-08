@@ -16,7 +16,6 @@
 .guidelines-page h2 {
   font-size: 1.25rem;
   margin-top: 2rem;
-  color: #2563eb;
 }
 
 .guidelines-page p {
@@ -38,7 +37,6 @@
 
 .guidelines-list li::before {
   content: "•";
-  color: #2563eb;
   position: absolute;
   left: 0;
 }
