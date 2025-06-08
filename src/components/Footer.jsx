@@ -10,6 +10,7 @@ export default function Footer() {
           <Link to="/aboutpage">About</Link>
           <Link to="/termsofservice">Terms of Service</Link>
           <Link to="/guidelines">Guidelines</Link>
+          <Link to="takedown">Takedown Policy</Link>
         </div>
         {/* <div className="footer-links">
           <Link to="/colleges">All Colleges</Link>
