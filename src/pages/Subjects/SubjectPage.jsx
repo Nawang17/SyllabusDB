@@ -1,5 +1,5 @@
 // SubjectPage.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router";
 import { db } from "../../../firebaseConfig";
 import {
@@ -13,6 +13,7 @@ import {
 import { IconChevronDown, IconChevronRight } from "@tabler/icons-react";
 import { Button } from "@mantine/core";
 import "./SubjectPage.css";
+import { useLocation } from "react-router";
 
 export default function SubjectPage() {
   const { collegeId, subject } = useParams();
@@ -26,6 +27,33 @@ export default function SubjectPage() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [totalSyllabiCount, setTotalSyllabiCount] = useState(0);
   const [collegeNickname, setCollegeNickname] = useState("");
+  // Helper to read query params
+  function useQuery() {
+    return new URLSearchParams(useLocation().search);
+  }
+
+  const URLquery = useQuery();
+  const searchAppliedRef = useRef(false);
+
+  useEffect(() => {
+    if (searchAppliedRef.current) return;
+
+    const courseQuery = URLquery.get("course");
+    if (!courseQuery) return;
+
+    // Wait until courses are loaded
+    if (courses.length > 0) {
+      setSearch(courseQuery);
+      searchAppliedRef.current = true;
+
+      const matched = courses.find(
+        (c) => c.code.toLowerCase().trim() === courseQuery.toLowerCase().trim()
+      );
+      if (matched) {
+        toggleExpand(matched.id);
+      }
+    }
+  }, [courses]);
 
   useEffect(() => {
     const handleScroll = () => {
