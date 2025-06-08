@@ -6,11 +6,12 @@ import {
   Group,
   ScrollArea,
   Divider,
+  Image,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import classes from "./styles/Header.module.css";
 import { useNavigate } from "react-router";
-
+import appLogo from "../assets/app_logo.png";
 export default function Header() {
   const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] =
     useDisclosure(false);
@@ -22,11 +23,9 @@ export default function Header() {
           {/* Left spacer */}
           <div className={classes.leftSide} />
 
-          {/* Center logo */}
           <div className={classes.logo} onClick={() => navigate("/")}>
             SyllabusDB
           </div>
-
           {/* Right buttons */}
           <Group className={classes.rightSide} visibleFrom="sm">
             <Button
@@ -39,7 +38,6 @@ export default function Header() {
               Log in
             </Button> */}
           </Group>
-
           {/* Burger for mobile */}
           <Burger
             opened={drawerOpened}
@@ -55,7 +53,17 @@ export default function Header() {
         onClose={closeDrawer}
         size="100%"
         padding="md"
-        title="SyllabusDB"
+        title={
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <img
+              src={appLogo}
+              alt="App Logo"
+              style={{ height: 40, cursor: "pointer", borderRadius: 8 }}
+              onClick={() => navigate("/")}
+            />
+            <strong>SyllabusDB</strong>
+          </div>
+        }
         hiddenFrom="sm"
         zIndex={1000000}
       >
