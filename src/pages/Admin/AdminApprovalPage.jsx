@@ -23,6 +23,16 @@ export default function AdminApprovalPage() {
   const [loading, setLoading] = useState(true);
   const [scanResults, setScanResults] = useState({});
   const [scanningIds, setScanningIds] = useState({});
+  const [openColleges, setOpenColleges] = useState({});
+  const [openOwners, setOpenOwners] = useState({});
+  const toggleCollege = (college) => {
+    setOpenColleges((prev) => ({ ...prev, [college]: !prev[college] }));
+  };
+
+  const toggleOwner = (college, owner) => {
+    const key = `${college}__${owner}`;
+    setOpenOwners((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const navigate = useNavigate();
   const scanPDF = async (syllabus) => {
@@ -59,6 +69,16 @@ export default function AdminApprovalPage() {
 
     return () => unsubscribe();
   }, [navigate]);
+  const groupedByCollege = syllabi.reduce((acc, item) => {
+    const college = item.collegeName;
+    const owner = item.owner || "Unknown";
+
+    if (!acc[college]) acc[college] = {};
+    if (!acc[college][owner]) acc[college][owner] = [];
+
+    acc[college][owner].push(item);
+    return acc;
+  }, {});
 
   const fetchUnapprovedSyllabi = async () => {
     setLoading(true);
@@ -73,7 +93,8 @@ export default function AdminApprovalPage() {
     for (const docSnap of snapshot.docs) {
       const data = docSnap.data();
       if (!data.approved) {
-        const { term, year, professor, pdf_url, file_path, createdAt } = data;
+        const { term, year, professor, pdf_url, file_path, createdAt, owner } =
+          data;
 
         // Extract college and course from path
         const pathParts = docSnap.ref.path.split("/");
@@ -103,10 +124,12 @@ export default function AdminApprovalPage() {
           courseTitle,
           file_path,
           createdAt: createdAt?.toDate?.() || null,
+          owner,
         });
       }
     }
 
+    console.log("Unapproved syllabi:", unapproved);
     setSyllabi(unapproved);
     // Sort by createdAt (newest first)
     const sorted = unapproved.sort((a, b) => {
@@ -222,57 +245,104 @@ export default function AdminApprovalPage() {
         <div className="syllabus-list">
           <h3>Total Pending: {syllabi.length}</h3>
 
-          {syllabi.map((s) => (
-            <div className="syllabus-card" key={s.id}>
-              <div className="syllabus-info">
-                {s.createdAt && (
-                  <div>📅 Uploaded: {s.createdAt.toLocaleString()}</div>
-                )}
-                <strong>
-                  {s.term} {s.year}
-                </strong>{" "}
-                – Prof. {s.professor}
-                <br />
-                📚 <strong>{s.courseId}</strong>: {s.courseTitle}
-                <br />
-                🏫 <em>{s.collegeName}</em>
-              </div>
-              <div className="syllabus-actions">
-                <a href={s.pdf_url} target="_blank" rel="noreferrer">
-                  View PDF
-                </a>
-                <button onClick={() => scanPDF(s)} disabled={scanningIds[s.id]}>
-                  {scanningIds[s.id] ? "🔍 Scanning..." : "🔍 Scan PDF"}
-                </button>
-                <button
-                  onClick={() =>
-                    approveSyllabus(s.ref, s.collegeId, s.courseId)
-                  }
-                >
-                  ✅ Approve
-                </button>
-                <button onClick={() => disapproveSyllabus(s)}>
-                  ❌ Disapprove
-                </button>
-              </div>
+          {Object.entries(groupedByCollege).map(([college, owners]) => (
+            <div key={college} className="college-group">
+              <button
+                onClick={() => toggleCollege(college)}
+                className="dropdown-btn"
+              >
+                {openColleges[college] ? "▼" : "►"} 🏫 {college} (
+                {Object.values(owners).flat().length})
+              </button>
 
-              {scanResults[s.id] && (
-                <div className="scan-result">
-                  {scanResults[s.id].error ? (
-                    <span className="error">{scanResults[s.id].error}</span>
-                  ) : (
-                    <>
-                      🛡️ <strong>Malicious:</strong>{" "}
-                      {scanResults[s.id].malicious},{" "}
-                      <strong>Suspicious:</strong>{" "}
-                      {scanResults[s.id].suspicious} <strong>harmless:</strong>{" "}
-                      {scanResults[s.id].harmless}, <strong>timeout:</strong>{" "}
-                      {scanResults[s.id].timeout}, <strong>undetected:</strong>{" "}
-                      {scanResults[s.id].undetected}
-                    </>
-                  )}
-                </div>
-              )}
+              {openColleges[college] &&
+                Object.entries(owners).map(([owner, items]) => {
+                  const key = `${college}__${owner}`;
+                  return (
+                    <div key={key} className="owner-group">
+                      <button
+                        onClick={() => toggleOwner(college, owner)}
+                        className="dropdown-btn inner"
+                      >
+                        {openOwners[key] ? "▼" : "►"} 👤 ...{owner.slice(-5)} (
+                        {items.length})
+                      </button>
+
+                      {openOwners[key] &&
+                        items.map((s) => (
+                          <div className="syllabus-card" key={s.id}>
+                            <div className="syllabus-info">
+                              {s.createdAt && (
+                                <div>
+                                  📅 Uploaded: {s.createdAt.toLocaleString()}
+                                </div>
+                              )}
+                              <strong>
+                                {s.term} {s.year}
+                              </strong>{" "}
+                              – Prof. {s.professor}
+                              <br />
+                              📚 <strong>{s.courseId}</strong>: {s.courseTitle}
+                            </div>
+                            <div className="syllabus-actions">
+                              <a
+                                href={s.pdf_url}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                View PDF
+                              </a>
+                              <button
+                                onClick={() => scanPDF(s)}
+                                disabled={scanningIds[s.id]}
+                              >
+                                {scanningIds[s.id]
+                                  ? "🔍 Scanning..."
+                                  : "🔍 Scan PDF"}
+                              </button>
+                              <button
+                                onClick={() =>
+                                  approveSyllabus(
+                                    s.ref,
+                                    s.collegeId,
+                                    s.courseId
+                                  )
+                                }
+                              >
+                                ✅ Approve
+                              </button>
+                              <button onClick={() => disapproveSyllabus(s)}>
+                                ❌ Disapprove
+                              </button>
+                            </div>
+
+                            {scanResults[s.id] && (
+                              <div className="scan-result">
+                                {scanResults[s.id].error ? (
+                                  <span className="error">
+                                    {scanResults[s.id].error}
+                                  </span>
+                                ) : (
+                                  <>
+                                    🛡️ <strong>Malicious:</strong>{" "}
+                                    {scanResults[s.id].malicious},{" "}
+                                    <strong>Suspicious:</strong>{" "}
+                                    {scanResults[s.id].suspicious}{" "}
+                                    <strong>harmless:</strong>{" "}
+                                    {scanResults[s.id].harmless},{" "}
+                                    <strong>timeout:</strong>{" "}
+                                    {scanResults[s.id].timeout},{" "}
+                                    <strong>undetected:</strong>{" "}
+                                    {scanResults[s.id].undetected}
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  );
+                })}
             </div>
           ))}
         </div>

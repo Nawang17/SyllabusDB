@@ -66,3 +66,26 @@
   color: #d10000;
   font-weight: bold;
 }
+.dropdown-btn {
+  background: none;
+  border: none;
+  font-weight: bold;
+  font-size: 1.1rem;
+  cursor: pointer;
+  margin: 1rem 0 0.5rem;
+}
+
+.dropdown-btn.inner {
+  margin-left: 1rem;
+  font-weight: normal;
+}
+
+.college-group {
+  margin-bottom: 1.5rem;
+  padding: 0.5rem 1rem;
+  border-left: 3px solid #e5e7eb;
+}
+
+.owner-group {
+  margin-left: 1rem;
+}
