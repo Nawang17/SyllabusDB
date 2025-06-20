@@ -99,6 +99,11 @@ export default function MyUploadsPage() {
       <Title order={2} mb="md">
         My Uploaded Syllabi
       </Title>
+      <Text size="sm" mb="xs" c="dimmed">
+        Showing {syllabiWithCourses.length} upload
+        {syllabiWithCourses.length !== 1 ? "s" : ""}
+      </Text>
+
       <TextInput
         placeholder="Search by course, code, or professor"
         value={searchQuery}

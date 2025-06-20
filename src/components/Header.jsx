@@ -153,12 +153,6 @@ export default function Header() {
                 Upload Syllabus
               </Menu.Item>
 
-              <Menu.Item
-                leftSection={<IconInfoCircle size={16} />}
-                onClick={() => navigate("/aboutpage")}
-              >
-                About
-              </Menu.Item>
               {user && !isAnonymous && (
                 <>
                   <Menu.Item
@@ -167,30 +161,37 @@ export default function Header() {
                   >
                     My Uploads
                   </Menu.Item>
-                  <Menu.Divider />
+
                   {/* <Menu.Item leftSection={<IconSettings size={16} />}>
                     Settings
                   </Menu.Item> */}
-
-                  <Menu.Divider />
-                  <Menu.Item
-                    color="red"
-                    onClick={async () => {
-                      const auth = getAuth();
-                      await auth.signOut();
-                      notifications.show({
-                        title: "Signed Out",
-                        message: "You have been signed out successfully.",
-                        color: "green",
-                      });
-                    }}
-                    leftSection={<IconLogout size={16} />}
-                  >
-                    Sign Out
-                  </Menu.Item>
                 </>
               )}
-
+              <Menu.Divider />
+              <Menu.Item
+                leftSection={<IconInfoCircle size={16} />}
+                onClick={() => navigate("/aboutpage")}
+              >
+                About
+              </Menu.Item>
+              <Menu.Divider />
+              {user && !isAnonymous && (
+                <Menu.Item
+                  color="red"
+                  onClick={async () => {
+                    const auth = getAuth();
+                    await auth.signOut();
+                    notifications.show({
+                      title: "Signed Out",
+                      message: "You have been signed out successfully.",
+                      color: "green",
+                    });
+                  }}
+                  leftSection={<IconLogout size={16} />}
+                >
+                  Sign Out
+                </Menu.Item>
+              )}
               {(!user || isAnonymous) && (
                 <Menu.Item
                   color="blue"
