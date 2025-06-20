@@ -129,7 +129,6 @@ export default function AdminApprovalPage() {
       }
     }
 
-    console.log("Unapproved syllabi:", unapproved);
     setSyllabi(unapproved);
     // Sort by createdAt (newest first)
     const sorted = unapproved.sort((a, b) => {

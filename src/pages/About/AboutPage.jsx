@@ -18,39 +18,47 @@ export default function AboutPage() {
       </p>
 
       <p>
-        That is why I built <strong>SyllabusDB</strong>, a simple and
-        open-access platform where students can upload and browse real syllabi
-        from courses they have taken. It is designed to make course planning
-        smarter, clearer, and more transparent.
+        This is why I built <strong>SyllabusDB</strong>, a simple and
+        student-powered platform where users can upload and browse real syllabi
+        from CUNY courses. The goal is to make course planning easier, clearer,
+        and more informed.
       </p>
 
       <p>
-        There is no login, no paywall, and no data harvesting. Just
-        student-powered access to the information we all wish we had when
-        choosing classes.
+        Uploading a syllabus does not require an account. However, if you choose
+        to sign in with Google, you will be able to manage and keep track of
+        your submissions. Signing in is optional, and your information is never
+        shared or used for advertising.
+      </p>
+
+      <p>
+        SyllabusDB is free to use and non-commercial. There are no subscriptions
+        or paywalls. The site uses Google Analytics to collect anonymous usage
+        statistics, such as page views and traffic sources, to help improve the
+        platform. No personal information is ever sold or used for advertising.
       </p>
 
       <p>
         If you have taken a course and still have the syllabus, consider
-        uploading it to help others. One small contribution can help many
-        students make better decisions.
+        uploading it to help others. A small action can make a big difference
+        for students trying to choose the right classes.
       </p>
 
       <p>
-        SyllabusDB is non-commercial and operates in accordance with fair use
-        under Section 107 of U.S. copyright law. It focuses on factual,
-        educational content shared by students to benefit other students.
+        SyllabusDB follows the principles of fair use under Section 107 of U.S.
+        copyright law. It is intended for educational use and shares factual,
+        course-related materials to benefit the student community.
       </p>
 
       <p>
-        If you have questions, suggestions, or need to report an issue, feel
-        free to reach out at{" "}
+        For feedback, suggestions, or issues, please contact{" "}
         <a href="mailto:katophh@gmail.com">katophh@gmail.com</a>.
       </p>
+
       <p>
-        Please note: All syllabi on this site are for reference only. Course
-        content, grading policies, and schedules may change in future terms at
-        the discretion of the instructor.
+        Note: All syllabi on this site are for reference only. Course content,
+        grading policies, and schedules may vary depending on the instructor or
+        term.
       </p>
     </div>
   );
