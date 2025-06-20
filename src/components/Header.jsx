@@ -16,6 +16,7 @@ import {
   IconLogout,
   IconHome,
   IconInfoCircle,
+  IconLock,
 } from "@tabler/icons-react";
 import classes from "./styles/Header.module.css";
 import { notifications } from "@mantine/notifications";
@@ -152,6 +153,12 @@ export default function Header() {
                 Upload Syllabus
               </Menu.Item>
 
+              <Menu.Item
+                leftSection={<IconInfoCircle size={16} />}
+                onClick={() => navigate("/aboutpage")}
+              >
+                About
+              </Menu.Item>
               {user && !isAnonymous && (
                 <>
                   <Menu.Item
@@ -165,12 +172,6 @@ export default function Header() {
                     Settings
                   </Menu.Item> */}
 
-                  <Menu.Item
-                    leftSection={<IconInfoCircle size={16} />}
-                    onClick={() => navigate("/aboutpage")}
-                  >
-                    About
-                  </Menu.Item>
                   <Menu.Divider />
                   <Menu.Item
                     color="red"
@@ -191,7 +192,13 @@ export default function Header() {
               )}
 
               {(!user || isAnonymous) && (
-                <Menu.Item onClick={openModal}>Sign In</Menu.Item>
+                <Menu.Item
+                  color="blue"
+                  leftSection={<IconLock size={16} />}
+                  onClick={openModal}
+                >
+                  Sign In
+                </Menu.Item>
               )}
 
               {isAdmin && (
