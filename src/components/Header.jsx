@@ -7,7 +7,6 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
-  linkWithPopup,
 } from "firebase/auth";
 import {
   IconPhoto,
@@ -51,33 +50,20 @@ export default function Header() {
     const auth = getAuth();
     const provider = new GoogleAuthProvider();
     try {
-      const currentUser = auth.currentUser;
-      if (currentUser?.isAnonymous) {
-        await linkWithPopup(currentUser, provider);
-        setIsAnonymous(false);
-        notifications.show({
-          title: "Logged In",
-          message: "You are now signed in with your Google account.",
-          color: "green",
-        });
-      } else {
-        const result = await signInWithPopup(auth, provider);
-        setIsAnonymous(false);
-        setUser(result.user);
-        notifications.show({
-          title: "Logged In",
-          message: "You are now signed in with your Google account.",
-          color: "green",
-        });
-      }
+      const result = await signInWithPopup(auth, provider);
+      setIsAnonymous(false);
+      setUser(result.user);
+      notifications.show({
+        title: "Logged In",
+        message: "You are now signed in with your Google account.",
+        color: "green",
+      });
+
       setSignInError("");
       closeModal();
     } catch (error) {
-      if (error.code === "auth/credential-already-in-use") {
-        setSignInError("This Google account is already linked.");
-      } else {
-        setSignInError("Something went wrong. Please try again.");
-      }
+      console.error(error);
+      setSignInError("Something went wrong. Please try again.");
     }
   };
 
@@ -146,6 +132,7 @@ export default function Header() {
                 Home
               </Menu.Item>
 
+              <Menu.Divider />
               <Menu.Item
                 leftSection={<IconUpload size={16} />}
                 onClick={() => navigate("/uploadsyllabus")}
@@ -168,13 +155,7 @@ export default function Header() {
                 </>
               )}
               <Menu.Divider />
-              <Menu.Item
-                leftSection={<IconInfoCircle size={16} />}
-                onClick={() => navigate("/aboutpage")}
-              >
-                About
-              </Menu.Item>
-              <Menu.Divider />
+
               {user && !isAnonymous && (
                 <Menu.Item
                   color="red"
@@ -217,14 +198,14 @@ export default function Header() {
           closeModal();
           setSignInError("");
         }}
-        title="Sign In (Optional)"
+        title="Sign In"
         radius="md"
         size="md"
       >
         <Text mb="md" size="sm">
-          <strong>Note:</strong> You don’t need to sign in to upload or view a
-          syllabus. However, signing in lets you{" "}
-          <strong>track and manage your uploads</strong> more easily.
+          <strong>Note:</strong> You don’t need to sign in to upload a syllabus.
+          However, signing in allows you to{" "}
+          <strong>track and manage your uploads</strong> easily.
         </Text>
 
         {signInError && (
@@ -256,7 +237,7 @@ export default function Header() {
             />
           }
         >
-          Continue with Google
+          Sign in with Google
         </Button>
       </Modal>
     </Box>
