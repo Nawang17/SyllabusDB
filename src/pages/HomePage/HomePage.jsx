@@ -6,11 +6,13 @@ import { db } from "../../../firebaseConfig";
 import "./HomePage.css";
 import studentImage from "../../assets/studentshangingout.jpg";
 import verifiedImage from "../../assets/verified-illustration.jpg"; // Adjust the path as needed
+import CountUp from "react-countup";
 export default function HomePage() {
   const [colleges, setColleges] = useState([]);
   const [Searchquery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [totalUploads, setTotalUploads] = useState(0);
   useEffect(() => {
     // Scroll to top on load
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -18,15 +20,19 @@ export default function HomePage() {
     const fetchCollegesWithCounts = async () => {
       try {
         const snapshot = await getDocs(collection(db, "colleges"));
-
-        const collegesData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          name: doc.data().name,
-          image_url: doc.data().image_url,
-          uploads: doc.data().approvedSyllabiTotal || 0,
-        }));
-
+        let uploadsSum = 0;
+        const collegesData = snapshot.docs.map((doc) => {
+          const uploads = doc.data().approvedSyllabiTotal || 0;
+          uploadsSum += uploads;
+          return {
+            id: doc.id,
+            name: doc.data().name,
+            image_url: doc.data().image_url,
+            uploads,
+          };
+        });
         setColleges(collegesData);
+        setTotalUploads(uploadsSum);
       } catch (error) {
         console.error("Error fetching colleges:", error);
       } finally {
@@ -48,6 +54,13 @@ export default function HomePage() {
           <h1>Know the course</h1>
           <h1>before you enroll</h1>
         </div>
+
+        <p className="hero-syllabi-count">
+          <strong>
+            <CountUp start={0} end={totalUploads} duration={2} separator="," />
+          </strong>{" "}
+          syllabi available from real college courses
+        </p>
 
         <div className="search-wrapper">
           <input

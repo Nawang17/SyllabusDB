@@ -19,9 +19,17 @@
 }
 
 .headline h1 {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 2.75rem;
+  font-weight: 800;
   margin: 0.25rem 0;
+  line-height: 1.2;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 768px) {
+  .headline h1 {
+    font-size: 2rem;
+  }
 }
 
 /* --- Search Input --- */
@@ -334,5 +342,36 @@
     text-align: left; /* keep list left-aligned inside center layout */
     margin: 0 auto; /* center the list block itself */
     max-width: 300px;
+  }
+}
+.hero-syllabi-count {
+  font-size: 1.3rem;
+  margin-top: 1rem;
+  color: #fefefe;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 6px 14px;
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  display: inline-block;
+  animation: fadeIn 1s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-syllabi-count {
+    font-size: 1.05rem;
+    padding: 5px 10px;
   }
 }
