@@ -345,33 +345,20 @@
   }
 }
 .hero-syllabi-count {
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   margin-top: 1rem;
   color: #fefefe;
   font-weight: 500;
-  background: rgba(0, 0, 0, 0.35);
-  padding: 6px 14px;
-  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 12px;
+  border-radius: 8px;
   backdrop-filter: blur(4px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   display: inline-block;
-  animation: fadeIn 1s ease-in;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @media (max-width: 768px) {
   .hero-syllabi-count {
-    font-size: 1.05rem;
-    padding: 5px 10px;
+    font-size: 1rem;
   }
 }

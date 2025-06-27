@@ -59,7 +59,7 @@ export default function HomePage() {
           <strong>
             <CountUp start={0} end={totalUploads} duration={2} separator="," />
           </strong>{" "}
-          syllabi available from real college courses
+          syllabi available
         </p>
 
         <div className="search-wrapper">
