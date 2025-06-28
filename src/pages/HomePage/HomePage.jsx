@@ -1,22 +1,23 @@
-// HomePage.js
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
 import "./HomePage.css";
 import studentImage from "../../assets/studentshangingout.jpg";
-import verifiedImage from "../../assets/verified-illustration.jpg"; // Adjust the path as needed
+import verifiedImage from "../../assets/verified-illustration.jpg";
 import CountUp from "react-countup";
+
 export default function HomePage() {
   const [colleges, setColleges] = useState([]);
   const [Searchquery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
   const [totalUploads, setTotalUploads] = useState(0);
-  useEffect(() => {
-    // Scroll to top on load
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const searchInputRef = useRef(null);
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     const fetchCollegesWithCounts = async () => {
       try {
         const snapshot = await getDocs(collection(db, "colleges"));
@@ -47,6 +48,34 @@ export default function HomePage() {
     college.name.toLowerCase().includes(Searchquery.toLowerCase())
   );
 
+  const handleKeyDown = (e) => {
+    if (Searchquery && filtered.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev + 1) % filtered.length);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIndex(
+          (prev) => (prev - 1 + filtered.length) % filtered.length
+        );
+      } else if (e.key === "Enter" && selectedIndex >= 0) {
+        navigate(`/college/${filtered[selectedIndex].id}`);
+      }
+    }
+  };
+
+  const highlightMatch = (name) => {
+    const index = name.toLowerCase().indexOf(Searchquery.toLowerCase());
+    if (index === -1) return name;
+    return (
+      <>
+        {name.slice(0, index)}
+        <strong>{name.slice(index, index + Searchquery.length)}</strong>
+        {name.slice(index + Searchquery.length)}
+      </>
+    );
+  };
+
   return (
     <div className="home-page">
       <section className="search-section">
@@ -68,19 +97,31 @@ export default function HomePage() {
             className="search-input"
             placeholder="Search for your college..."
             value={Searchquery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setSelectedIndex(-1);
+            }}
+            onKeyDown={handleKeyDown}
+            ref={searchInputRef}
+            aria-label="Search for a college"
           />
-
+          {Searchquery && (
+            <button className="clear-btn" onClick={() => setSearchQuery("")}>
+              ×
+            </button>
+          )}
           {Searchquery && (
             <div className="results-box">
               {filtered.length > 0 ? (
-                filtered.map((college) => (
+                filtered.map((college, index) => (
                   <div
                     key={college.id}
-                    className="result-item"
+                    className={`result-item ${
+                      selectedIndex === index ? "highlighted" : ""
+                    }`}
                     onClick={() => navigate(`/college/${college.id}`)}
                   >
-                    {college.name}
+                    {highlightMatch(college.name)}
                   </div>
                 ))
               ) : (
@@ -105,18 +146,24 @@ export default function HomePage() {
             : colleges
                 .sort((a, b) => b.uploads - a.uploads)
                 .slice(0, 10)
-                .map((college) => (
+                .map((college, i) => (
                   <div
                     key={college.id}
-                    className="college-card"
+                    className="college-card fade-in"
                     onClick={() => navigate(`/college/${college.id}`)}
                   >
                     <img
                       src={college.image_url}
                       alt={college.name}
                       className="college-img"
+                      onError={(e) =>
+                        (e.target.src =
+                          "https://via.placeholder.com/300x200?text=Image+Unavailable")
+                      }
                     />
-                    <div className="college-name">{college.name}</div>
+                    <div className="college-name">
+                      {i + 1}. {college.name}
+                    </div>
                     {college.uploads > 0 && (
                       <div className="college-count">
                         {college.uploads} syllabi
@@ -126,7 +173,7 @@ export default function HomePage() {
                 ))}
           {!loading && (
             <div
-              className="college-card view-all-card-link"
+              className="college-card view-all-card-link fade-in"
               onClick={() => navigate("/colleges")}
             >
               <span className="view-all-link">View All Colleges</span>
@@ -134,27 +181,26 @@ export default function HomePage() {
           )}
         </div>
       </section>
-      <section className="why-section">
+
+      <section className="why-section fade-in">
         <img src={studentImage} alt="Helping each other" className="why-img" />
         <div className="why-content">
-          <h3>Why this matters</h3>
+          <h3>💡 Why this matters</h3>
           <p>
             SyllabusDB helps students preview real course syllabi so they can
             choose classes with confidence. When you upload a syllabus, you’re
             supporting fellow students and building a more transparent, helpful
             campus culture.
           </p>
-          <button
-            onClick={() => navigate("/uploadsyllabus")}
-            className="upload-cta-btn"
-          >
+          <button onClick={() => navigate("/uploadsyllabus")} className="btn">
             Upload a Syllabus
           </button>
         </div>
       </section>
-      <section className="trust-section">
+
+      <section className="trust-section fade-in">
         <div className="trust-content">
-          <h3>Trusted & Verified</h3>
+          <h3>🔒 Trusted & Verified</h3>
           <p>How we keep things safe and reliable:</p>
           <ul className="trust-list">
             <li>✅ Every syllabus is reviewed before approval</li>

@@ -363,3 +363,48 @@
     font-size: 1rem;
   }
 }
+/* Search highlight and clear */
+.clear-btn {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #555;
+}
+
+.result-item.highlighted {
+  background-color: #e0f2fe;
+}
+
+/* Animation fade-in */
+.fade-in {
+  animation: fadeInUp 0.5s ease both;
+}
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Button standard style */
+.btn {
+  padding: 10px 20px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.btn:hover {
+  background-color: #1d4ed8;
+}
