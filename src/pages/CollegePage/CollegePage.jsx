@@ -200,13 +200,42 @@ export default function CollegePage() {
                 filteredSubjects.map(([subject, data]) => (
                   <div
                     key={subject}
-                    className="subject-card"
+                    className="subject-card fade-in"
                     onClick={() =>
                       navigate(`/college/${collegeId}/subject/${subject}`)
                     }
                   >
                     <div className="subject-main">
-                      <div className="subject-title">{subject}</div>
+                      <div className="subject-title">
+                        {search ? (
+                          <>
+                            {subject.slice(
+                              0,
+                              subject
+                                .toLowerCase()
+                                .indexOf(search.toLowerCase())
+                            )}
+                            <strong>
+                              {subject.slice(
+                                subject
+                                  .toLowerCase()
+                                  .indexOf(search.toLowerCase()),
+                                subject
+                                  .toLowerCase()
+                                  .indexOf(search.toLowerCase()) + search.length
+                              )}
+                            </strong>
+                            {subject.slice(
+                              subject
+                                .toLowerCase()
+                                .indexOf(search.toLowerCase()) + search.length
+                            )}
+                          </>
+                        ) : (
+                          subject
+                        )}
+                      </div>
+
                       <div className="subject-count">
                         {data.syllabiCount} syllabi
                       </div>
