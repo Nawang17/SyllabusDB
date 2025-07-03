@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
@@ -20,6 +20,9 @@ export default function RequestCollege() {
       .replace(/[^a-z0-9]/g, "-")
       .replace(/-+/g, "-");
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
