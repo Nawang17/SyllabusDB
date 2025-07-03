@@ -1,0 +1,130 @@
+.request-college-page {
+  max-width: 700px;
+  margin: 3rem auto;
+  padding: 2.5rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  font-family: "Arial", sans-serif;
+  animation: fadeIn 0.4s ease-in;
+}
+
+.request-college-page h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #003366;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.request-college-page p {
+  font-size: 1rem;
+  color: #444;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.request-form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  margin-top: 1rem;
+  color: #222;
+}
+
+.request-form .required {
+  color: red;
+  margin-left: 4px;
+}
+
+.request-form input,
+.request-form textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  transition: border-color 0.3s;
+}
+
+.request-form input:focus,
+.request-form textarea:focus {
+  border-color: #003366;
+  outline: none;
+}
+
+.request-form textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.submit-btn {
+  margin-top: 1.5rem;
+  width: 100%;
+  padding: 0.85rem;
+  font-size: 1.05rem;
+  background-color: #003366;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.submit-btn:hover {
+  background-color: #002244;
+}
+
+.success-message {
+  text-align: center;
+  color: green;
+  font-size: 1.1rem;
+}
+
+.success-message button {
+  margin-top: 1rem;
+  padding: 0.7rem 1.4rem;
+  font-size: 1rem;
+  background-color: #003366;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.success-message button:hover {
+  background-color: #001f4d;
+}
+
+.error-message {
+  background-color: #ffe0e0;
+  color: #b80000;
+  padding: 0.7rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 600px) {
+  .request-college-page {
+    padding: 1.5rem;
+    margin: 2rem 1rem;
+  }
+
+  .request-college-page h1 {
+    font-size: 1.5rem;
+  }
+}

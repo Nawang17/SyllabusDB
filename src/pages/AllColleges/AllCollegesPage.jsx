@@ -10,20 +10,24 @@ export default function AllCollegesPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
-  useEffect(() => {
     const fetchColleges = async () => {
       const snapshot = await getDocs(collection(db, "colleges"));
       const grouped = {};
+      let approvedCount = 0;
+
       snapshot.docs.forEach((doc) => {
         const data = doc.data();
+        if (data.approved === false) return; // Skip unapproved
+
         const state = data.state || "Unknown";
         if (!grouped[state]) grouped[state] = [];
+
         grouped[state].push({
           id: doc.id,
           name: data.name,
         });
+
+        approvedCount += 1;
       });
 
       // Sort states alphabetically
@@ -36,7 +40,7 @@ export default function AllCollegesPage() {
       });
 
       setCollegesByState(sortedGrouped);
-      setTotalColleges(snapshot.size);
+      setTotalColleges(approvedCount);
     };
 
     fetchColleges();

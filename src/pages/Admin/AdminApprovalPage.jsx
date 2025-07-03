@@ -28,6 +28,8 @@ export default function AdminApprovalPage() {
   const toggleCollege = (college) => {
     setOpenColleges((prev) => ({ ...prev, [college]: !prev[college] }));
   };
+  const [collegeRequests, setCollegeRequests] = useState([]);
+  const [showCollegeRequests, setShowCollegeRequests] = useState(false);
 
   const toggleOwner = (college, owner) => {
     const key = `${college}__${owner}`;
@@ -64,11 +66,40 @@ export default function AdminApprovalPage() {
         navigate("/login");
       } else {
         fetchUnapprovedSyllabi(); // ✅ now fetch after confirming admin user
+        fetchUnapprovedColleges(); // fetch college requests
       }
     });
 
     return () => unsubscribe();
   }, [navigate]);
+  const fetchUnapprovedColleges = async () => {
+    const q = query(collection(db, "colleges"), where("approved", "==", false));
+    const snapshot = await getDocs(q);
+
+    const requests = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    setCollegeRequests(requests);
+  };
+  const approveCollege = async (id) => {
+    if (!window.confirm("Are you sure you want to approve this college?")) {
+      return;
+    }
+
+    await updateDoc(doc(db, "colleges", id), { approved: true });
+    setCollegeRequests((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  const deleteCollege = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this college?")) {
+      return;
+    }
+    await deleteDoc(doc(db, "colleges", id));
+    setCollegeRequests((prev) => prev.filter((c) => c.id !== id));
+  };
+
   const groupedByCollege = syllabi.reduce((acc, item) => {
     const college = item.collegeName;
     const owner = item.owner || "Unknown";
@@ -143,6 +174,10 @@ export default function AdminApprovalPage() {
   };
 
   const approveSyllabus = async (ref, collegeId, courseId) => {
+    if (!window.confirm("Are you sure you want to approve this syllabus?")) {
+      return;
+    }
+
     await updateDoc(ref, { approved: true });
 
     const courseRef = doc(db, "colleges", collegeId, "courses", courseId);
@@ -158,6 +193,14 @@ export default function AdminApprovalPage() {
   };
 
   const disapproveSyllabus = async (syllabus) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to disapprove and delete this syllabus?"
+      )
+    ) {
+      return;
+    }
+
     try {
       // 1. Delete the PDF file from Firebase Storage
       const fileRef = storageRef(storage, syllabus.file_path);
@@ -232,8 +275,7 @@ export default function AdminApprovalPage() {
           navigate("/login");
         }}
       >
-        {" "}
-        Logout{" "}
+        Logout
       </Button>
       <h2>Pending Syllabi for Approval</h2>
       {loading ? (
@@ -241,109 +283,152 @@ export default function AdminApprovalPage() {
       ) : syllabi.length === 0 ? (
         <p>No pending syllabi.</p>
       ) : (
-        <div className="syllabus-list">
-          <h3>Total Pending: {syllabi.length}</h3>
+        <>
+          <div className="syllabus-list">
+            <h3>Total Pending: {syllabi.length}</h3>
 
-          {Object.entries(groupedByCollege).map(([college, owners]) => (
-            <div key={college} className="college-group">
-              <button
-                onClick={() => toggleCollege(college)}
-                className="dropdown-btn"
-              >
-                {openColleges[college] ? "▼" : "►"} 🏫 {college} (
-                {Object.values(owners).flat().length})
-              </button>
+            {Object.entries(groupedByCollege).map(([college, owners]) => (
+              <div key={college} className="college-group">
+                <button
+                  onClick={() => toggleCollege(college)}
+                  className="dropdown-btn"
+                >
+                  {openColleges[college] ? "▼" : "►"} 🏫 {college} (
+                  {Object.values(owners).flat().length})
+                </button>
 
-              {openColleges[college] &&
-                Object.entries(owners).map(([owner, items]) => {
-                  const key = `${college}__${owner}`;
-                  return (
-                    <div key={key} className="owner-group">
-                      <button
-                        onClick={() => toggleOwner(college, owner)}
-                        className="dropdown-btn inner"
-                      >
-                        {openOwners[key] ? "▼" : "►"} 👤 ...{owner.slice(-5)} (
-                        {items.length})
-                      </button>
+                {openColleges[college] &&
+                  Object.entries(owners).map(([owner, items]) => {
+                    const key = `${college}__${owner}`;
+                    return (
+                      <div key={key} className="owner-group">
+                        <button
+                          onClick={() => toggleOwner(college, owner)}
+                          className="dropdown-btn inner"
+                        >
+                          {openOwners[key] ? "▼" : "►"} 👤 ...{owner.slice(-5)}{" "}
+                          ({items.length})
+                        </button>
 
-                      {openOwners[key] &&
-                        items.map((s) => (
-                          <div className="syllabus-card" key={s.id}>
-                            <div className="syllabus-info">
-                              {s.createdAt && (
-                                <div>
-                                  📅 Uploaded: {s.createdAt.toLocaleString()}
+                        {openOwners[key] &&
+                          items.map((s) => (
+                            <div className="syllabus-card" key={s.id}>
+                              <div className="syllabus-info">
+                                {s.createdAt && (
+                                  <div>
+                                    📅 Uploaded: {s.createdAt.toLocaleString()}
+                                  </div>
+                                )}
+                                <strong>
+                                  {s.term} {s.year}
+                                </strong>{" "}
+                                – Prof. {s.professor}
+                                <br />
+                                📚 <strong>{s.courseId}</strong>:{" "}
+                                {s.courseTitle}
+                              </div>
+                              <div className="syllabus-actions">
+                                <a
+                                  href={s.pdf_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  View PDF
+                                </a>
+                                <button
+                                  onClick={() => scanPDF(s)}
+                                  disabled={scanningIds[s.id]}
+                                >
+                                  {scanningIds[s.id]
+                                    ? "🔍 Scanning..."
+                                    : "🔍 Scan PDF"}
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    approveSyllabus(
+                                      s.ref,
+                                      s.collegeId,
+                                      s.courseId
+                                    )
+                                  }
+                                >
+                                  ✅ Approve
+                                </button>
+                                <button onClick={() => disapproveSyllabus(s)}>
+                                  ❌ Disapprove
+                                </button>
+                              </div>
+
+                              {scanResults[s.id] && (
+                                <div className="scan-result">
+                                  {scanResults[s.id].error ? (
+                                    <span className="error">
+                                      {scanResults[s.id].error}
+                                    </span>
+                                  ) : (
+                                    <>
+                                      🛡️ <strong>Malicious:</strong>{" "}
+                                      {scanResults[s.id].malicious},{" "}
+                                      <strong>Suspicious:</strong>{" "}
+                                      {scanResults[s.id].suspicious}{" "}
+                                      <strong>harmless:</strong>{" "}
+                                      {scanResults[s.id].harmless},{" "}
+                                      <strong>timeout:</strong>{" "}
+                                      {scanResults[s.id].timeout},{" "}
+                                      <strong>undetected:</strong>{" "}
+                                      {scanResults[s.id].undetected}
+                                    </>
+                                  )}
                                 </div>
                               )}
-                              <strong>
-                                {s.term} {s.year}
-                              </strong>{" "}
-                              – Prof. {s.professor}
-                              <br />
-                              📚 <strong>{s.courseId}</strong>: {s.courseTitle}
                             </div>
-                            <div className="syllabus-actions">
-                              <a
-                                href={s.pdf_url}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                View PDF
-                              </a>
-                              <button
-                                onClick={() => scanPDF(s)}
-                                disabled={scanningIds[s.id]}
-                              >
-                                {scanningIds[s.id]
-                                  ? "🔍 Scanning..."
-                                  : "🔍 Scan PDF"}
-                              </button>
-                              <button
-                                onClick={() =>
-                                  approveSyllabus(
-                                    s.ref,
-                                    s.collegeId,
-                                    s.courseId
-                                  )
-                                }
-                              >
-                                ✅ Approve
-                              </button>
-                              <button onClick={() => disapproveSyllabus(s)}>
-                                ❌ Disapprove
-                              </button>
-                            </div>
+                          ))}
+                      </div>
+                    );
+                  })}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      <div className="college-request-section">
+        <button
+          onClick={() => setShowCollegeRequests((prev) => !prev)}
+          className="dropdown-btn"
+        >
+          {showCollegeRequests ? "▼" : "►"} 📚 College Requests (
+          {collegeRequests.length})
+        </button>
+      </div>
 
-                            {scanResults[s.id] && (
-                              <div className="scan-result">
-                                {scanResults[s.id].error ? (
-                                  <span className="error">
-                                    {scanResults[s.id].error}
-                                  </span>
-                                ) : (
-                                  <>
-                                    🛡️ <strong>Malicious:</strong>{" "}
-                                    {scanResults[s.id].malicious},{" "}
-                                    <strong>Suspicious:</strong>{" "}
-                                    {scanResults[s.id].suspicious}{" "}
-                                    <strong>harmless:</strong>{" "}
-                                    {scanResults[s.id].harmless},{" "}
-                                    <strong>timeout:</strong>{" "}
-                                    {scanResults[s.id].timeout},{" "}
-                                    <strong>undetected:</strong>{" "}
-                                    {scanResults[s.id].undetected}
-                                  </>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                    </div>
-                  );
-                })}
-            </div>
-          ))}
+      {showCollegeRequests && (
+        <div className="college-request-list">
+          {collegeRequests.length === 0 ? (
+            <p>No pending college requests.</p>
+          ) : (
+            collegeRequests.map((college) => (
+              <div key={college.id} className="college-request-card">
+                <h4>{college.name}</h4>
+                <p>
+                  🏙️ {college.city}, {college.state}
+                </p>
+                {college.message && <p>📩 "{college.message}"</p>}
+                <div className="syllabus-actions">
+                  <Button
+                    onClick={() => {
+                      approveCollege(college.id);
+                    }}
+                    color="green"
+                  >
+                    Approve
+                  </Button>
+                  <Button color="red" onClick={() => deleteCollege(college.id)}>
+                    Disapprove
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
     </div>

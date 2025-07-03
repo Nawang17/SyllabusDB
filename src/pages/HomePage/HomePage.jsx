@@ -18,20 +18,28 @@ export default function HomePage() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+
     const fetchCollegesWithCounts = async () => {
       try {
         const snapshot = await getDocs(collection(db, "colleges"));
         let uploadsSum = 0;
-        const collegesData = snapshot.docs.map((doc) => {
-          const uploads = doc.data().approvedSyllabiTotal || 0;
-          uploadsSum += uploads;
-          return {
-            id: doc.id,
-            name: doc.data().name,
-            image_url: doc.data().image_url,
-            uploads,
-          };
-        });
+        const collegesData = snapshot.docs
+          .map((doc) => {
+            const data = doc.data();
+            const uploads = data.approvedSyllabiTotal || 0;
+
+            return {
+              id: doc.id,
+              name: data.name,
+              image_url: data.image_url,
+              uploads,
+              approved: data.approved, // include this so we can filter
+            };
+          })
+          .filter((college) => college.approved !== false); // only include approved or undefined
+
+        uploadsSum = collegesData.reduce((sum, c) => sum + c.uploads, 0);
+
         setColleges(collegesData);
         setTotalUploads(uploadsSum);
       } catch (error) {
@@ -125,7 +133,15 @@ export default function HomePage() {
                   </div>
                 ))
               ) : (
-                <div className="no-result">No colleges found.</div>
+                <div className="no-result">
+                  <p>No colleges found.</p>
+                  <button
+                    className="request-college-btn"
+                    onClick={() => navigate("/requestcollege")}
+                  >
+                    Request a College
+                  </button>
+                </div>
               )}
             </div>
           )}

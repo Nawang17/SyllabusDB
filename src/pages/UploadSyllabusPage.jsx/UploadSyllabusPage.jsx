@@ -43,14 +43,19 @@ export default function UploadSyllabus() {
   useEffect(() => {
     const fetchColleges = async () => {
       const snapshot = await getDocs(collection(db, "colleges"));
-      const list = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        name: doc.data().name,
-      }));
+      const list = snapshot.docs
+        .filter((doc) => doc.data().approved !== false) // ✅ filter out unapproved
+        .map((doc) => ({
+          id: doc.id,
+          name: doc.data().name,
+        }));
+
       setColleges(list);
     };
+
     fetchColleges();
   }, []);
+
   const resetForm = () => {
     setCourseCode("");
     setCourseTitle("");

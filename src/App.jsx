@@ -18,6 +18,7 @@ import TakedownPage from "./pages/TakeDown/TakeDownPage.jsx";
 import TermsOfService from "./pages/TermsOfService/TermsOfService.jsx";
 import { Notifications } from "@mantine/notifications";
 import MyUploadsPage from "./pages/Account/MyUploads/MyUploadsPage.jsx";
+import RequestCollege from "./pages/RequestCollege/RequestCollege.jsx";
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
           <Route path="/admin" element={<AdminApprovalPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/aboutpage" element={<AboutPage />} />
+          <Route path="/requestcollege" element={<RequestCollege />} />
         </Routes>
 
         <Footer />

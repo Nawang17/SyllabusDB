@@ -408,3 +408,18 @@
 .btn:hover {
   background-color: #1d4ed8;
 }
+.request-college-btn {
+  margin-top: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  background-color: #003366;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.request-college-btn:hover {
+  background-color: #001f4d;
+}

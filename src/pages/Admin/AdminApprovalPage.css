@@ -89,3 +89,21 @@
 .owner-group {
   margin-left: 1rem;
 }
+.college-request-section {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.college-request-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: white;
+}
+
+.college-request-card h4 {
+  margin: 0 0 0.4rem;
+}
