@@ -8,17 +8,18 @@ import CollegePage from "./pages/CollegePage/CollegePage";
 import UploadSyllabusPage from "./pages/UploadSyllabusPage.jsx/UploadSyllabusPage";
 import AdminApprovalPage from "./pages/Admin/AdminApprovalPage";
 import LoginPage from "./pages/Login/LoginPage.jsx";
-import Footer from "./components/Footer.jsx";
-import AboutPage from "./pages/About/AboutPage.jsx";
+import Footer from "./pages/Footer/Footer.jsx";
 
 import AllCollegesPage from "./pages/AllColleges/AllCollegesPage.jsx";
-import GuidelinesPage from "./pages/GuidelinesPage/GuideLinesPage.jsx";
+import GuidelinesPage from "./pages/Footer/GuidelinesPage/GuideLinesPage.jsx";
 import SubjectPage from "./pages/Subjects/SubjectPage.jsx";
-import TakedownPage from "./pages/TakeDown/TakeDownPage.jsx";
-import TermsOfService from "./pages/TermsOfService/TermsOfService.jsx";
+import TakedownPage from "./pages/Footer/TakeDown/TakeDownPage.jsx";
+import TermsOfService from "./pages/Footer/TermsOfService/TermsOfService.jsx";
 import { Notifications } from "@mantine/notifications";
 import MyUploadsPage from "./pages/Account/MyUploads/MyUploadsPage.jsx";
 import RequestCollege from "./pages/RequestCollege/RequestCollege.jsx";
+import AboutPage from "./pages/Footer/About/AboutPage.jsx";
+import PrivacyPolicy from "./pages/Footer/PrivacyPolicy/PrivacyPolicy.jsx";
 
 function App() {
   return (
@@ -40,7 +41,7 @@ function App() {
           <Route path="/termsofservice" element={<TermsOfService />} />
           <Route path="/guidelines" element={<GuidelinesPage />} />
           <Route path="/takedown" element={<TakedownPage />} />
-
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/admin" element={<AdminApprovalPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/aboutpage" element={<AboutPage />} />

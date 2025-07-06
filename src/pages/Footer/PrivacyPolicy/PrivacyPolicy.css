@@ -1,0 +1,26 @@
+.privacy-page {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+  font-family: "Segoe UI", sans-serif;
+  color: #333;
+}
+
+.privacy-page h1 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.privacy-page h2 {
+  margin-top: 1.5rem;
+  font-size: 1.2rem;
+}
+
+.privacy-page ul {
+  margin-left: 1.5rem;
+  list-style: disc;
+}
+
+.privacy-page p {
+  margin-bottom: 1rem;
+}
