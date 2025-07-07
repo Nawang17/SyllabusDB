@@ -31,6 +31,9 @@ export default function UploadSyllabus() {
   const [courseSuggestions, setCourseSuggestions] = useState([]);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [uploadError, setUploadError] = useState(""); // error shown in modal
+  const [showUploadWarning, setShowUploadWarning] = useState(() => {
+    return localStorage.getItem("hideUploadWarning") !== "true";
+  });
 
   const fileInputRef = useRef();
 
@@ -233,12 +236,26 @@ export default function UploadSyllabus() {
   return (
     <div className="upload-page">
       <h2>Upload a Syllabus</h2>
-      <p className="upload-warning">
-        📌 Before uploading, please check that a syllabus for the{" "}
-        <strong>same course, term, year, and professor</strong> hasn’t already
-        been shared. This helps keep the platform organized and avoids
-        duplicates.
-      </p>
+      {showUploadWarning && (
+        <div className="upload-warning">
+          <span className="warning-text">
+            📌 Before uploading, please check that a syllabus for the{" "}
+            <strong>same course, term, year, and professor</strong> hasn’t
+            already been shared. This helps keep the platform organized and
+            avoids duplicates.
+          </span>
+          <button
+            className="dismiss-warning"
+            onClick={() => {
+              localStorage.setItem("hideUploadWarning", "true");
+              setShowUploadWarning(false);
+            }}
+            aria-label="Dismiss warning"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <form className="upload-form" onSubmit={handleSubmit}>
         <label>
