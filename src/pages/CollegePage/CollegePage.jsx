@@ -62,7 +62,7 @@ export default function CollegePage() {
         setCollegeImage(data.image_url || null);
         setCollegeName(data.name || "");
         setCollegeLocation(`${data.city || ""}, ${data.state || ""}`);
-
+        setTotalSyllabiCount(data.approvedSyllabiTotal || 0);
         const courseQuery = query(
           collection(db, "colleges", collegeId, "courses"),
           where("approved", "==", true)
@@ -74,13 +74,11 @@ export default function CollegePage() {
         }));
         setCourses(courseList);
 
-        let syllabiTotal = 0;
         const grouped = {};
 
         for (const course of courseList) {
           const subjectCode = course.code.split(" ")[0].toUpperCase(); // get e.g., 'CSCI'
           const count = course.approvedSyllabiCount || 0;
-          syllabiTotal += count;
 
           if (!grouped[subjectCode]) {
             grouped[subjectCode] = { syllabiCount: 0, courses: [] };
@@ -91,7 +89,6 @@ export default function CollegePage() {
         }
 
         setSubjectMap(grouped);
-        setTotalSyllabiCount(syllabiTotal);
       } catch (err) {
         console.error("Error:", err);
         setError("Something went wrong.");
