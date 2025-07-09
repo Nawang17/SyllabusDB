@@ -1,12 +1,48 @@
-# React + Vite
+# SyllabusDB
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+🔗 **Live Site:** [https://syllabusdb.com](https://syllabusdb.com)
 
-Currently, two official plugins are available:
+**SyllabusDB** is a student-led platform to share and explore course syllabi. It helps students make informed choices before enrolling by giving access to real syllabi from real classes.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Built by students. Open to all. No paywall. No gatekeeping.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🔍 What You Can Do
+
+- Browse syllabi by college and course
+- Search across departments and titles
+- Upload syllabi you've received from your classes
+- View supported colleges in the Colleges Directory
+- Request a college if yours is not listed
+
+---
+
+## 🛡️ Moderation and Safety
+
+Every upload is reviewed before being published. This ensures accuracy and keeps the platform safe and reliable.
+
+---
+
+## 🌎 Who It’s For
+
+Students from any college. Whether you're planning your schedule or helping others, this resource is open and community-driven.
+
+---
+
+## 💡 Why It Matters
+
+Too many students register without knowing what to expect. SyllabusDB gives visibility into real expectations so you can prepare and choose better.
+
+---
+
+## 🙋 How to Contribute
+
+Have a syllabus? Upload it.  
+Don't see your college? Request it.
+
+---
+
+## 📫 Contact
+
+For questions or feedback, you can email me at katophh@gmail.com.
