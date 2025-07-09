@@ -18,10 +18,13 @@ export default function Footer() {
         </Text>
         <nav className="footer-links">
           <Link to="/aboutpage">About</Link>
-          <Link to="/termsofservice">Terms of Service</Link>
           <Link to="/guidelines">Guidelines</Link>
+          <Link to="/colleges">All Colleges</Link>
+          <Link to="/termsofservice">Terms of Service</Link>
+
           <Link to="/privacy-policy">Privacy Policy</Link>
         </nav>
+
         <p className="footer-note">
           Built by students to help students succeed.
         </p>

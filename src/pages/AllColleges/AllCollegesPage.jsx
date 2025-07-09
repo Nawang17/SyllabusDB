@@ -67,6 +67,12 @@ export default function AllCollegesPage() {
           </ul>
         </div>
       ))}
+      <div className="request-college-cta">
+        <p>Don’t see your college listed?</p>
+        <button onClick={() => navigate("/requestcollege")}>
+          Request a College
+        </button>
+      </div>
     </div>
   );
 }

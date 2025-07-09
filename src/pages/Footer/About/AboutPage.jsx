@@ -11,7 +11,7 @@ export default function AboutPage() {
       <h1>About SyllabusDB</h1>
 
       <p>
-        SyllabusDB was built to help CUNY students make better-informed course
+        SyllabusDB was built to help students make better-informed course
         decisions. Too often, official course descriptions leave out key details
         like grading, workload, and assignments.
       </p>
