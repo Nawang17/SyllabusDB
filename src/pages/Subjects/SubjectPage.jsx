@@ -1,6 +1,5 @@
-// SubjectPage.jsx
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router";
+import { useNavigate, useParams, Link, useLocation } from "react-router";
 import { db } from "../../../firebaseConfig";
 import {
   collection,
@@ -16,9 +15,9 @@ import {
   IconCopy,
 } from "@tabler/icons-react";
 import { ActionIcon, Button } from "@mantine/core";
-import "./SubjectPage.css";
-import { useLocation } from "react-router";
+import { useDebouncedValue } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
+import "./SubjectPage.css";
 
 export default function SubjectPage() {
   const { collegeId, subject } = useParams();
@@ -32,65 +31,28 @@ export default function SubjectPage() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [totalSyllabiCount, setTotalSyllabiCount] = useState(0);
   const [collegeNickname, setCollegeNickname] = useState("");
-  // Helper to read query params
-  function useQuery() {
-    return new URLSearchParams(useLocation().search);
-  }
+  const [debouncedSearch] = useDebouncedValue(search, 250);
 
-  const URLquery = useQuery();
+  const URLquery = new URLSearchParams(useLocation().search);
   const searchAppliedRef = useRef(false);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (searchAppliedRef.current) return;
-
-    const courseQuery = URLquery.get("course");
-    if (!courseQuery) return;
-
-    // Wait until courses are loaded
-    if (courses.length > 0) {
-      setSearch(courseQuery);
-      searchAppliedRef.current = true;
-
-      const matched = courses.find(
-        (c) => c.code.toLowerCase().trim() === courseQuery.toLowerCase().trim()
-      );
-      if (matched) {
-        toggleExpand(matched.id);
-      }
-    }
-  }, [courses]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    scrollToTop();
-  }, []);
+  const termOrder = { Spring: 1, Summer: 2, Fall: 3, Winter: 4 };
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const navigate = useNavigate();
+  useEffect(() => {
+    window.addEventListener("scroll", () =>
+      setShowScrollTop(window.scrollY > 400)
+    );
+    return () => window.removeEventListener("scroll", () => {});
+  }, []);
 
-  const termOrder = {
-    Spring: 1,
-    Summer: 2,
-    Fall: 3,
-    Winter: 4,
-  };
-  const formatCollegeName = (str) => {
-    return str
-      .split("-")
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
-  };
+  useEffect(() => {
+    scrollToTop();
+  }, []);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -105,18 +67,15 @@ export default function SubjectPage() {
           id: doc.id,
           ...doc.data(),
         }));
-
         const filtered = allCourses.filter(
           (course) =>
             course.code &&
             course.code.toUpperCase().startsWith(subject?.toUpperCase() + " ")
         );
-
         const total = filtered.reduce(
-          (sum, course) => sum + (course.approvedSyllabiCount || 0),
+          (sum, c) => sum + (c.approvedSyllabiCount || 0),
           0
         );
-
         setCourses(filtered);
         setFilteredCourses(filtered);
         setTotalSyllabiCount(total);
@@ -126,24 +85,18 @@ export default function SubjectPage() {
         setLoading(false);
       }
     };
-
     fetchCourses();
   }, [collegeId, subject]);
+
   useEffect(() => {
     const fetchCollegeNickname = async () => {
       try {
-        const collegeDocRef = doc(db, "colleges", collegeId);
-        const collegeDocSnap = await getDoc(collegeDocRef);
-
-        if (collegeDocSnap.exists()) {
-          const data = collegeDocSnap.data();
-          setCollegeNickname(data.nickname || "");
-        }
+        const snap = await getDoc(doc(db, "colleges", collegeId));
+        if (snap.exists()) setCollegeNickname(snap.data().nickname || "");
       } catch (err) {
         console.error("Failed to fetch college nickname:", err);
       }
     };
-
     fetchCollegeNickname();
   }, [collegeId]);
 
@@ -151,33 +104,54 @@ export default function SubjectPage() {
     setFilteredCourses(
       courses.filter(
         (c) =>
-          c.code.toLowerCase().includes(search.toLowerCase()) ||
-          c.title.toLowerCase().includes(search.toLowerCase())
+          c.code.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+          c.title.toLowerCase().includes(debouncedSearch.toLowerCase())
       )
     );
-  }, [search, courses]);
+  }, [debouncedSearch, courses]);
+
+  useEffect(() => {
+    if (searchAppliedRef.current) return;
+    const courseQuery = URLquery.get("course");
+    if (!courseQuery || courses.length === 0) return;
+
+    setSearch(courseQuery);
+    searchAppliedRef.current = true;
+    const matched = courses.find(
+      (c) => c.code.toLowerCase().trim() === courseQuery.toLowerCase().trim()
+    );
+    if (matched) toggleExpand(matched.id);
+  }, [courses]);
 
   const toggleExpand = async (courseId) => {
     setExpanded((prev) => ({ ...prev, [courseId]: !prev[courseId] }));
+    document
+      .getElementById(`course-${courseId}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
 
     if (!syllabiMap[courseId]) {
+      const course = courses.find((c) => c.id === courseId);
+      if (!course || course.approvedSyllabiCount === 0) return;
+
       setLoadingCourseId(courseId);
       try {
-        const syllabiQuery = query(
-          collection(db, "colleges", collegeId, "courses", courseId, "syllabi"),
-          where("approved", "==", true)
+        const snapshot = await getDocs(
+          query(
+            collection(
+              db,
+              "colleges",
+              collegeId,
+              "courses",
+              courseId,
+              "syllabi"
+            ),
+            where("approved", "==", true)
+          )
         );
-        const snapshot = await getDocs(syllabiQuery);
-        const syllabi = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        syllabi.sort((a, b) => {
-          if (b.year !== a.year) return b.year - a.year;
-          return termOrder[b.term] - termOrder[a.term];
-        });
-
+        const syllabi = snapshot.docs.map((doc) => doc.data());
+        syllabi.sort(
+          (a, b) => b.year - a.year || termOrder[b.term] - termOrder[a.term]
+        );
         setSyllabiMap((prev) => ({ ...prev, [courseId]: syllabi }));
       } catch (err) {
         console.error("Error fetching syllabi:", err);
@@ -187,16 +161,34 @@ export default function SubjectPage() {
     }
   };
 
+  const highlightText = (text) => {
+    if (!debouncedSearch) return text;
+    const regex = new RegExp(`(${debouncedSearch})`, "gi");
+    return (
+      <span
+        dangerouslySetInnerHTML={{
+          __html: text.replace(regex, "<mark>$1</mark>"),
+        }}
+      />
+    );
+  };
+
+  const formatCollegeName = (str) =>
+    str
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+
   return (
     <div className="college-page">
       <div className="college-header">
-        <div style={{ display: "flex", flexDirection: "column" }}>
+        <div>
           <div className="college-title">
             <strong>{subject?.toUpperCase()}</strong> syllabi
           </div>
           <div
-            onClick={() => navigate(`/college/${collegeId}`)}
             style={{ fontSize: "0.9rem", fontWeight: "500", cursor: "pointer" }}
+            onClick={() => navigate(`/college/${collegeId}`)}
           >
             {formatCollegeName(collegeId)}
           </div>
@@ -204,29 +196,25 @@ export default function SubjectPage() {
       </div>
 
       <div className="breadcrumb-nav">
-        <Link to={`/`} className="breadcrumb-link breadcrumb-home">
+        <Link to="/" className="breadcrumb-link breadcrumb-home">
           Home
         </Link>
-        <IconChevronRight className="breadcrumb-home" size={16} />
+        <IconChevronRight size={16} />
         <Link to={`/college/${collegeId}`} className="breadcrumb-link">
           {collegeNickname || formatCollegeName(collegeId)}
         </Link>
         <IconChevronRight size={16} />
         <div className="breadcrumb-current">{subject?.toUpperCase()}</div>
       </div>
+
       {!loading && (
         <>
-          <div style={{ fontSize: "1.2rem", fontWeight: "500" }}>
-            <span style={{ fontWeight: "bold", color: "#007bff" }}>
-              {totalSyllabiCount}
-            </span>{" "}
-            course syllabi available
+          <div className="total-syllabi-banner">
+            <span className="syllabi-count">{totalSyllabiCount}</span> course
+            syllabi available
           </div>
-
           <div className="search-and-controls">
             <input
-              id="course-search"
-              type="text"
               className="syllabus-search"
               placeholder="Search by course code or name..."
               value={search}
@@ -244,18 +232,29 @@ export default function SubjectPage() {
       ) : filteredCourses.length === 0 ? (
         <div className="no-courses-found">
           <p>No courses found for this search</p>
+          <Button onClick={() => navigate("/uploadsyllabus")}>
+            Upload a syllabus
+          </Button>
         </div>
       ) : (
         <div className="course-list">
           {filteredCourses.map((course) => (
-            <div className="course-card" key={course.id}>
+            <div
+              className="course-card"
+              key={course.id}
+              id={`course-${course.id}`}
+            >
               <div
                 className="course-header"
                 onClick={() => toggleExpand(course.id)}
               >
                 <div>
-                  <div className="course-code">{course.code}</div>
-                  <div className="course-title">{course.title}</div>
+                  <div className="course-code">
+                    {highlightText(course.code)}
+                  </div>
+                  <div className="course-title">
+                    {highlightText(course.title)}
+                  </div>
                 </div>
                 <div className="expand-icon">
                   {expanded[course.id] ? (
@@ -287,14 +286,14 @@ export default function SubjectPage() {
                           color="black"
                           aria-label="Copy Link"
                           onClick={() => {
-                            const shareUrl = `${window.location.origin}${
+                            const url = `${window.location.origin}${
                               window.location.pathname
                             }?course=${encodeURIComponent(course.code)}`;
-                            navigator.clipboard.writeText(shareUrl).then(() => {
+                            navigator.clipboard.writeText(url).then(() => {
                               notifications.show({
                                 position: "top-center",
                                 title: "Link Copied to Clipboard",
-                                message: shareUrl,
+                                message: url,
                               });
                             });
                           }}
@@ -310,6 +309,7 @@ export default function SubjectPage() {
           ))}
         </div>
       )}
+
       {!loading && (
         <div className="upload-banner">
           <p>Have a syllabus for a {subject?.toUpperCase()} course?</p>

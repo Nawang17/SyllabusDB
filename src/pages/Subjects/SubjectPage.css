@@ -1,3 +1,4 @@
+/* SubjectPage.css */
 .college-page {
   padding: 2rem;
   font-family: Arial, sans-serif;
@@ -7,16 +8,19 @@
   margin: 0 auto;
 }
 
-.college-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1f2937;
+.college-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.college-subtitle {
-  font-size: 1rem;
-  color: #6b7280;
-  margin-bottom: 2rem;
+.college-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1f2937;
 }
 
 .search-and-controls {
@@ -33,29 +37,19 @@
   border-radius: 8px;
   font-size: 1rem;
   outline: none;
+  transition: border 0.2s ease;
 }
 
-.filters {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+.syllabus-search:focus {
+  border-color: #3b82f6;
 }
 
-.filter-dropdown {
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 0.95rem;
-}
-
-/* Course List */
 .course-list {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-/* Each Course Card */
 .course-card {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -92,6 +86,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  animation: fadeIn 0.3s ease;
 }
 
 .syllabus-item {
@@ -102,59 +97,16 @@
   align-items: center;
 }
 
-.syllabus-item a {
+.syllabus-link {
   color: #2563eb;
   text-decoration: underline;
   font-weight: 500;
 }
 
-.syllabus-item a:hover {
+.syllabus-link:hover {
   text-decoration: underline;
 }
-.no-courses-found {
-  margin-top: 2rem;
-  padding: 2rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  background-color: #f9fafb;
-  text-align: center;
-}
 
-.no-courses-found p {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 1rem;
-}
-
-.no-courses-found button {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  margin: 0 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.no-courses-found button:hover {
-  background-color: #2563eb;
-}
-.upload-button {
-  background-color: #2563eb;
-  color: white;
-  padding: 10px 16px;
-  border: none;
-  border-radius: 8px;
-  margin: 1rem 0;
-  cursor: pointer;
-  font-weight: 600;
-}
-.upload-button:hover {
-  background-color: #1d4ed8;
-}
 .loading-spinner {
   display: flex;
   flex-direction: column;
@@ -178,81 +130,31 @@
   }
 }
 
-.course-count {
-  font-size: 0.95rem;
-  color: #6b7280;
-  text-align: right;
-  margin-top: -0.5rem;
-}
-.college-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.college-title {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #1f2937;
-}
-
-.college-location {
-  font-size: 1rem;
-  color: #6b7280;
-  margin-top: 0.25rem;
-}
-.college-hero {
-  position: relative;
-  height: 200px;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 1.5rem;
-}
-
-.college-hero-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: brightness(65%); /* Darken the image slightly */
-}
-
-.college-hero-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  padding: 1rem;
-  width: 100%;
-  color: white;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
-}
-
-.college-hero-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-}
-
-.college-hero-location {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-  margin-top: 4px;
-}
 .total-syllabi-banner {
   font-size: 1.5rem;
   font-weight: 600;
   color: #374151;
   margin-bottom: 0.5rem;
 }
+
 .syllabi-count {
   font-size: 1.5rem;
   color: #38bdf8;
   font-weight: bold;
   margin-bottom: 1rem;
 }
+
 .scroll-to-top {
   position: fixed;
   bottom: 2rem;
@@ -272,89 +174,7 @@
 .scroll-to-top:hover {
   background-color: #1864ab;
 }
-.subject-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.25rem;
-  margin-top: 2rem;
-}
 
-.subject-card {
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.subject-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  transform: translateY(-2px);
-}
-
-.subject-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.subject-count {
-  background-color: #dbeafe;
-  color: #1e3a8a;
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.25rem 0.6rem;
-  border-radius: 50px;
-}
-
-.expand-icon {
-  font-size: 1.2rem;
-  margin-right: 1rem;
-}
-.search-label {
-  font-size: 1rem;
-  font-weight: 500;
-  color: #1f2937;
-}
-.breadcrumb-nav {
-  display: flex;
-  align-items: center;
-
-  margin: 1rem 0;
-  font-size: 0.9rem;
-  color: #374151;
-  align-items: center;
-}
-
-.breadcrumb-link {
-  color: #111827;
-
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.breadcrumb-link:hover {
-  text-decoration: underline;
-}
-
-.breadcrumb-current {
-  text-decoration: underline;
-  color: #111827;
-}
-@media (max-width: 412px) {
-  .breadcrumb-nav {
-    font-size: 0.8rem;
-    gap: 0rem;
-  }
-  .breadcrumb-home {
-    display: none;
-  }
-}
 .upload-banner {
   margin-top: 2rem;
   padding: 1.5rem;
@@ -369,8 +189,48 @@
 .upload-banner button {
   margin-top: 0.75rem;
 }
+
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.breadcrumb-link {
+  color: #111827;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.breadcrumb-link:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb-current {
+  text-decoration: underline;
+  color: #111827;
+}
+
 .share-button {
   font-size: 1rem;
   cursor: pointer;
   margin-right: 1.3rem;
+}
+
+mark {
+  background-color: #fef08a;
+  padding: 0 2px;
+  border-radius: 4px;
+}
+
+@media (max-width: 412px) {
+  .breadcrumb-nav {
+    font-size: 0.8rem;
+    gap: 0rem;
+  }
+  .breadcrumb-home {
+    display: none;
+  }
 }
