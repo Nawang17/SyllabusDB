@@ -125,9 +125,16 @@ export default function SubjectPage() {
 
   const toggleExpand = async (courseId) => {
     setExpanded((prev) => ({ ...prev, [courseId]: !prev[courseId] }));
-    document
-      .getElementById(`course-${courseId}`)
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    // Wait a tick to ensure DOM updates
+    setTimeout(() => {
+      const el = document.getElementById(`course-${courseId}`);
+      if (el) {
+        const yOffset = -80; // offset for sticky headers if needed
+        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: "smooth" });
+      }
+    }, 50);
 
     if (!syllabiMap[courseId]) {
       const course = courses.find((c) => c.id === courseId);
