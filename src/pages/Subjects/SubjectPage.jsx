@@ -112,15 +112,31 @@ export default function SubjectPage() {
 
   useEffect(() => {
     if (searchAppliedRef.current) return;
+
     const courseQuery = URLquery.get("course");
     if (!courseQuery || courses.length === 0) return;
 
     setSearch(courseQuery);
     searchAppliedRef.current = true;
+
     const matched = courses.find(
       (c) => c.code.toLowerCase().trim() === courseQuery.toLowerCase().trim()
     );
-    if (matched) toggleExpand(matched.id);
+
+    if (matched) {
+      toggleExpand(matched.id);
+
+      // Force scroll after short delay (to wait for expand animation & DOM paint)
+      setTimeout(() => {
+        const el = document.getElementById(`course-${matched.id}`);
+        if (el) {
+          const yOffset = -80; // adjust this based on your header height
+          const y =
+            el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: y, behavior: "smooth" });
+        }
+      }, 600); // adjust if your animation is longer
+    }
   }, [courses]);
 
   const toggleExpand = async (courseId) => {
