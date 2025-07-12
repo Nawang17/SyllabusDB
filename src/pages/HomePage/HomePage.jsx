@@ -169,6 +169,7 @@ export default function HomePage() {
                     onClick={() => navigate(`/college/${college.id}`)}
                   >
                     <img
+                      loading="lazy"
                       src={college.image_url}
                       alt={college.name}
                       className="college-img"
@@ -199,7 +200,12 @@ export default function HomePage() {
       </section>
 
       <section className="why-section fade-in">
-        <img src={studentImage} alt="Helping each other" className="why-img" />
+        <img
+          loading="lazy"
+          src={studentImage}
+          alt="Helping each other"
+          className="why-img"
+        />
         <div className="why-content">
           <h3>💡 Why this matters</h3>
           <p>
@@ -229,6 +235,7 @@ export default function HomePage() {
           </p>
         </div>
         <img
+          loading="lazy"
           src={verifiedImage}
           alt="Verified submission process"
           className="trust-image"
