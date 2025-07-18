@@ -227,7 +227,7 @@ export default function UploadSyllabus() {
         },
         body: JSON.stringify({
           collegeName: collegeId,
-          courseCode: courseCode,
+          courseCode: `${courseCode} - ${courseTitle}`,
         }),
       });
     }
