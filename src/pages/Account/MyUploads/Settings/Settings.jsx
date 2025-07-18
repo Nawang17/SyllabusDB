@@ -76,7 +76,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <Container size="lg" py="xl" px="2rem">
+    <Container size="1200px" py="xl" px="2rem">
       <Title order={2} mb="md">
         Settings
       </Title>
