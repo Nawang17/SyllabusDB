@@ -99,12 +99,18 @@ export default function SettingsPage() {
             onChange={(e) => handleToggle(e.currentTarget.checked)}
             label="Email me when my syllabus or college request is approved or rejected"
             // Disable the switch if data is being saved
+            onLabel="Yes"
+            offLabel="No"
             disabled={isSaving}
           />
           <Divider my="md" />
           <Text size="xs" c="dimmed">
             You can change this anytime. Emails will be sent from{" "}
             <strong>momosalerts@gmail.com</strong>.
+          </Text>
+          <Text size="xs" c="dimmed" mt="md">
+            If you don’t see them, please check your spam or promotions folder
+            just in case.
           </Text>
         </Card>
       )}
