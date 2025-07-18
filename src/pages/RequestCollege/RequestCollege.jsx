@@ -60,6 +60,20 @@ export default function RequestCollege() {
     } catch (err) {
       console.error("Error submitting college request:", err);
       setError("Something went wrong. Please try again.");
+    } finally {
+      await fetch(
+        "https://syllabusdbserver.onrender.com/notify-college-request",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            collegeName: collegeName.trim(),
+            location: `${city.trim()}, ${state.trim()}`,
+          }),
+        }
+      );
     }
   };
 
