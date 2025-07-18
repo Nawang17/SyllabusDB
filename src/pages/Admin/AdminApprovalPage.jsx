@@ -35,6 +35,86 @@ export default function AdminApprovalPage() {
     const key = `${college}__${owner}`;
     setOpenOwners((prev) => ({ ...prev, [key]: !prev[key] }));
   };
+  const shouldNotifyUser = async (uid) => {
+    try {
+      const userRef = doc(db, "users", uid);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) return null;
+
+      const data = userSnap.data();
+      if (data.email && data.wantsEmailNotifications) {
+        return data.email;
+      }
+      return null;
+    } catch (err) {
+      console.error("Error checking notification preferences:", err);
+      return null;
+    }
+  };
+  const sendNotificationEmail = async ({ email, subject, message }) => {
+    try {
+      await fetch("https://syllabusdbserver.onrender.com/notify-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, subject, message }),
+      });
+    } catch (err) {
+      console.error("Failed to send email:", err);
+    }
+  };
+  const approveCollege = async (id) => {
+    if (!window.confirm("Are you sure you want to approve this college?"))
+      return;
+
+    const collegeRef = doc(db, "colleges", id);
+    const collegeSnap = await getDoc(collegeRef);
+    const data = collegeSnap.data();
+
+    await updateDoc(collegeRef, { approved: true });
+    setCollegeRequests((prev) => prev.filter((c) => c.id !== id));
+
+    const email = await shouldNotifyUser(data.owner);
+    if (email) {
+      await sendNotificationEmail({
+        email,
+        subject: "Your college request was approved",
+        message:
+          `Hi,\n\n` +
+          `Good news! Your request to add "${data.name}" has been approved and is now live on SyllabusDB.\n\n` +
+          `Thank you for helping grow the platform and making it more useful for everyone.`,
+      });
+    }
+  };
+  const deleteCollege = async (id) => {
+    const reason = window.prompt(
+      "Enter a reason for disapproval (this will be emailed):"
+    );
+    if (!reason) return;
+
+    if (!window.confirm("Are you sure you want to delete this college?"))
+      return;
+
+    const collegeRef = doc(db, "colleges", id);
+    const collegeSnap = await getDoc(collegeRef);
+    const data = collegeSnap.data();
+
+    await deleteDoc(collegeRef);
+    setCollegeRequests((prev) => prev.filter((c) => c.id !== id));
+
+    const email = await shouldNotifyUser(data.owner);
+    if (email) {
+      await sendNotificationEmail({
+        email,
+        subject: "Your college request was disapproved",
+        message:
+          `Hi,\n\n` +
+          `We reviewed your request to add "${data.name}" to SyllabusDB, but it was not approved at this time.\n\n` +
+          `Reason: ${reason}\n\n` +
+          `If you have any questions or believe this was a mistake, please reach out to us.\n\n` +
+          `Thank you for your understanding.`,
+      });
+    }
+  };
 
   const navigate = useNavigate();
   const scanPDF = async (syllabus) => {
@@ -82,22 +162,6 @@ export default function AdminApprovalPage() {
     }));
 
     setCollegeRequests(requests);
-  };
-  const approveCollege = async (id) => {
-    if (!window.confirm("Are you sure you want to approve this college?")) {
-      return;
-    }
-
-    await updateDoc(doc(db, "colleges", id), { approved: true });
-    setCollegeRequests((prev) => prev.filter((c) => c.id !== id));
-  };
-
-  const deleteCollege = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this college?")) {
-      return;
-    }
-    await deleteDoc(doc(db, "colleges", id));
-    setCollegeRequests((prev) => prev.filter((c) => c.id !== id));
   };
 
   const groupedByCollege = syllabi.reduce((acc, item) => {
@@ -173,10 +237,9 @@ export default function AdminApprovalPage() {
     setLoading(false);
   };
 
-  const approveSyllabus = async (ref, collegeId, courseId) => {
-    if (!window.confirm("Are you sure you want to approve this syllabus?")) {
+  const approveSyllabus = async (ref, collegeId, courseId, owner) => {
+    if (!window.confirm("Are you sure you want to approve this syllabus?"))
       return;
-    }
 
     await updateDoc(ref, { approved: true });
 
@@ -190,77 +253,62 @@ export default function AdminApprovalPage() {
       approvedSyllabiTotal: increment(1),
     });
     setSyllabi((prev) => prev.filter((s) => s.ref.id !== ref.id));
+
+    const email = await shouldNotifyUser(owner);
+    if (email) {
+      await sendNotificationEmail({
+        email,
+        subject: "Your syllabus was approved",
+        message:
+          `Hi there,\n\n` +
+          `Your syllabus for ${courseId} at ${collegeId} has been approved.\n\n` +
+          `It's now available for others to view on SyllabusDB.\n\n` +
+          `Thank you for contributing and helping other students make better choices!\n\n`,
+      });
+    }
   };
 
   const disapproveSyllabus = async (syllabus) => {
+    const reason = window.prompt(
+      "Enter a reason for disapproval (this will be emailed):"
+    );
+    if (!reason) return;
+
     if (
       !window.confirm(
         "Are you sure you want to disapprove and delete this syllabus?"
       )
-    ) {
+    )
       return;
-    }
 
     try {
-      // 1. Delete the PDF file from Firebase Storage
-      const fileRef = storageRef(storage, syllabus.file_path);
-      await deleteObject(fileRef);
-
-      // 2. Delete the syllabus document from Firestore
-      const syllabusDocRef = doc(
-        db,
-        "colleges",
-        syllabus.collegeId,
-        "courses",
-        syllabus.courseId,
-        "syllabi",
-        syllabus.id
-      );
-      await deleteDoc(syllabusDocRef);
-
-      // 3. Check if any syllabi remain for this course
-      const syllabiSnapshot = await getDocs(
-        collection(
+      await deleteObject(storageRef(storage, syllabus.file_path));
+      await deleteDoc(
+        doc(
           db,
           "colleges",
           syllabus.collegeId,
           "courses",
           syllabus.courseId,
-          "syllabi"
+          "syllabi",
+          syllabus.id
         )
       );
 
-      if (syllabiSnapshot.empty) {
-        // No syllabi left → delete the course
-        const courseDocRef = doc(
-          db,
-          "colleges",
-          syllabus.collegeId,
-          "courses",
-          syllabus.courseId
-        );
-        await deleteDoc(courseDocRef);
-      } else {
-        // Update course approved status + count
-        const approvedCount = syllabiSnapshot.docs.filter(
-          (d) => d.data().approved
-        ).length;
-
-        const courseDocRef = doc(
-          db,
-          "colleges",
-          syllabus.collegeId,
-          "courses",
-          syllabus.courseId
-        );
-        await updateDoc(courseDocRef, {
-          approved: approvedCount > 0,
-          approvedSyllabiCount: approvedCount,
+      const email = await shouldNotifyUser(syllabus.owner);
+      if (email) {
+        await sendNotificationEmail({
+          email,
+          subject: "Your syllabus was disapproved",
+          message:
+            `Hi,\n\n` +
+            `Unfortunately, your syllabus for ${syllabus.courseId} at ${syllabus.collegeId} was not approved.\n\n` +
+            `Reason: ${reason}\n\n` +
+            `If you believe this was a mistake or have questions, feel free to reach out.\n\n`,
         });
       }
 
-      alert("Syllabus disapproved and deleted.");
-      fetchUnapprovedSyllabi(); // refresh
+      fetchUnapprovedSyllabi();
     } catch (err) {
       console.error("Failed to disapprove/delete syllabus:", err);
       alert("❌ Failed to delete syllabus.");
@@ -348,7 +396,8 @@ export default function AdminApprovalPage() {
                                     approveSyllabus(
                                       s.ref,
                                       s.collegeId,
-                                      s.courseId
+                                      s.courseId,
+                                      s.owner
                                     )
                                   }
                                 >

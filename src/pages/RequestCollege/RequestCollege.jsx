@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
 import "./RequestCollege.css";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 
 export default function RequestCollege() {
   const [collegeName, setCollegeName] = useState("");
@@ -11,6 +12,7 @@ export default function RequestCollege() {
 
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
+  const [uid, setUid] = useState(null);
 
   const navigate = useNavigate();
 
@@ -22,7 +24,19 @@ export default function RequestCollege() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+
+    const auth = getAuth();
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUid(user.uid);
+      } else {
+        signInAnonymously(auth)
+          .then((result) => setUid(result.user.uid))
+          .catch((err) => console.error("Anonymous sign-in failed:", err));
+      }
+    });
   }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -50,10 +64,10 @@ export default function RequestCollege() {
         city: city.trim(),
         state: state.trim(),
         approved: false,
-
         createdAt: serverTimestamp(),
         approvedSyllabiTotal: 0,
         image_url: null,
+        owner: uid || null,
       });
 
       setSubmitted(true);
