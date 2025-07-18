@@ -20,6 +20,7 @@ import MyUploadsPage from "./pages/Account/MyUploads/MyUploadsPage.jsx";
 import RequestCollege from "./pages/RequestCollege/RequestCollege.jsx";
 import AboutPage from "./pages/Footer/About/AboutPage.jsx";
 import PrivacyPolicy from "./pages/Footer/PrivacyPolicy/PrivacyPolicy.jsx";
+import SettingsPage from "./pages/Account/MyUploads/Settings/Settings.jsx";
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/aboutpage" element={<AboutPage />} />
           <Route path="/requestcollege" element={<RequestCollege />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Routes>
 
         <Footer />

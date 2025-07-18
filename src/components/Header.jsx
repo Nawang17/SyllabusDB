@@ -17,6 +17,7 @@ import {
   IconInfoCircle,
   IconLock,
 } from "@tabler/icons-react";
+import confetti from "canvas-confetti";
 import classes from "./styles/Header.module.css";
 import { notifications } from "@mantine/notifications";
 import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
@@ -27,6 +28,7 @@ export default function Header() {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [signInError, setSignInError] = useState("");
+  const [showNewUserModal, setShowNewUserModal] = useState(false);
 
   const [modalOpened, { open: openModal, close: closeModal }] =
     useDisclosure(false);
@@ -70,14 +72,21 @@ export default function Header() {
           profile_image: user.photoURL || "",
           createdAt: new Date(),
         });
+        confetti({
+          particleCount: 300,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+        // Show modal for email notifications
+        setShowNewUserModal(true);
+      } else {
+        notifications.show({
+          title: "Logged In",
+          message: "You are now signed in with your Google account.",
+          color: "green",
+        });
       }
-
-      notifications.show({
-        title: "Logged In",
-        message: "You are now signed in with your Google account.",
-        color: "green",
-      });
-
+      navigate("/");
       setSignInError("");
       closeModal();
     } catch (error) {
@@ -161,6 +170,7 @@ export default function Header() {
 
               {user && !isAnonymous && (
                 <>
+                  <Menu.Divider />
                   <Menu.Item
                     onClick={() => navigate("/myuploads")}
                     leftSection={<IconPhoto size={16} />}
@@ -168,9 +178,12 @@ export default function Header() {
                     My Uploads
                   </Menu.Item>
 
-                  {/* <Menu.Item leftSection={<IconSettings size={16} />}>
+                  <Menu.Item
+                    onClick={() => navigate("/settings")}
+                    leftSection={<IconSettings size={16} />}
+                  >
                     Settings
-                  </Menu.Item> */}
+                  </Menu.Item>
                 </>
               )}
               <Menu.Divider />
@@ -181,6 +194,7 @@ export default function Header() {
                   onClick={async () => {
                     const auth = getAuth();
                     await auth.signOut();
+                    navigate("/");
                     notifications.show({
                       title: "Signed Out",
                       message: "You have been signed out successfully.",
@@ -259,6 +273,63 @@ export default function Header() {
           Sign in with Google
         </Button>
       </Modal>
+      {showNewUserModal && (
+        <Modal
+          opened
+          onClose={() => setShowNewUserModal(false)}
+          centered
+          radius="md"
+          padding="lg"
+          withCloseButton={false}
+        >
+          <div style={{ textAlign: "center" }}>
+            <h2 style={{ marginBottom: "1rem", fontSize: "1.5rem" }}>
+              🎓 Welcome to SyllabusDB
+            </h2>
+
+            <p style={{ marginBottom: "1rem" }}>
+              Want to get email updates when your syllabus or college request is
+              approved?
+            </p>
+
+            <p
+              style={{
+                fontSize: "0.9rem",
+                color: "#666",
+                marginBottom: "1.5rem",
+              }}
+            >
+              You can change this anytime in Settings.
+            </p>
+
+            <div
+              style={{ display: "flex", justifyContent: "center", gap: "1rem" }}
+            >
+              <Button
+                onClick={async () => {
+                  const db = getFirestore();
+                  const auth = getAuth();
+                  const userRef = doc(db, "users", auth.currentUser.uid);
+                  await setDoc(
+                    userRef,
+                    { wantsEmailNotifications: true },
+                    { merge: true }
+                  );
+                  setShowNewUserModal(false);
+                }}
+              >
+                Yes
+              </Button>
+              <Button
+                variant="default"
+                onClick={() => setShowNewUserModal(false)}
+              >
+                No
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </Box>
   );
 }
