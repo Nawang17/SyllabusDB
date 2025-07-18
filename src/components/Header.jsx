@@ -19,6 +19,7 @@ import {
 } from "@tabler/icons-react";
 import classes from "./styles/Header.module.css";
 import { notifications } from "@mantine/notifications";
+import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -48,11 +49,29 @@ export default function Header() {
 
   const handleGoogleLink = async () => {
     const auth = getAuth();
+    const db = getFirestore();
     const provider = new GoogleAuthProvider();
+
     try {
       const result = await signInWithPopup(auth, provider);
+      const user = result.user;
       setIsAnonymous(false);
-      setUser(result.user);
+      setUser(user);
+
+      // Check if user doc already exists
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        // Only create if it doesn't exist
+        await setDoc(userRef, {
+          email: user.email,
+          full_name: user.displayName || "",
+          profile_image: user.photoURL || "",
+          createdAt: new Date(),
+        });
+      }
+
       notifications.show({
         title: "Logged In",
         message: "You are now signed in with your Google account.",
