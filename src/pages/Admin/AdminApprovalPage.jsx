@@ -294,7 +294,22 @@ export default function AdminApprovalPage() {
           syllabus.id
         )
       );
+      // after deleting the syllabus
+      const syllabiRef = collection(
+        db,
+        "colleges",
+        syllabus.collegeId,
+        "courses",
+        syllabus.courseId,
+        "syllabi"
+      );
+      const remaining = await getDocs(syllabiRef);
 
+      if (remaining.empty) {
+        await deleteDoc(
+          doc(db, "colleges", syllabus.collegeId, "courses", syllabus.courseId)
+        );
+      }
       const email = await shouldNotifyUser(syllabus.owner);
       if (email) {
         await sendNotificationEmail({
