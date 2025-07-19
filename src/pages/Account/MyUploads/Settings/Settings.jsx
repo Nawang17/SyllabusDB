@@ -103,14 +103,25 @@ export default function SettingsPage() {
             offLabel="No"
             disabled={isSaving}
           />
-          <Divider my="md" />
-          <Text size="xs" c="dimmed">
-            You can change this anytime. Emails will be sent from{" "}
+
+          <Text size="xs" pt="md" c="dimmed">
+            You can change this anytime. All emails will be sent from{" "}
             <strong>momosalerts@gmail.com</strong>.
           </Text>
-          <Text size="xs" c="dimmed" mt="md">
-            If you don’t see them, please check your spam or promotions folder
-            just in case.
+
+          <Divider my="md" />
+
+          <Text size="xs">Account created</Text>
+          <Text size="xs" pt="4px" c="dimmed">
+            {user?.metadata?.creationTime
+              ? new Date(user.metadata.creationTime).toLocaleString("default", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "numeric",
+                })
+              : "Unknown"}
           </Text>
         </Card>
       )}

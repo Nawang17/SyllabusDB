@@ -14,8 +14,8 @@ import {
   IconSettings,
   IconLogout,
   IconHome,
-  IconInfoCircle,
   IconLock,
+  IconSparkles,
 } from "@tabler/icons-react";
 import confetti from "canvas-confetti";
 import classes from "./styles/Header.module.css";
@@ -81,9 +81,10 @@ export default function Header() {
         setShowNewUserModal(true);
       } else {
         notifications.show({
-          title: "Logged In",
-          message: "You are now signed in with your Google account.",
+          title: "Signed In Successfully",
+          message: "Welcome back to SyllabusDB!",
           color: "green",
+          icon: <IconSparkles size={16} />,
         });
       }
       navigate("/");
