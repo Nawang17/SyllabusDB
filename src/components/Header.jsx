@@ -85,7 +85,7 @@ export default function Header() {
           message: "Welcome back to SyllabusDB!",
           color: "green",
           icon: <IconSparkles size={16} />,
-          position: "top-center",
+          position: "bottom-center",
         });
       }
       navigate("/");
@@ -200,8 +200,9 @@ export default function Header() {
                     notifications.show({
                       title: "Signed Out",
                       message: "You have been signed out successfully.",
-                      color: "green",
-                      position: "top-center",
+                      color: "red",
+                      position: "bottom-center",
+                      icon: <IconLogout size={16} />,
                     });
                   }}
                   leftSection={<IconLogout size={16} />}

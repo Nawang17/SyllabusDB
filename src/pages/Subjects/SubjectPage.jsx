@@ -315,7 +315,7 @@ export default function SubjectPage() {
                             }?course=${encodeURIComponent(course.code)}`;
                             navigator.clipboard.writeText(url).then(() => {
                               notifications.show({
-                                position: "top-center",
+                                position: "bottom-center",
                                 title: "Link copied",
                                 message:
                                   "The syllabus link has been copied to your clipboard.",
