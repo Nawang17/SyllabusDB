@@ -306,8 +306,9 @@ export default function SubjectPage() {
                         <ActionIcon
                           className="share-button"
                           variant="subtle"
-                          color="black"
-                          aria-label="Copy Link"
+                          size="lg"
+                          radius="md"
+                          aria-label="Copy syllabus link"
                           onClick={() => {
                             const url = `${window.location.origin}${
                               window.location.pathname
@@ -315,13 +316,16 @@ export default function SubjectPage() {
                             navigator.clipboard.writeText(url).then(() => {
                               notifications.show({
                                 position: "top-center",
-                                title: "Link Copied to Clipboard",
-                                message: url,
+                                title: "Link copied",
+                                message:
+                                  "The syllabus link has been copied to your clipboard.",
+                                icon: <IconCopy size={16} />,
+                                color: "blue",
                               });
                             });
                           }}
                         >
-                          <IconCopy size={16} />
+                          <IconCopy size={18} />
                         </ActionIcon>
                       </div>
                     ))

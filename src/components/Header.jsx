@@ -85,6 +85,7 @@ export default function Header() {
           message: "Welcome back to SyllabusDB!",
           color: "green",
           icon: <IconSparkles size={16} />,
+          position: "top-center",
         });
       }
       navigate("/");
@@ -200,6 +201,7 @@ export default function Header() {
                       title: "Signed Out",
                       message: "You have been signed out successfully.",
                       color: "green",
+                      position: "top-center",
                     });
                   }}
                   leftSection={<IconLogout size={16} />}
@@ -232,26 +234,27 @@ export default function Header() {
           closeModal();
           setSignInError("");
         }}
-        title="Sign In"
+        title="Sign In to SyllabusDB"
         radius="md"
         size="md"
       >
-        <Text mb="md" size="sm">
+        <Text size="sm" mb="sm">
           <strong>Note:</strong> You don’t need to sign in to upload a syllabus.
-          However, signing in allows you to{" "}
-          <strong>track and manage your uploads</strong> easily.
+          But signing in lets you <strong>track and manage your uploads</strong>{" "}
+          easily.
         </Text>
 
         {signInError && (
           <Box
-            mb="sm"
+            bg="#ffe0e0"
+            c="#b00020"
             p="sm"
+            mb="sm"
             style={{
-              backgroundColor: "#ffe0e0",
-              color: "#b00020",
-              borderRadius: 6,
+              borderRadius: 8,
               fontSize: 13,
               textAlign: "center",
+              border: "1px solid #b00020",
             }}
           >
             {signInError}
@@ -260,8 +263,9 @@ export default function Header() {
 
         <Button
           fullWidth
-          variant="default"
+          variant="outline"
           radius="md"
+          size="md"
           onClick={handleGoogleLink}
           leftSection={
             <img
@@ -274,6 +278,7 @@ export default function Header() {
           Sign in with Google
         </Button>
       </Modal>
+
       {showNewUserModal && (
         <Modal
           opened
