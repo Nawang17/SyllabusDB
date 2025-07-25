@@ -254,9 +254,12 @@ export default function SubjectPage() {
         </div>
       ) : filteredCourses.length === 0 ? (
         <div className="no-courses-found">
-          <p>No courses found for this search</p>
+          <p>
+            No syllabi available for this course yet. You can help by uploading
+            one!
+          </p>
           <Button onClick={() => navigate("/uploadsyllabus")}>
-            Upload a syllabus
+            Upload a Syllabus
           </Button>
         </div>
       ) : (
@@ -337,7 +340,7 @@ export default function SubjectPage() {
         </div>
       )}
 
-      {!loading && (
+      {!loading && filteredCourses.length !== 0 && (
         <div className="upload-banner">
           <p>Have a syllabus for a {subject?.toUpperCase()} course?</p>
           <Button onClick={() => navigate("/uploadsyllabus")}>
