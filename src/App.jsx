@@ -21,6 +21,7 @@ import RequestCollege from "./pages/RequestCollege/RequestCollege.jsx";
 import AboutPage from "./pages/Footer/About/AboutPage.jsx";
 import PrivacyPolicy from "./pages/Footer/PrivacyPolicy/PrivacyPolicy.jsx";
 import SettingsPage from "./pages/Account/MyUploads/Settings/Settings.jsx";
+import ExtensionPrivacyPolicy from "./pages/syllabusdb-extension/ExtensionPrivacyPolicy.jsx";
 
 function App() {
   return (
@@ -48,6 +49,12 @@ function App() {
           <Route path="/aboutpage" element={<AboutPage />} />
           <Route path="/requestcollege" element={<RequestCollege />} />
           <Route path="/settings" element={<SettingsPage />} />
+
+          {/* SyllabusDB Extension Privacy Policy */}
+          <Route
+            path="/extension-privacy-policy"
+            element={<ExtensionPrivacyPolicy />}
+          />
         </Routes>
 
         <Footer />
