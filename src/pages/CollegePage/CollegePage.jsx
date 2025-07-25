@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./CollegePage.css";
 import { Link, useNavigate, useParams } from "react-router";
-import { db } from "../../../firebaseConfig";
+import { analytics, db } from "../../../firebaseConfig";
 import {
   collection,
   doc,
@@ -13,6 +13,7 @@ import {
 import { IconChevronRight, IconMapPin } from "@tabler/icons-react";
 import { Button, Flex, Image, Skeleton } from "@mantine/core";
 import errorImage from "../../assets/5203299.jpg"; // Error image for not found
+import { logEvent } from "firebase/analytics";
 export default function CollegePage() {
   const [loading, setLoading] = useState(true);
 
@@ -29,6 +30,14 @@ export default function CollegePage() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [subjectMap, setSubjectMap] = useState({});
   const [nickname, setNickname] = useState("");
+  useEffect(() => {
+    if (collegeId && analytics) {
+      logEvent(analytics, "view_college_page", {
+        college_id: collegeId,
+      });
+    }
+  }, [collegeId]);
+
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
