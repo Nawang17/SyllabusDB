@@ -14,7 +14,17 @@ import { IconChevronRight, IconMapPin } from "@tabler/icons-react";
 import { Button, Flex, Image, Skeleton } from "@mantine/core";
 import errorImage from "../../assets/5203299.jpg"; // Error image for not found
 import { logEvent } from "firebase/analytics";
+import { IconInfoCircle } from "@tabler/icons-react";
+import { Alert } from "@mantine/core";
 export default function CollegePage() {
+  const [showExtensionAlert, setShowExtensionAlert] = useState(() => {
+    return localStorage.getItem("dismissedExtensionAlert") !== "true";
+  });
+
+  const handleCloseExtensionAlert = () => {
+    setShowExtensionAlert(false);
+    localStorage.setItem("dismissedExtensionAlert", "true");
+  };
   const [loading, setLoading] = useState(true);
 
   const { collegeId } = useParams();
@@ -127,6 +137,40 @@ export default function CollegePage() {
         </Flex>
       ) : (
         <div className="college-page">
+          {showExtensionAlert && (
+            <div
+              style={{
+                marginBottom: "1.5rem",
+              }}
+            >
+              <Alert
+                variant="light"
+                color="blue"
+                title="Using CUNY Schedule Builder?"
+                icon={<IconInfoCircle />}
+                withCloseButton
+                onClose={handleCloseExtensionAlert}
+              >
+                <span>
+                  You can now see syllabus links directly in Schedule Builder
+                  with our{" "}
+                  <a
+                    href="https://chromewebstore.google.com/detail/syllabusdb-for-schedule-b/kggnbpofeleldhpmamlmjidieheobhni"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontWeight: 500,
+                      textDecoration: "underline",
+                      color: "#1d4ed8",
+                    }}
+                  >
+                    Chrome Extension
+                  </a>
+                  .
+                </span>
+              </Alert>
+            </div>
+          )}
           {collegeImage ? (
             <div className="college-hero">
               <Image
