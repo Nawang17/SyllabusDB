@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
 import "./RequestCollege.css";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { getAuth, signInAnonymously } from "firebase/auth";
 
 export default function RequestCollege() {
   const [collegeName, setCollegeName] = useState("");
@@ -12,7 +12,6 @@ export default function RequestCollege() {
 
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
-  const [uid, setUid] = useState(null);
 
   const navigate = useNavigate();
 
@@ -24,17 +23,6 @@ export default function RequestCollege() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-
-    const auth = getAuth();
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUid(user.uid);
-      } else {
-        signInAnonymously(auth)
-          .then((result) => setUid(result.user.uid))
-          .catch((err) => console.error("Anonymous sign-in failed:", err));
-      }
-    });
   }, []);
 
   const handleSubmit = async (e) => {
@@ -45,7 +33,16 @@ export default function RequestCollege() {
       setError("Please fill out all required fields.");
       return;
     }
+    const auth = getAuth();
 
+    // ✅ Check login status and sign in anonymously if not logged in
+    let user = auth.currentUser;
+    if (!user) {
+      const result = await signInAnonymously(auth);
+      user = result.user;
+    }
+
+    const uid = user?.uid;
     const id = generateDocId(collegeName);
 
     try {
