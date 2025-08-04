@@ -20,7 +20,18 @@ import {
 import confetti from "canvas-confetti";
 import classes from "./styles/Header.module.css";
 import { notifications } from "@mantine/notifications";
-import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
+import {
+  collectionGroup,
+  doc,
+  getDoc,
+  getDocs,
+  getFirestore,
+  query,
+  setDoc,
+  writeBatch,
+  where,
+  deleteField,
+} from "firebase/firestore";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -32,9 +43,9 @@ export default function Header() {
 
   const [modalOpened, { open: openModal, close: closeModal }] =
     useDisclosure(false);
+  const auth = getAuth();
 
   useEffect(() => {
-    const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       if (u) {
         setUser(u);
@@ -50,34 +61,72 @@ export default function Header() {
   }, []);
 
   const handleGoogleLink = async () => {
-    const auth = getAuth();
     const db = getFirestore();
     const provider = new GoogleAuthProvider();
 
+    let docPathsToClaim = [];
+
+    const anonUser = auth.currentUser?.isAnonymous ? auth.currentUser : null;
+    const anonUID = anonUser?.uid;
+
+    if (anonUID) {
+      try {
+        const snapshot = await getDocs(
+          query(collectionGroup(db, "syllabi"), where("owner", "==", anonUID))
+        );
+
+        const batch = writeBatch(db);
+
+        snapshot.forEach((docSnap) => {
+          const ref = doc(db, docSnap.ref.path);
+          batch.update(ref, { owner: deleteField() });
+          docPathsToClaim.push(ref.path);
+        });
+
+        await batch.commit();
+        sessionStorage.setItem(
+          "pendingSyllabusClaims",
+          JSON.stringify(docPathsToClaim)
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     try {
+      // 🔐 Sign in with Google
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      setIsAnonymous(false);
       setUser(user);
+      setIsAnonymous(false);
 
-      // Check if user doc already exists
+      const claimedPaths = JSON.parse(
+        sessionStorage.getItem("pendingSyllabusClaims") || "[]"
+      );
+
+      if (claimedPaths.length > 0) {
+        const batch = writeBatch(db);
+        claimedPaths.forEach((path) => {
+          const ref = doc(db, path);
+          batch.update(ref, { owner: user.uid });
+        });
+        await batch.commit();
+        sessionStorage.removeItem("pendingSyllabusClaims");
+      }
+
+      // 🧾 Create user doc if it doesn't exist
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
-        // Only create if it doesn't exist
         await setDoc(userRef, {
           email: user.email,
           full_name: user.displayName || "",
           profile_image: user.photoURL || "",
           createdAt: new Date(),
         });
-        confetti({
-          particleCount: 300,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
-        // Show modal for email notifications
+
+        confetti({ particleCount: 300, spread: 70, origin: { y: 0.6 } });
         setShowNewUserModal(true);
       } else {
         notifications.show({
@@ -88,12 +137,28 @@ export default function Header() {
           position: "bottom-center",
         });
       }
+
       navigate("/");
       setSignInError("");
       closeModal();
     } catch (error) {
-      console.error(error);
+      console.error("❌ Google sign-in failed:", error);
       setSignInError("Something went wrong. Please try again.");
+      // 🔁 Rollback: re-assign anonUID to previously cleared docs
+      if (anonUID && docPathsToClaim.length > 0) {
+        try {
+          const batch = writeBatch(db);
+          docPathsToClaim.forEach((path) => {
+            const ref = doc(db, path);
+            batch.update(ref, { owner: anonUID });
+          });
+          await batch.commit();
+
+          sessionStorage.removeItem("pendingSyllabusClaims");
+        } catch (rollbackError) {
+          console.error(rollbackError);
+        }
+      }
     }
   };
 
