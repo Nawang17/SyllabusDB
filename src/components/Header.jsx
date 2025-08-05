@@ -239,9 +239,7 @@ export default function Header() {
                     leftSection={
                       userData?.profile_image ? (
                         <Avatar
-                          src={
-                            "https://res.cloudinary.com/dwzjfylgh/image/upload/v1712801791/kqrvww4xuitbtmyz6zsh.jpg"
-                          }
+                          src={userData?.profile_image}
                           radius="xl"
                           size="sm"
                         />
