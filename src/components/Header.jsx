@@ -1,4 +1,13 @@
-import { Box, Button, Group, Modal, Menu, Burger, Text } from "@mantine/core";
+import {
+  Box,
+  Button,
+  Group,
+  Modal,
+  Menu,
+  Burger,
+  Text,
+  Avatar,
+} from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
@@ -16,6 +25,8 @@ import {
   IconHome,
   IconLock,
   IconSparkles,
+  IconUser,
+  IconChevronDown,
 } from "@tabler/icons-react";
 import confetti from "canvas-confetti";
 import classes from "./styles/Header.module.css";
@@ -40,7 +51,7 @@ export default function Header() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [signInError, setSignInError] = useState("");
   const [showNewUserModal, setShowNewUserModal] = useState(false);
-
+  const [userData, setUserData] = useState(null);
   const [modalOpened, { open: openModal, close: closeModal }] =
     useDisclosure(false);
   const auth = getAuth();
@@ -51,6 +62,17 @@ export default function Header() {
         setUser(u);
         setIsAnonymous(u.isAnonymous);
         setIsAdmin(u.email === "nawangsherpa1010@gmail.com");
+        if (!u.isAnonymous) {
+          // Fetch user document to check if it exists
+          const db = getFirestore();
+          const userRef = doc(db, "users", u.uid);
+          getDoc(userRef).then((userSnap) => {
+            if (userSnap.exists()) {
+              setUserData(userSnap.data());
+              console.log("User data:", userSnap.data());
+            }
+          });
+        }
       } else {
         setUser(null);
         setIsAnonymous(false);
@@ -203,7 +225,7 @@ export default function Header() {
 
           {/* Unified Menu (desktop + mobile) */}
           {(!user || isAnonymous) && (
-            <Button onClick={openModal} variant="subtle" visibleFrom="sm">
+            <Button onClick={openModal} variant="filled" visibleFrom="sm">
               Sign In
             </Button>
           )}
@@ -211,11 +233,34 @@ export default function Header() {
             <Menu.Target>
               <div>
                 {user && !isAnonymous && (
-                  <Button visibleFrom="sm" variant="subtle">
-                    My Account
+                  <Button
+                    variant="filled"
+                    color="blue"
+                    leftSection={
+                      userData?.profile_image ? (
+                        <Avatar
+                          src={
+                            "https://res.cloudinary.com/dwzjfylgh/image/upload/v1712801791/kqrvww4xuitbtmyz6zsh.jpg"
+                          }
+                          radius="xl"
+                          size="sm"
+                        />
+                      ) : (
+                        <IconUser size={16} />
+                      )
+                    }
+                    rightSection={<IconChevronDown size={16} />}
+                  >
+                    {userData?.full_name?.trim().split(" ").length > 1
+                      ? userData.full_name
+                          .match(/\b\w/g)
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase()
+                      : userData?.full_name || "Account"}
                   </Button>
                 )}
-                <Burger hiddenFrom="sm" />
+                {(!user || isAnonymous) && <Burger hiddenFrom="sm" />}
               </div>
             </Menu.Target>
 

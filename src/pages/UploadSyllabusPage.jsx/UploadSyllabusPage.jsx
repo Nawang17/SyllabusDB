@@ -137,6 +137,20 @@ export default function UploadSyllabus() {
         setIsSubmitting(false);
         return;
       }
+      if (!user?.isAnonymous) {
+        const userRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          await setDoc(userRef, {
+            email: user.email,
+            full_name: user.displayName || "",
+            profile_image: user.photoURL || "",
+            createdAt: new Date(),
+            wantsEmailNotifications: true,
+          });
+        }
+      }
       if (!pdfFile || pdfFile.size > 5 * 1024 * 1024) {
         setUploadError("❌ PDF file is too large. Maximum size is 5 MB.");
         return;
