@@ -234,14 +234,13 @@ export default function Header() {
               <div>
                 {user && !isAnonymous && (
                   <Button
-                    variant="filled"
-                    color="blue"
+                    variant="outline"
                     leftSection={
                       userData?.profile_image ? (
                         <Avatar
                           src={userData?.profile_image}
                           radius="xl"
-                          size="sm"
+                          size="18px"
                         />
                       ) : (
                         <IconUser size={16} />
@@ -249,13 +248,7 @@ export default function Header() {
                     }
                     rightSection={<IconChevronDown size={16} />}
                   >
-                    {userData?.full_name?.trim().split(" ").length > 1
-                      ? userData.full_name
-                          .match(/\b\w/g)
-                          .slice(0, 2)
-                          .join("")
-                          .toUpperCase()
-                      : userData?.full_name || "Account"}
+                    {userData?.full_name?.split(" ")[0] || "Account"}
                   </Button>
                 )}
                 {(!user || isAnonymous) && <Burger hiddenFrom="sm" />}
