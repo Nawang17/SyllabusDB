@@ -44,10 +44,9 @@ export default function SubjectPage() {
   };
 
   useEffect(() => {
-    window.addEventListener("scroll", () =>
-      setShowScrollTop(window.scrollY > 400)
-    );
-    return () => window.removeEventListener("scroll", () => {});
+    const onScroll = () => setShowScrollTop(window.scrollY > 400);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
@@ -99,13 +98,42 @@ export default function SubjectPage() {
     };
     fetchCollegeNickname();
   }, [collegeId]);
+  // helpers (put near top)
+  const tokenizeCode = (str = "") => {
+    const m = str
+      .trim()
+      .toUpperCase()
+      .match(/^([A-Z&]+)\s*-?\s*(\d+)/);
+    return {
+      dept: m?.[1] || "",
+      num: m?.[2] || "",
+    };
+  };
 
+  const courseCodeMatches = (courseCode, search) => {
+    if (!search) return true;
+
+    const c = tokenizeCode(courseCode);
+    const s = tokenizeCode(search);
+
+    // If user typed a dept, require it to match
+    if (s.dept && c.dept && c.dept !== s.dept) return false;
+
+    // If user typed numbers, treat as prefix either way (340 <-> 34000)
+    if (s.num && c.num) {
+      return c.num.startsWith(s.num) || s.num.startsWith(c.num);
+    }
+
+    // Fallback to fuzzy text includes
+    return courseCode.toLowerCase().includes(search.toLowerCase());
+  };
   useEffect(() => {
+    const q = debouncedSearch.trim();
     setFilteredCourses(
       courses.filter(
         (c) =>
-          c.code.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-          c.title.toLowerCase().includes(debouncedSearch.toLowerCase())
+          courseCodeMatches(c.code, q) ||
+          c.title.toLowerCase().includes(q.toLowerCase())
       )
     );
   }, [debouncedSearch, courses]);
@@ -119,23 +147,18 @@ export default function SubjectPage() {
     setSearch(courseQuery);
     searchAppliedRef.current = true;
 
-    const matched = courses.find(
-      (c) => c.code.toLowerCase().trim() === courseQuery.toLowerCase().trim()
-    );
-
+    const matched = courses.find((c) => courseCodeMatches(c.code, courseQuery));
     if (matched) {
       toggleExpand(matched.id);
-
-      // Force scroll after short delay (to wait for expand animation & DOM paint)
       setTimeout(() => {
         const el = document.getElementById(`course-${matched.id}`);
         if (el) {
-          const yOffset = -80; // adjust this based on your header height
+          const yOffset = -80;
           const y =
             el.getBoundingClientRect().top + window.pageYOffset + yOffset;
           window.scrollTo({ top: y, behavior: "smooth" });
         }
-      }, 600); // adjust if your animation is longer
+      }, 600);
     }
   }, [courses]);
 
@@ -254,10 +277,14 @@ export default function SubjectPage() {
         </div>
       ) : filteredCourses.length === 0 ? (
         <div className="no-courses-found">
-          <p>
-            No syllabi available for this course yet. You can help by uploading
-            one!
-          </p>
+          {search.trim() ? (
+            <p>No courses match your search.</p>
+          ) : (
+            <p>
+              No syllabi available for this subject yet. You can help by
+              uploading one!
+            </p>
+          )}
           <Button onClick={() => navigate("/uploadsyllabus")}>
             Upload a Syllabus
           </Button>
