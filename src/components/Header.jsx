@@ -52,10 +52,17 @@ export default function Header() {
   const [signInError, setSignInError] = useState("");
   const [showNewUserModal, setShowNewUserModal] = useState(false);
   const [userData, setUserData] = useState(null);
+  const [scrolled, setScrolled] = useState(false); // NEW
   const [modalOpened, { open: openModal, close: closeModal }] =
     useDisclosure(false);
   const auth = getAuth();
-
+  // NEW: shadow only after scroll
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 6);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       if (u) {
@@ -183,32 +190,33 @@ export default function Header() {
       }
     }
   };
-
+  // helper: initials fallback for avatar
+  const initials = (name) => {
+    if (!name) return "U";
+    const parts = name.trim().split(/\s+/);
+    const first = parts[0]?.[0] || "";
+    const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+    return (first + last).toUpperCase();
+  };
   return (
-    <Box className={classes.header}>
-      <div className={classes["header-inner"]}>
+    <Box className={`${classes.header} ${scrolled ? classes.scrolled : ""}`}>
+      <div className={classes.headerInner}>
         <div
           className={classes.logo}
           onClick={() => navigate("/")}
-          style={{ cursor: "pointer" }}
+          aria-label="SyllabusDB Home"
         >
-          <Text
-            fw={800}
-            size="xl"
-            style={{
-              fontFamily: "Inter, Roboto, sans-serif",
-              letterSpacing: -0.5,
-            }}
-          >
-            Syllabus<span style={{ color: "#1E88E5" }}>DB</span>
+          <Text fw={800} size="xl" className={classes.wordmark}>
+            Syllabus<span className={classes.brand}>DB</span>
           </Text>
         </div>
 
-        <Group className={classes.rightSide}>
+        <Group className={classes.rightSide} gap="xs">
           <Button
             variant="default"
             onClick={() => navigate("/uploadsyllabus")}
             visibleFrom="sm"
+            size="xs"
           >
             Upload Syllabus
           </Button>
@@ -218,40 +226,51 @@ export default function Header() {
               variant="outline"
               onClick={() => navigate("/admin")}
               visibleFrom="sm"
+              size="xs"
             >
               Admin
             </Button>
           )}
 
-          {/* Unified Menu (desktop + mobile) */}
           {(!user || isAnonymous) && (
-            <Button onClick={openModal} variant="filled" visibleFrom="sm">
+            <Button
+              onClick={openModal}
+              variant="filled"
+              visibleFrom="sm"
+              size="xs"
+            >
               Sign In
             </Button>
           )}
+
           <Menu shadow="md" width={220} position="bottom-end" withinPortal>
             <Menu.Target>
               <div>
-                {user && !isAnonymous && (
+                {user && !isAnonymous ? (
                   <Button
                     variant="outline"
+                    size="xs"
+                    className={classes.accountBtn}
                     leftSection={
                       userData?.profile_image ? (
                         <Avatar
-                          src={userData?.profile_image}
+                          src={userData.profile_image}
                           radius="xl"
-                          size="18px"
+                          size="sm"
                         />
                       ) : (
-                        <IconUser size={16} />
+                        <Avatar radius="xl" size="sm" color="gray">
+                          {initials(userData?.full_name)}
+                        </Avatar>
                       )
                     }
-                    rightSection={<IconChevronDown size={16} />}
+                    rightSection={<IconChevronDown size={14} />}
                   >
-                    {userData?.full_name?.split(" ")[0] || "Account"}
+                    {userData?.full_name || "Account"}
                   </Button>
+                ) : (
+                  <Burger hiddenFrom="sm" size="sm" />
                 )}
-                {(!user || isAnonymous) && <Burger hiddenFrom="sm" />}
               </div>
             </Menu.Target>
 
@@ -280,7 +299,6 @@ export default function Header() {
                   >
                     My Uploads
                   </Menu.Item>
-
                   <Menu.Item
                     onClick={() => navigate("/settings")}
                     leftSection={<IconSettings size={16} />}
@@ -289,9 +307,19 @@ export default function Header() {
                   </Menu.Item>
                 </>
               )}
+
+              {isAdmin && (
+                <>
+                  <Menu.Divider />
+                  <Menu.Item onClick={() => navigate("/admin")}>
+                    Admin
+                  </Menu.Item>
+                </>
+              )}
+
               <Menu.Divider />
 
-              {user && !isAnonymous && (
+              {user && !isAnonymous ? (
                 <Menu.Item
                   color="red"
                   onClick={async () => {
@@ -310,8 +338,7 @@ export default function Header() {
                 >
                   Sign Out
                 </Menu.Item>
-              )}
-              {(!user || isAnonymous) && (
+              ) : (
                 <Menu.Item
                   color="blue"
                   leftSection={<IconLock size={16} />}
@@ -319,10 +346,6 @@ export default function Header() {
                 >
                   Sign In
                 </Menu.Item>
-              )}
-
-              {isAdmin && (
-                <Menu.Item onClick={() => navigate("/admin")}>Admin</Menu.Item>
               )}
             </Menu.Dropdown>
           </Menu>
