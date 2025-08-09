@@ -167,19 +167,6 @@
   box-shadow: 0 12px 30px rgba(2, 6, 23, 0.12);
 }
 
-/* rank chip */
-.rank-chip {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  background: #111827;
-  color: #fff;
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  opacity: 0.92;
-}
-
 .college-img {
   width: 100%;
   aspect-ratio: 16/10;
@@ -405,10 +392,4 @@
 }
 .request-college-btn:hover {
   background-color: #001f4d;
-}
-.index-badge {
-  color: #9ca3af; /* muted */
-  font-weight: 600;
-  margin-right: 6px;
-  font-size: 0.9em;
 }
