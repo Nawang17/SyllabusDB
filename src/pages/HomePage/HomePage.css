@@ -406,3 +406,9 @@
 .request-college-btn:hover {
   background-color: #001f4d;
 }
+.index-badge {
+  color: #9ca3af; /* muted */
+  font-weight: 600;
+  margin-right: 6px;
+  font-size: 0.9em;
+}

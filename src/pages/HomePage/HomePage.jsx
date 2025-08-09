@@ -190,7 +190,9 @@ export default function HomePage() {
                     className="college-card fade-in"
                     onClick={() => navigate(`/college/${college.id}`)}
                   >
-                    <span className="rank-chip">{i + 1}</span>
+                    {/* <span className="rank-chip">{i + 1}</span> */}
+                    {/* remove the old rank-chip */}
+                    {/* <div className="corner-rank">{i + 1}</div> */}
                     <img
                       loading="lazy"
                       src={college.image_url}
@@ -201,7 +203,11 @@ export default function HomePage() {
                           "https://via.placeholder.com/300x200?text=Image+Unavailable";
                       }}
                     />
-                    <div className="college-name">{college.name}</div>
+                    <div className="college-name">
+                      <span className="index-badge">{i + 1}.</span>{" "}
+                      {college.name}
+                    </div>
+
                     {college.uploads > 0 && (
                       <div className="college-count">
                         {college.uploads} syllabi
