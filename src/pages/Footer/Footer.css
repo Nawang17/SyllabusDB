@@ -1,33 +1,9 @@
-/* Footer.css */
-:root {
-  --bg: #f8f9fa;
-  --text: #2b2f36;
-  --muted: #68707d;
-  --border: #e3e7ee;
-  --brand: #1e88e5;
-  --link: #0b73d9;
-  --link-hover: #065bb0;
-  --chip: #eef6ff;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1115;
-    --text: #e7eaf1;
-    --muted: #aab1bd;
-    --border: #1a1f28;
-    --brand: #5aa8ff;
-    --link: #7db6ff;
-    --link-hover: #a6ccff;
-    --chip: #0f223a;
-  }
-}
-
+/* Footer.css — light theme only */
 .site-footer {
-  background: var(--bg);
-  color: var(--text);
+  background: #ffffff;
+  color: #333;
   margin-top: 4rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid #eee;
 }
 
 .footer-inner {
@@ -35,15 +11,14 @@
   margin: 0 auto;
   padding: 2rem 1rem;
   display: grid;
-  gap: 1.25rem;
+  gap: 1rem;
   grid-template-columns: 1fr;
-  align-items: start;
+  text-align: center; /* keep centered on small screens */
 }
 
 @media (min-width: 768px) {
   .footer-inner {
-    grid-template-columns: 1.2fr 1fr auto;
-    padding: 2.25rem 1.25rem;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -51,15 +26,16 @@
   font-size: 1.9rem;
   letter-spacing: -0.4px;
   line-height: 1;
+  font-family: Inter, Roboto, system-ui, -apple-system, Segoe UI, sans-serif;
 }
 
 .brand-accent {
-  color: var(--brand);
+  color: #1e88e5;
 }
 
 .tagline {
   margin-top: 0.4rem;
-  color: var(--muted);
+  color: #666;
   font-size: 0.95rem;
 }
 
@@ -68,74 +44,27 @@
   justify-content: center;
   gap: 0.9rem 1.2rem;
   flex-wrap: wrap;
-  padding: 0.25rem 0;
+  padding: 0.5rem 0 0;
 }
 
 .footer-links a {
-  color: var(--link);
+  color: #0b73d9;
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95rem;
   padding: 0.25rem 0.1rem;
   border-radius: 8px;
   outline: none;
-  transition: color 160ms ease, background-color 160ms ease,
-    transform 120ms ease;
+  transition: color 150ms ease, background-color 150ms ease;
 }
 
 .footer-links a:hover {
-  color: var(--link-hover);
+  color: #065bb0;
   text-decoration: underline;
 }
 
 .footer-links a:focus-visible {
   text-decoration: none;
-  background: var(--chip);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand) 25%, transparent);
-}
-
-.footer-social {
-  display: flex;
-  justify-content: center;
-  gap: 0.6rem;
-}
-
-.icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  color: var(--text);
-  background: transparent;
-  outline: none;
-  transition: transform 120ms ease, background 160ms ease,
-    border-color 160ms ease;
-}
-
-.icon-btn:hover {
-  transform: translateY(-1px);
-  background: var(--chip);
-  border-color: color-mix(in oklab, var(--brand) 35%, var(--border));
-}
-
-.icon-btn:focus-visible {
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand) 30%, transparent);
-}
-
-.footer-bottom {
-  display: flex;
-  gap: 0.6rem;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  font-size: 0.9rem;
-  padding: 0.9rem 1rem 1.6rem;
-  border-top: 1px dashed var(--border);
-}
-
-.footer-bottom .dot {
-  opacity: 0.6;
+  background: #eef6ff;
+  box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.25);
 }
