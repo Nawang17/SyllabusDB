@@ -13,10 +13,9 @@
   align-items: center;
   padding: 6rem 1.5rem 3rem;
   text-align: center;
-  color: white;
-  /* softer overlay */
-  background: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.35)),
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
     url("../../assets/background_img.png") center/cover no-repeat;
+  color: white;
 }
 
 .headline h1 {
@@ -33,89 +32,50 @@
   }
 }
 
-/* --- Floating Search Card --- */
+/* --- Search Input --- */
 .search-wrapper {
   position: relative;
   width: 100%;
-  max-width: 640px;
-  margin-top: 1.75rem;
-  background: #fff;
-  border-radius: 12px;
-  padding: 8px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
-  transition: box-shadow 0.2s ease;
-}
-.search-wrapper:focus-within {
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.22);
+  max-width: 600px;
+  margin-top: 1.5rem;
 }
 
 .search-input {
   width: 100%;
-  padding: 14px 40px 14px 16px;
+  padding: 20px 18px;
   font-size: 1rem;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  border: 1px solid #ccc;
   outline: none;
-  background: #fff;
 }
+
 .search-input:focus {
   border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
-/* Search highlight and clear */
-.clear-btn {
-  position: absolute;
-  top: 50%;
-  right: 14px;
-  transform: translateY(-50%);
-  background: transparent;
-  border: none;
-  font-size: 1.3rem;
-  cursor: pointer;
-  color: #6b7280;
-}
-.clear-btn:hover {
-  color: #374151;
-}
-
-/* Results popover */
 .results-box {
   position: absolute;
-  top: calc(100% + 8px);
-  left: 8px;
-  right: 8px;
-  background: #ffffffcc; /* translucent for frosted look */
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  max-height: 320px;
+  border-radius: 8px;
+  max-height: 200px;
   overflow-y: auto;
   z-index: 20;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
-  backdrop-filter: blur(6px);
-}
-
-.results-meta,
-.results-more {
-  color: #6b7280;
-  font-size: 12px;
-  padding: 8px 10px;
-  border-bottom: 1px solid #f3f4f6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .result-item {
-  padding: 12px 14px;
+  padding: 12px 16px;
   cursor: pointer;
   color: #1f2937;
-  border-radius: 8px;
-  margin: 4px 6px;
 }
+
 .result-item:hover {
   background-color: #f3f4f6;
-}
-.result-item.highlighted {
-  background-color: #dbeafe;
-  font-weight: 600;
 }
 
 .no-result {
@@ -130,6 +90,7 @@
   width: 100%;
   max-width: 1200px;
 }
+
 .scroll-title {
   font-size: 1.25rem;
   font-weight: 600;
@@ -139,11 +100,9 @@
 }
 
 .college-scroll {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(240px, 280px);
-  gap: 16px;
+  display: flex;
   overflow-x: auto;
+  gap: 1.5rem;
   padding-bottom: 1rem;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
@@ -152,28 +111,27 @@
 /* --- College Card --- */
 .college-card {
   background-color: #ffffff;
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 1rem;
+  width: 250px;
   flex-shrink: 0;
   scroll-snap-align: start;
   text-align: center;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  position: relative;
 }
+
 .college-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.12);
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .college-img {
   width: 100%;
-  aspect-ratio: 16/10;
+  height: 200px;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 8px;
   margin-bottom: 0.75rem;
-  background: #f1f5f9;
 }
 
 .college-name {
@@ -181,6 +139,7 @@
   font-size: 1rem;
   color: #1f2937;
 }
+
 .college-count {
   font-size: 0.9rem;
   color: #6b7280;
@@ -191,28 +150,62 @@
 .skeleton {
   background: #f3f3f3;
 }
+
 .skeleton-img {
   width: 100%;
-  aspect-ratio: 16/10;
+  height: 200px;
   background: #e0e0e0;
-  border-radius: 10px;
+  border-radius: 8px;
 }
+
 .skeleton-line {
   height: 14px;
   background: #d1d5db;
   border-radius: 6px;
   margin-top: 0.5rem;
 }
+
 .skeleton-line.short {
   width: 60%;
   margin: 0.5rem auto;
 }
+
 .skeleton-line.long {
   width: 80%;
   margin: 0.5rem auto;
 }
 
-/* --- Why Section --- */
+@keyframes pulse {
+  0% {
+    background-color: #f3f3f3;
+  }
+  50% {
+    background-color: #e0e0e0;
+  }
+  100% {
+    background-color: #f3f3f3;
+  }
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .headline h1 {
+    font-size: 1.5rem;
+  }
+
+  .college-scroll-wrapper {
+    padding: 0 1rem;
+  }
+
+  .college-card {
+    width: 200px;
+    padding: 0.75rem;
+  }
+
+  .college-img {
+    height: 160px;
+  }
+}
 .why-section {
   display: flex;
   flex-wrap: wrap;
@@ -224,23 +217,26 @@
   margin: 0 auto;
   text-align: center;
 }
+
 .why-img {
   max-width: 300px;
   width: 100%;
 }
+
 .why-content h3 {
   font-size: 1.5rem;
   color: #1f2937;
   margin-bottom: 1rem;
 }
+
 .why-content p {
   font-size: 1rem;
   color: #374151;
   max-width: 500px;
   margin: 0 auto 1.5rem;
 }
-.upload-cta-btn,
-.btn {
+
+.upload-cta-btn {
   padding: 10px 20px;
   background-color: #2563eb;
   color: white;
@@ -249,43 +245,41 @@
   font-size: 1rem;
   cursor: pointer;
 }
-.upload-cta-btn:hover,
-.btn:hover {
+
+.upload-cta-btn:hover {
   background-color: #1d4ed8;
 }
+
 @media (max-width: 768px) {
   .why-section {
     flex-direction: column;
   }
 }
-
-/* --- View All link tile --- */
 .view-all-card-link {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: 10px;
+  width: 250px;
   flex-shrink: 0;
   scroll-snap-align: start;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: background 0.2s ease;
 }
+
 .view-all-card-link:hover {
   background-color: #f3f4f6;
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.12);
 }
+
 .view-all-link {
   font-size: 1rem;
   color: #2563eb;
   white-space: nowrap;
 }
+
 .view-all-link:hover {
   color: #1d4ed8;
 }
-
-/* --- Trust Section --- */
 .trust-section {
   display: flex;
   flex-wrap: wrap;
@@ -295,28 +289,33 @@
   padding: 3rem 2rem;
   max-width: 1000px;
   margin: 0 auto;
-  text-align: left;
+  text-align: left; /* changed from center */
   border-top: 1px solid #e5e7eb;
   margin-top: 3rem;
 }
+
 .trust-content {
   max-width: 500px;
 }
+
 .trust-content h3 {
   font-size: 1.5rem;
   color: #1f2937;
   margin-bottom: 1rem;
 }
+
 .trust-content p {
   font-size: 1rem;
   color: #374151;
   margin-bottom: 1rem;
 }
+
 .trust-image {
   max-width: 300px;
   width: 100%;
   flex-shrink: 0;
 }
+
 .trust-list {
   list-style: none;
   padding: 0;
@@ -325,26 +324,27 @@
   font-size: 0.95rem;
   color: #374151;
 }
+
 .trust-list li {
   margin-bottom: 0.5rem;
 }
-
 @media (max-width: 896px) {
   .trust-section {
     flex-direction: column;
     text-align: center;
   }
+
   .trust-content {
     text-align: center;
+    align-items: center;
   }
+
   .trust-list {
-    text-align: left;
-    margin: 0 auto;
+    text-align: left; /* keep list left-aligned inside center layout */
+    margin: 0 auto; /* center the list block itself */
     max-width: 300px;
   }
 }
-
-/* hero count pill */
 .hero-syllabi-count {
   font-size: 1.25rem;
   margin-top: 1rem;
@@ -357,10 +357,27 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   display: inline-block;
 }
+
 @media (max-width: 768px) {
   .hero-syllabi-count {
     font-size: 1rem;
   }
+}
+/* Search highlight and clear */
+.clear-btn {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #555;
+}
+
+.result-item.highlighted {
+  background-color: #e0f2fe;
 }
 
 /* Animation fade-in */
@@ -378,7 +395,19 @@
   }
 }
 
-/* Request College button */
+/* Button standard style */
+.btn {
+  padding: 10px 20px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.btn:hover {
+  background-color: #1d4ed8;
+}
 .request-college-btn {
   margin-top: 0.5rem;
   padding: 0.6rem 1.2rem;
@@ -390,6 +419,7 @@
   cursor: pointer;
   transition: background-color 0.3s;
 }
+
 .request-college-btn:hover {
   background-color: #001f4d;
 }
