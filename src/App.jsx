@@ -1,7 +1,6 @@
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router";
 import { MantineProvider } from "@mantine/core";
-import "@mantine/core/styles.css";
 import HomePage from "./pages/HomePage/HomePage";
 import Header from "./components/Header";
 import CollegePage from "./pages/CollegePage/CollegePage";

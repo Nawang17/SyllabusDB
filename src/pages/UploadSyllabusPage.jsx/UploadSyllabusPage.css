@@ -56,12 +56,43 @@
   background-color: #1d4ed8;
 }
 
+.upload-form button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
 .upload-status {
-  margin-top: 1.5rem;
+  margin-top: 0.75rem;
   text-align: center;
   font-weight: 500;
   color: #10b981;
+  font-size: 0.95rem;
 }
+
+.upload-status.error {
+  background-color: #ffeaea;
+  color: #d10000;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.cancel-btn {
+  margin-left: 0.75rem;
+  background: transparent;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background: #fff1f2;
+}
+
 .autocomplete-list {
   border: 1px solid #ccc;
   max-height: 150px;
@@ -81,6 +112,7 @@
 .autocomplete-item:hover {
   background: #f0f0f0;
 }
+
 .course-input-wrapper {
   position: relative;
   width: 100%;
@@ -108,9 +140,12 @@
   cursor: pointer;
 }
 
-.suggestions-dropdown li:hover {
+.suggestions-dropdown li:hover,
+.suggestions-dropdown li:focus {
   background-color: #f3f4f6;
+  outline: none;
 }
+
 .full-width {
   width: 100%;
 }
@@ -125,80 +160,30 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .modal-content {
   background: white;
   padding: 2rem;
   border-radius: 12px;
-  text-align: center;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  max-width: 400px;
+  max-width: 500px;
   width: 90%;
+  text-align: left;
 }
 
 .modal-content h3 {
   margin-bottom: 0.75rem;
   color: #2563eb;
+  text-align: center;
 }
 
 .modal-buttons {
   margin-top: 1.5rem;
   display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.upload-warning {
-  background-color: #fff7ed;
-  border-left: 4px solid #f97316;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  color: #7c2d12;
-}
-.upload-status {
-  text-align: center;
-  font-weight: 500;
-  color: #10b981;
-  font-size: 0.95rem;
-  margin-top: -0.5rem;
-  margin-bottom: -0.5rem;
-}
-
-.upload-form button:disabled {
-  background-color: #9ca3af;
-  cursor: not-allowed;
-}
-.upload-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  text-align: left;
-}
-
-.modal-content h3 {
-  margin-bottom: 1rem;
-  font-size: 1.25rem;
-  text-align: center;
+  gap: 0.75rem;
+  flex-direction: column;
 }
 
 .confirm-list {
@@ -213,30 +198,17 @@
   font-size: 0.95rem;
 }
 
-.modal-buttons {
-  display: flex;
-  gap: 0.75rem;
-  flex-direction: column;
-}
-
-.upload-status.error {
-  background-color: #ffeaea;
-  color: #d10000;
-  padding: 0.75rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-weight: 500;
-  text-align: center;
-}
 .upload-guideline-reminder {
   font-size: 0.95rem;
   color: #374151;
   margin-top: 1rem;
 }
+
 .upload-guideline-reminder a {
   color: #2563eb;
   text-decoration: underline;
 }
+
 .upload-warning {
   background-color: #fff4e5;
   border-left: 4px solid #ff9800;
@@ -268,4 +240,48 @@
 .warning-text {
   flex: 1;
   padding-right: 0.5rem;
+}
+
+.agree-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+/* ...keep all your existing CSS from before... */
+
+.dropzone-block {
+  margin-top: 0.5rem;
+}
+
+.dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fafafa;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.dropzone:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.dropzone-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: center;
+  text-align: center;
+}
+
+.file-chip {
+  margin-top: 0.5rem;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

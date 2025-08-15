@@ -76,7 +76,6 @@ export default function Header() {
           getDoc(userRef).then((userSnap) => {
             if (userSnap.exists()) {
               setUserData(userSnap.data());
-              console.log("User data:", userSnap.data());
             }
           });
         }

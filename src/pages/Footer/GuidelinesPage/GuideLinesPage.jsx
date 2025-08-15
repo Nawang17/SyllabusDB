@@ -29,7 +29,6 @@ export default function GuidelinesPage() {
       <h2>Do Not Upload</h2>
       <ul className="guidelines-list">
         <li>Fake, altered, or misleading documents</li>
-        <li>Files with names, ID numbers, email addresses, or contact info</li>
         <li>
           Homework assignments, quizzes, exams, solution keys, or textbook
           material
