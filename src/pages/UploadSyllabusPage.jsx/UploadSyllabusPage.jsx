@@ -74,8 +74,6 @@ export default function UploadSyllabus() {
     setCourseCode("");
     setCourseTitle("");
     setProfessor("");
-    setTerm("Fall");
-    setYear(new Date().getFullYear());
     setPdfFile(null);
     setUploadError("");
     setCourseSuggestions([]);
