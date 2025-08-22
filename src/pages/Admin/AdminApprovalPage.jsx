@@ -77,11 +77,13 @@ export default function AdminApprovalPage() {
     if (email) {
       await sendNotificationEmail({
         email,
-        subject: "Your college request was approved",
+        subject: `Your college request for ${data.name} was approved`,
         message:
           `Hi,\n\n` +
           `Good news! Your request to add "${data.name}" has been approved and is now live on SyllabusDB.\n\n` +
-          `Thank you for helping grow the platform and making it more useful for everyone.`,
+          `Thank you for helping grow the platform and making it more useful for everyone.` +
+          `\n\nBest regards,\n` +
+          `The SyllabusDB Team`,
       });
     }
   };
@@ -105,13 +107,15 @@ export default function AdminApprovalPage() {
     if (email) {
       await sendNotificationEmail({
         email,
-        subject: "Your college request was disapproved",
+        subject: `Your college request for ${data.name} was disapproved`,
         message:
           `Hi,\n\n` +
           `We reviewed your request to add "${data.name}" to SyllabusDB, but it was not approved at this time.\n\n` +
           `Reason: ${reason}\n\n` +
           `If you have any questions or believe this was a mistake, please reach out to us.\n\n` +
-          `Thank you for your understanding.`,
+          `Thank you for your understanding.` +
+          `\n\nBest regards,\n` +
+          `The SyllabusDB Team`,
       });
     }
   };
@@ -258,12 +262,14 @@ export default function AdminApprovalPage() {
     if (email) {
       await sendNotificationEmail({
         email,
-        subject: "Your syllabus was approved",
+        subject: `Your syllabus for ${courseId} was approved`,
         message:
           `Hi there,\n\n` +
           `Your syllabus for ${courseId} at ${collegeId} has been approved.\n\n` +
           `It's now available for others to view on SyllabusDB.\n\n` +
-          `Thank you for contributing and helping other students make better choices!\n\n`,
+          `Thank you for contributing and helping other students make better choices!\n\n` +
+          `Best regards,\n` +
+          `The SyllabusDB Team`,
       });
     }
   };
@@ -314,12 +320,14 @@ export default function AdminApprovalPage() {
       if (email) {
         await sendNotificationEmail({
           email,
-          subject: "Your syllabus was disapproved",
+          subject: `Your syllabus for ${syllabus.courseId} was disapproved`,
           message:
             `Hi,\n\n` +
             `Unfortunately, your syllabus for ${syllabus.courseId} at ${syllabus.collegeId} was not approved.\n\n` +
             `Reason: ${reason}\n\n` +
-            `If you believe this was a mistake or have questions, feel free to reach out.\n\n`,
+            `If you believe this was a mistake or have questions, feel free to reach out.\n\n` +
+            `Best regards,\n` +
+            `The SyllabusDB Team`,
         });
       }
 
