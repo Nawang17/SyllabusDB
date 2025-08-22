@@ -22,7 +22,7 @@ export default function UploadSyllabus() {
   const [courseCode, setCourseCode] = useState("");
   const [courseTitle, setCourseTitle] = useState("");
   const [professor, setProfessor] = useState("");
-  const [term, setTerm] = useState("Fall");
+  const [term, setTerm] = useState(getCurrentTerm());
   const [year, setYear] = useState(new Date().getFullYear());
   const [pdfFile, setPdfFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,7 +34,13 @@ export default function UploadSyllabus() {
   const [showUploadWarning, setShowUploadWarning] = useState(() => {
     return localStorage.getItem("hideUploadWarning") !== "true";
   });
-
+  function getCurrentTerm() {
+    const m = new Date().getMonth() + 1; // 1 = Jan, 12 = Dec
+    if (m === 1) return "Winter";
+    if (m >= 2 && m <= 5) return "Spring";
+    if (m >= 6 && m <= 8) return "Summer";
+    return "Fall"; // Sep–Dec
+  }
   const fileInputRef = useRef();
 
   const navigate = useNavigate();
@@ -63,7 +69,6 @@ export default function UploadSyllabus() {
     setCourseCode("");
     setCourseTitle("");
     setProfessor("");
-    setTerm("Fall");
     setYear(new Date().getFullYear());
     setPdfFile(null);
     setUploadError("");
