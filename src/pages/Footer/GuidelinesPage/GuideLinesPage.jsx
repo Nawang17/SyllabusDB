@@ -1,13 +1,18 @@
 import { useEffect } from "react";
 import "./GuideLinesPage.css";
 
-export default function GuidelinesPage() {
+export default function GuidelinesPage({ ismodal }) {
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    !ismodal && window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   return (
-    <div className="guidelines-page">
+    <div
+      style={{
+        marginTop: ismodal ? 0 : "2rem",
+      }}
+      className="guidelines-page"
+    >
       <h1>Guidelines</h1>
       <p>
         SyllabusDB is a student-powered platform created to help others make

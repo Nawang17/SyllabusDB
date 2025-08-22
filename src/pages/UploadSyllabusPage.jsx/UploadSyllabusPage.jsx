@@ -10,12 +10,14 @@ import {
   where,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import "./UploadSyllabusPage.css";
-import { Button, Select } from "@mantine/core";
+import { Button, Modal, Select } from "@mantine/core";
 import { getAuth, signInAnonymously } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
-
+import { useDisclosure } from "@mantine/hooks";
+import TermsOfService from "../Footer/TermsOfService/TermsOfService";
+import GuidelinesPage from "../Footer/GuidelinesPage/GuideLinesPage";
 export default function UploadSyllabus() {
   const [collegeId, setCollegeId] = useState("");
   const [colleges, setColleges] = useState([]);
@@ -34,6 +36,9 @@ export default function UploadSyllabus() {
   const [showUploadWarning, setShowUploadWarning] = useState(() => {
     return localStorage.getItem("hideUploadWarning") !== "true";
   });
+  const [TOSopened, { close: closeTOS, open: openTOS }] = useDisclosure(false);
+  const [GuidelinesOpened, { close: closeG, open: openG }] =
+    useDisclosure(false);
   function getCurrentTerm() {
     const m = new Date().getMonth() + 1; // 1 = Jan, 12 = Dec
     if (m === 1) return "Winter";
@@ -395,12 +400,41 @@ export default function UploadSyllabus() {
           />
         </label>
 
-        {status && <div className="upload-status">{status}</div>}
         <p className="upload-guideline-reminder">
           By uploading, you agree to follow our{" "}
-          <Link to="/guidelines">Community Guidelines</Link> and{" "}
-          <Link to="/termsofservice">Terms of Service</Link>. Only upload real
-          syllabi. No private materials, personal info, or spam.
+          <button
+            type="button"
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              color: "#2563eb",
+              textDecoration: "underline",
+              cursor: "pointer",
+            }}
+            onClick={openG}
+            aria-label="Open Community Guidelines"
+          >
+            Community Guidelines
+          </button>{" "}
+          and{" "}
+          <button
+            type="button"
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              color: "#2563eb",
+              textDecoration: "underline",
+              cursor: "pointer",
+            }}
+            onClick={openTOS}
+            aria-label="Open Terms of Service"
+          >
+            Terms of Service
+          </button>
+          . Only upload real syllabi. No private materials, personal info, or
+          spam.
         </p>
 
         <button type="submit" disabled={isSubmitting}>
@@ -490,6 +524,13 @@ export default function UploadSyllabus() {
           </div>
         </div>
       )}
+      {/* terms of service modal */}
+      <Modal opened={TOSopened} onClose={closeTOS} title="">
+        <TermsOfService ismodal={true} />
+      </Modal>
+      <Modal opened={GuidelinesOpened} onClose={closeG} title="">
+        <GuidelinesPage ismodal={true} />
+      </Modal>
     </div>
   );
 }

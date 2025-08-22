@@ -2,13 +2,19 @@ import { useEffect } from "react";
 import "./TermsOfService.css";
 import { Link } from "react-router";
 
-export default function TermsOfService() {
+export default function TermsOfService({ ismodal }) {
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    !ismodal && window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   return (
-    <div className="terms-container">
+    <div
+      style={{
+        marginTop: ismodal ? 0 : "40px",
+        paddingTop: ismodal ? "0px" : "20px",
+      }}
+      className="terms-container"
+    >
       <h1>Terms of Service</h1>
       <p>
         <strong>Last Updated:</strong> July 06, 2025
