@@ -80,15 +80,6 @@
   color: #4b5563;
 }
 
-.syllabi-list {
-  margin-top: 1rem;
-  padding-left: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  animation: fadeIn 0.3s ease;
-}
-
 .syllabus-item {
   font-size: 0.95rem;
   color: #1f2937;
@@ -234,8 +225,7 @@ mark {
     display: none;
   }
 }
-/* --- Mantine-styled syllabus rows --- */
-.syllabus-card {
+--- Mantine-styled syllabus rows --- .syllabus-card {
   padding: 12px 14px;
   background: #ffffff;
   transition: box-shadow 120ms ease, transform 120ms ease;
