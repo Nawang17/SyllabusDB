@@ -9,15 +9,113 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
+
 import {
   IconChevronDown,
   IconChevronRight,
   IconCopy,
+  IconQuote,
+  IconMessageCircle,
+  IconShare2,
 } from "@tabler/icons-react";
-import { ActionIcon, Button } from "@mantine/core";
+
+import { Button, Paper, Text, Group, Collapse, ThemeIcon } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import "./SubjectPage.css";
+
+function SyllabusRow({ s, courseCode }) {
+  const [open, setOpen] = useState(false);
+  const hasExp = !!s.experience_text?.trim();
+  const label = `${s.term} ${s.year} - ${s.professor}`;
+
+  return (
+    <Paper withBorder radius="md" className="syllabus-card">
+      <Group justify="space-between" align="flex-start" wrap="nowrap">
+        <Group gap="sm" wrap="nowrap">
+          <div>
+            <a
+              href={s.pdf_url}
+              target="_blank"
+              rel="noreferrer"
+              className="syllabus-title-link"
+            >
+              <Text fw={600} className="syllabus-title">
+                {label}
+              </Text>
+            </a>
+          </div>
+        </Group>
+
+        <Group gap={"sm"} wrap="nowrap">
+          {hasExp && (
+            <ThemeIcon
+              onClick={() => setOpen((v) => !v)}
+              style={{
+                cursor: "pointer",
+              }}
+              variant="light"
+              radius="md"
+              size="lg"
+            >
+              <IconMessageCircle size={17} stroke={1.7} />
+            </ThemeIcon>
+          )}
+          <ThemeIcon
+            onClick={() => {
+              const url = `${window.location.origin}${
+                window.location.pathname
+              }?course=${encodeURIComponent(courseCode)}`;
+
+              navigator.clipboard.writeText(url).then(() => {
+                // fallback: show your notification/toast
+                notifications.show({
+                  position: "top-center",
+                  title: "Link copied",
+                  message:
+                    "The syllabus link has been copied to your clipboard.",
+                  color: "blue",
+                });
+              });
+            }}
+            style={{
+              cursor: "pointer",
+            }}
+            variant="light"
+            radius="md"
+            size="lg"
+          >
+            <IconShare2 size={17} stroke={1.7} />
+          </ThemeIcon>
+        </Group>
+      </Group>
+
+      {hasExp && (
+        <Collapse in={open}>
+          <Paper
+            radius="md"
+            className="experience-quote"
+            mt="md"
+            p="md"
+            withBorder
+          >
+            <Group gap="sm" align="flex-start" wrap="nowrap">
+              <ThemeIcon radius="xl" variant="light">
+                <IconQuote size={16} />
+              </ThemeIcon>
+              <Text
+                className="experience-text"
+                style={{ whiteSpace: "pre-wrap" }}
+              >
+                {s.experience_text}
+              </Text>
+            </Group>
+          </Paper>
+        </Collapse>
+      )}
+    </Paper>
+  );
+}
 
 export default function SubjectPage() {
   const { collegeId, subject } = useParams();
@@ -69,7 +167,9 @@ export default function SubjectPage() {
         const filtered = allCourses.filter(
           (course) =>
             course.code &&
-            course.code.toUpperCase().startsWith(subject?.toUpperCase() + " ")
+            course.code
+              .toUpperCase()
+              .startsWith((subject || "").toUpperCase() + " ")
         );
         const total = filtered.reduce(
           (sum, c) => sum + (c.approvedSyllabiCount || 0),
@@ -84,7 +184,7 @@ export default function SubjectPage() {
         setLoading(false);
       }
     };
-    fetchCourses();
+    if (collegeId) fetchCourses();
   }, [collegeId, subject]);
 
   useEffect(() => {
@@ -96,37 +196,29 @@ export default function SubjectPage() {
         console.error("Failed to fetch college nickname:", err);
       }
     };
-    fetchCollegeNickname();
+    if (collegeId) fetchCollegeNickname();
   }, [collegeId]);
-  // helpers (put near top)
+
+  // helpers
   const tokenizeCode = (str = "") => {
     const m = str
       .trim()
       .toUpperCase()
       .match(/^([A-Z&]+)\s*-?\s*(\d+)/);
-    return {
-      dept: m?.[1] || "",
-      num: m?.[2] || "",
-    };
+    return { dept: m?.[1] || "", num: m?.[2] || "" };
   };
 
-  const courseCodeMatches = (courseCode, search) => {
-    if (!search) return true;
-
+  const courseCodeMatches = (courseCode, s) => {
+    if (!s) return true;
     const c = tokenizeCode(courseCode);
-    const s = tokenizeCode(search);
+    const t = tokenizeCode(s);
 
-    // If user typed a dept, require it to match
-    if (s.dept && c.dept && c.dept !== s.dept) return false;
-
-    // If user typed numbers, treat as prefix either way (340 <-> 34000)
-    if (s.num && c.num) {
-      return c.num.startsWith(s.num) || s.num.startsWith(c.num);
-    }
-
-    // Fallback to fuzzy text includes
-    return courseCode.toLowerCase().includes(search.toLowerCase());
+    if (t.dept && c.dept && c.dept !== t.dept) return false;
+    if (t.num && c.num)
+      return c.num.startsWith(t.num) || t.num.startsWith(c.num);
+    return courseCode.toLowerCase().includes(s.toLowerCase());
   };
+
   useEffect(() => {
     const q = debouncedSearch.trim();
     setFilteredCourses(
@@ -140,7 +232,6 @@ export default function SubjectPage() {
 
   useEffect(() => {
     if (searchAppliedRef.current) return;
-
     const courseQuery = URLquery.get("course");
     if (!courseQuery || courses.length === 0) return;
 
@@ -160,16 +251,15 @@ export default function SubjectPage() {
         }
       }, 600);
     }
-  }, [courses]);
+  }, [courses]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleExpand = async (courseId) => {
     setExpanded((prev) => ({ ...prev, [courseId]: !prev[courseId] }));
 
-    // Wait a tick to ensure DOM updates
     setTimeout(() => {
       const el = document.getElementById(`course-${courseId}`);
       if (el) {
-        const yOffset = -80; // offset for sticky headers if needed
+        const yOffset = -80;
         const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
         window.scrollTo({ top: y, behavior: "smooth" });
       }
@@ -194,7 +284,7 @@ export default function SubjectPage() {
             where("approved", "==", true)
           )
         );
-        const syllabi = snapshot.docs.map((doc) => doc.data());
+        const syllabi = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
         syllabi.sort(
           (a, b) => b.year - a.year || termOrder[b.term] - termOrder[a.term]
         );
@@ -219,7 +309,7 @@ export default function SubjectPage() {
     );
   };
 
-  const formatCollegeName = (str) =>
+  const formatCollegeName = (str = "") =>
     str
       .split("-")
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -233,7 +323,7 @@ export default function SubjectPage() {
             <strong>{subject?.toUpperCase()}</strong> syllabi
           </div>
           <div
-            style={{ fontSize: "0.9rem", fontWeight: "500", cursor: "pointer" }}
+            style={{ fontSize: "0.9rem", fontWeight: 500, cursor: "pointer" }}
             onClick={() => navigate(`/college/${collegeId}`)}
           >
             {formatCollegeName(collegeId)}
@@ -323,42 +413,32 @@ export default function SubjectPage() {
                   {loadingCourseId === course.id ? (
                     <div className="loading-syllabi">Loading syllabi...</div>
                   ) : (
-                    (syllabiMap[course.id] || []).map((s) => (
-                      <div key={s.id} className="syllabus-item">
-                        <a
-                          href={s.pdf_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="syllabus-link"
-                        >
-                          {s.term} {s.year} – {s.professor}
-                        </a>
-                        <ActionIcon
-                          className="share-button"
-                          variant="subtle"
-                          size="lg"
-                          radius="md"
-                          aria-label="Copy syllabus link"
-                          onClick={() => {
-                            const url = `${window.location.origin}${
-                              window.location.pathname
-                            }?course=${encodeURIComponent(course.code)}`;
-                            navigator.clipboard.writeText(url).then(() => {
-                              notifications.show({
-                                position: "bottom-center",
-                                title: "Link copied",
-                                message:
-                                  "The syllabus link has been copied to your clipboard.",
-                                icon: <IconCopy size={16} />,
-                                color: "blue",
-                              });
-                            });
-                          }}
-                        >
-                          <IconCopy size={18} />
-                        </ActionIcon>
-                      </div>
-                    ))
+                    (syllabiMap[course.id] || []).map((s) => {
+                      const copyAction = () => {
+                        const url = `${window.location.origin}${
+                          window.location.pathname
+                        }?course=${encodeURIComponent(course.code)}`;
+                        navigator.clipboard.writeText(url).then(() => {
+                          notifications.show({
+                            position: "top-center",
+                            title: "Link copied",
+                            message:
+                              "The syllabus link has been copied to your clipboard.",
+                            icon: <IconCopy size={16} />,
+                            color: "blue",
+                          });
+                        });
+                      };
+
+                      return (
+                        <SyllabusRow
+                          key={s.id}
+                          s={s}
+                          courseCode={course.code}
+                          onCopy={copyAction}
+                        />
+                      );
+                    })
                   )}
                 </div>
               )}

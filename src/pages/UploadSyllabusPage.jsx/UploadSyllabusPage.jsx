@@ -12,12 +12,13 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router";
 import "./UploadSyllabusPage.css";
-import { Button, Modal, Select } from "@mantine/core";
+import { Button, Modal, Select, Textarea } from "@mantine/core";
 import { getAuth, signInAnonymously } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 import { useDisclosure } from "@mantine/hooks";
 import TermsOfService from "../Footer/TermsOfService/TermsOfService";
 import GuidelinesPage from "../Footer/GuidelinesPage/GuideLinesPage";
+
 export default function UploadSyllabus() {
   const [collegeId, setCollegeId] = useState("");
   const [colleges, setColleges] = useState([]);
@@ -27,6 +28,11 @@ export default function UploadSyllabus() {
   const [term, setTerm] = useState(getCurrentTerm());
   const [year, setYear] = useState(new Date().getFullYear());
   const [pdfFile, setPdfFile] = useState(null);
+
+  // NEW: optional experience input
+  const [experience, setExperience] = useState("");
+  const EXPERIENCE_MAX = 500;
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [courseOptions, setCourseOptions] = useState([]);
@@ -39,6 +45,7 @@ export default function UploadSyllabus() {
   const [TOSopened, { close: closeTOS, open: openTOS }] = useDisclosure(false);
   const [GuidelinesOpened, { close: closeG, open: openG }] =
     useDisclosure(false);
+
   function getCurrentTerm() {
     const m = new Date().getMonth() + 1; // 1 = Jan, 12 = Dec
     if (m === 1) return "Winter";
@@ -46,8 +53,8 @@ export default function UploadSyllabus() {
     if (m >= 6 && m <= 8) return "Summer";
     return "Fall"; // Sep–Dec
   }
-  const fileInputRef = useRef();
 
+  const fileInputRef = useRef();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -78,6 +85,7 @@ export default function UploadSyllabus() {
     setPdfFile(null);
     setUploadError("");
     setCourseSuggestions([]);
+    setExperience(""); // NEW: clear optional input
 
     // 👇 Clear file input visually
     if (fileInputRef.current) {
@@ -161,13 +169,22 @@ export default function UploadSyllabus() {
           });
         }
       }
+
       if (!pdfFile || pdfFile.size > 5 * 1024 * 1024) {
         setUploadError("❌ PDF file is too large. Maximum size is 5 MB.");
         return;
       }
+
       const cleanedCourseCode = courseCode.trim();
       const cleanedCourseTitle = courseTitle.trim();
       const cleanedProfessor = professor.trim();
+
+      // Clean & bound optional text
+      const rawExperience = (experience || "").trim();
+      const cleanedExperience =
+        rawExperience.length > EXPERIENCE_MAX
+          ? rawExperience.slice(0, EXPERIENCE_MAX)
+          : rawExperience;
 
       const filePath = `syllabi/${collegeId}/${cleanedCourseCode}/${pdfFile.name}`;
       const storageRef = ref(storage, filePath);
@@ -191,6 +208,7 @@ export default function UploadSyllabus() {
           approved: false, // Initially not approved
         });
       }
+
       // Step: Check if syllabus already exists for course + term + year
       const existingQuery = query(
         collection(
@@ -208,15 +226,14 @@ export default function UploadSyllabus() {
       );
 
       const existingSnapshot = await getDocs(existingQuery);
-
       if (!existingSnapshot.empty) {
         setUploadError(
           "⚠️ A syllabus for this course, term, and year already exists."
         );
-
         setIsSubmitting(false);
         return;
       }
+
       const sylabbiRef = collection(
         db,
         "colleges",
@@ -225,6 +242,7 @@ export default function UploadSyllabus() {
         cleanedCourseCode,
         "syllabi"
       );
+
       await setDoc(doc(sylabbiRef), {
         professor: cleanedProfessor,
         term,
@@ -234,26 +252,29 @@ export default function UploadSyllabus() {
         approved: false,
         owner: uid || null,
         createdAt: Timestamp.now(),
+
+        // NEW: store optional experience text (omit if empty for cleanliness)
+        ...(cleanedExperience ? { experience_text: cleanedExperience } : {}),
       });
 
       setShowReviewModal(false);
       setShowModal(true);
+
+      // optional: also notify your server with minimal info + whether experience was provided
+      await fetch("https://syllabusdbserver.onrender.com/notify-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          collegeName: collegeId,
+          courseCode: `${cleanedCourseCode} - ${cleanedCourseTitle}`,
+          hasExperience: !!cleanedExperience,
+        }),
+      });
     } catch (err) {
       console.error("Upload failed:", err);
       setUploadError("❌ Upload failed. Please try again.");
     } finally {
       setIsSubmitting(false);
-      // Notify admin about the new upload
-      await fetch("https://syllabusdbserver.onrender.com/notify-upload", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          collegeName: collegeId,
-          courseCode: `${courseCode} - ${courseTitle}`,
-        }),
-      });
     }
   };
 
@@ -400,6 +421,39 @@ export default function UploadSyllabus() {
           />
         </label>
 
+        {/* NEW: Optional Experience Field */}
+        <label>
+          Class Experience (optional):
+          <Textarea
+            radius={"md"}
+            value={experience}
+            onChange={(e) => {
+              const v = e.currentTarget.value;
+              if (v.length <= EXPERIENCE_MAX) setExperience(v);
+            }}
+            placeholder="What was your experience with this class? (tips for future students, workload, grading style, etc.)"
+            autosize
+            minRows={3}
+            maxRows={8}
+            styles={{
+              root: { marginTop: "0.5rem" },
+            }}
+          />
+          <div
+            style={{
+              fontSize: 12,
+              color: "#6b7280",
+              marginTop: 4,
+              display: "flex",
+              justifyContent: "space-between",
+            }}
+          >
+            <span>
+              {experience.length}/{EXPERIENCE_MAX}
+            </span>
+          </div>
+        </label>
+
         <p className="upload-guideline-reminder">
           By uploading, you agree to follow our{" "}
           <button
@@ -467,6 +521,7 @@ export default function UploadSyllabus() {
           </div>
         </div>
       )}
+
       {showReviewModal && (
         <div className="upload-modal">
           <div className="modal-content">
@@ -495,6 +550,16 @@ export default function UploadSyllabus() {
               <li>
                 <strong>File:</strong> {pdfFile?.name}
               </li>
+
+              {/* NEW: only show if provided */}
+              {experience.trim() && (
+                <li>
+                  <strong>Experience:</strong>{" "}
+                  <span style={{ whiteSpace: "pre-wrap" }}>
+                    {experience.trim()}
+                  </span>
+                </li>
+              )}
             </ul>
 
             {uploadError && (
@@ -524,6 +589,7 @@ export default function UploadSyllabus() {
           </div>
         </div>
       )}
+
       {/* terms of service modal */}
       <Modal opened={TOSopened} onClose={closeTOS} title="">
         <TermsOfService ismodal={true} />

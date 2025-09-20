@@ -234,3 +234,69 @@ mark {
     display: none;
   }
 }
+/* --- Mantine-styled syllabus rows --- */
+.syllabus-card {
+  padding: 12px 14px;
+  background: #ffffff;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+.syllabus-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.syllabus-title-link {
+  text-decoration: none;
+}
+
+.syllabus-title-link:hover .syllabus-title {
+  color: #2563eb;
+}
+
+.experience-quote {
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border-color: #e5e7eb;
+}
+.experience-text {
+  color: #111827;
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+
+/* Keep space tidy inside syllabi list */
+.syllabi-list .mantine-Paper-root + .mantine-Paper-root {
+  margin-top: 8px;
+}
+.syllabus-action-btn {
+  background: transparent; /* no strong background */
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #4b5563; /* neutral gray text & icon */
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.syllabus-action-btn:hover {
+  background: #f3f4f6; /* subtle gray hover */
+}
+
+.syllabus-action-btn svg {
+  color: inherit; /* icons follow button color */
+}
+
+.comment-toggle-text {
+  display: inline;
+  font-weight: 500;
+}
+
+/* Hide text on small screens */
+@media (max-width: 580px) {
+  .comment-toggle-text {
+    display: none;
+  }
+}

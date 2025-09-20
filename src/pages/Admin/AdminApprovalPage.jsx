@@ -224,6 +224,7 @@ export default function AdminApprovalPage() {
           file_path,
           createdAt: createdAt?.toDate?.() || null,
           owner,
+          experience_text: data.experience_text || "",
         });
       }
     }
@@ -393,10 +394,13 @@ export default function AdminApprovalPage() {
                                 <strong>
                                   {s.term} {s.year}
                                 </strong>{" "}
-                                – Prof. {s.professor}
+                                – {s.professor}
                                 <br />
                                 📚 <strong>{s.courseId}</strong>:{" "}
                                 {s.courseTitle}
+                                <br />
+                                <strong>Experience:</strong>{" "}
+                                {s.experience_text || "None"}
                               </div>
                               <div className="syllabus-actions">
                                 <a
