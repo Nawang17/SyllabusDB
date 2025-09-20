@@ -409,7 +409,12 @@ export default function SubjectPage() {
               </div>
 
               {expanded[course.id] && (
-                <div className="syllabi-list">
+                <div
+                  style={{
+                    paddingLeft: "0px",
+                  }}
+                  className="syllabi-list"
+                >
                   {loadingCourseId === course.id ? (
                     <div className="loading-syllabi">Loading syllabi...</div>
                   ) : (
