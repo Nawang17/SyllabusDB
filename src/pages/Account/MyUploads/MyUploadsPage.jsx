@@ -221,7 +221,7 @@ export default function MyUploadsPage() {
           </Text>
         </div>
 
-        <Group gap="xs">
+        {/* <Group gap="xs">
           <Tooltip label="Reset filters" withArrow>
             <Button
               variant="light"
@@ -231,7 +231,7 @@ export default function MyUploadsPage() {
               Reset
             </Button>
           </Tooltip>
-        </Group>
+        </Group> */}
       </Group>
 
       {/* Controls */}
@@ -246,7 +246,7 @@ export default function MyUploadsPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.currentTarget.value)}
           />
-          <Group grow wrap="wrap">
+          {/* <Group grow wrap="wrap">
             <Select
               style={{
                 width: "100%",
@@ -280,13 +280,10 @@ export default function MyUploadsPage() {
               value={collegeFilter}
               onChange={setCollegeFilter}
             />
-          </Group>
+          </Group> */}
 
           <Group justify="space-between" wrap="wrap">
             <Group>
-              <Text size="sm" fw={500} style={{ marginRight: 8 }}>
-                Status:
-              </Text>
               <Chip.Group
                 multiple={false}
                 value={statusFilter}
@@ -298,7 +295,7 @@ export default function MyUploadsPage() {
               </Chip.Group>
             </Group>
 
-            <Group>
+            {/* <Group>
               <Text size="sm" fw={500} style={{ marginRight: 8 }}>
                 Sort:
               </Text>
@@ -311,7 +308,7 @@ export default function MyUploadsPage() {
                   { label: "A-Z", value: "az" },
                 ]}
               />
-            </Group>
+            </Group> */}
           </Group>
         </Stack>
       </Card>
@@ -373,12 +370,18 @@ export default function MyUploadsPage() {
                   <Text size="sm">
                     Professor: {syllabus?.professor || "N/A"}
                   </Text>
+
                   {createdAt && (
                     <Text size="sm" c="dimmed">
                       Uploaded: {createdAt.toLocaleString()}
                     </Text>
                   )}
                 </Group>
+                {syllabus?.experience_text && (
+                  <Text mt="sm" size="sm">
+                    Experience: {syllabus?.experience_text}
+                  </Text>
+                )}
 
                 {syllabus?.pdf_url && (
                   <a
