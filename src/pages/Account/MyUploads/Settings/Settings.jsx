@@ -106,7 +106,7 @@ export default function SettingsPage() {
 
           <Text size="xs" pt="md" c="dimmed">
             You can change this anytime. All emails will be sent from{" "}
-            <strong>momosalerts@gmail.com</strong>.
+            <strong>no-reply@syllabusdb.com</strong>.
           </Text>
 
           <Divider my="md" />

@@ -85,7 +85,7 @@ function SyllabusRow({ s, courseCode }) {
             radius="md"
             size="lg"
           >
-            <IconShare2 size={17} stroke={1.7} />
+            <IconCopy size={17} stroke={1.7} />
           </ThemeIcon>
         </Group>
       </Group>

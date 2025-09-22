@@ -236,7 +236,7 @@ mark {
 }
 
 .syllabus-title-link {
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 .syllabus-title-link:hover .syllabus-title {
