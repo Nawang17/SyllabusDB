@@ -1,3 +1,4 @@
+// src/components/Header.jsx
 import {
   Box,
   Button,
@@ -7,10 +8,13 @@ import {
   Burger,
   Text,
   Avatar,
+  Drawer,
+  Divider,
+  Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { useNavigate } from "react-router";
-import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
+import { useEffect, useMemo, useState } from "react";
 import {
   getAuth,
   onAuthStateChanged,
@@ -25,8 +29,8 @@ import {
   IconHome,
   IconLock,
   IconSparkles,
-  IconUser,
   IconChevronDown,
+  IconUser,
 } from "@tabler/icons-react";
 import confetti from "canvas-confetti";
 import classes from "./styles/Header.module.css";
@@ -47,53 +51,68 @@ import {
 export default function Header() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [signInError, setSignInError] = useState("");
   const [showNewUserModal, setShowNewUserModal] = useState(false);
-  const [userData, setUserData] = useState(null);
-  const [scrolled, setScrolled] = useState(false); // NEW
-  const [modalOpened, { open: openModal, close: closeModal }] =
+  const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+  const isHome = location.pathname === "/";
+  const [isSignInOpen, { open: openSignIn, close: closeSignIn }] =
     useDisclosure(false);
+  const [
+    isMobileOpen,
+    { open: openMobile, close: closeMobile, toggle: toggleMobile },
+  ] = useDisclosure(false);
+
   const auth = getAuth();
-  // NEW: shadow only after scroll
+
+  // Elevation on scroll
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 6);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+  // Auth state watcher + user doc fetch
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (u) {
         setUser(u);
         setIsAnonymous(u.isAnonymous);
         setIsAdmin(u.email === "nawangsherpa1010@gmail.com");
+
         if (!u.isAnonymous) {
-          // Fetch user document to check if it exists
           const db = getFirestore();
           const userRef = doc(db, "users", u.uid);
-          getDoc(userRef).then((userSnap) => {
-            if (userSnap.exists()) {
-              setUserData(userSnap.data());
-            }
-          });
+          const snap = await getDoc(userRef);
+          if (snap.exists()) setUserData(snap.data());
+        } else {
+          setUserData(null);
         }
       } else {
         setUser(null);
         setIsAnonymous(false);
         setIsAdmin(false);
+        setUserData(null);
       }
     });
     return () => unsubscribe();
   }, []);
+  const initials = useMemo(() => {
+    if (!userData?.full_name) return "U";
+    const parts = userData.full_name.trim().split(/\s+/);
+    const first = parts[0]?.[0] || "";
+    const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+    return (first + last).toUpperCase();
+  }, [userData?.full_name]);
 
   const handleGoogleLink = async () => {
     const db = getFirestore();
     const provider = new GoogleAuthProvider();
 
     let docPathsToClaim = [];
-
     const anonUser = auth.currentUser?.isAnonymous ? auth.currentUser : null;
     const anonUID = anonUser?.uid;
 
@@ -102,15 +121,12 @@ export default function Header() {
         const snapshot = await getDocs(
           query(collectionGroup(db, "syllabi"), where("owner", "==", anonUID))
         );
-
         const batch = writeBatch(db);
-
         snapshot.forEach((docSnap) => {
           const ref = doc(db, docSnap.ref.path);
           batch.update(ref, { owner: deleteField() });
           docPathsToClaim.push(ref.path);
         });
-
         await batch.commit();
         sessionStorage.setItem(
           "pendingSyllabusClaims",
@@ -122,43 +138,39 @@ export default function Header() {
     }
 
     try {
-      // 🔐 Sign in with Google
       const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      setUser(user);
+      const signedUser = result.user;
+      setUser(signedUser);
       setIsAnonymous(false);
 
       const claimedPaths = JSON.parse(
         sessionStorage.getItem("pendingSyllabusClaims") || "[]"
       );
-
       if (claimedPaths.length > 0) {
         const batch = writeBatch(db);
         claimedPaths.forEach((path) => {
           const ref = doc(db, path);
-          batch.update(ref, { owner: user.uid });
+          batch.update(ref, { owner: signedUser.uid });
         });
         await batch.commit();
         sessionStorage.removeItem("pendingSyllabusClaims");
       }
 
-      // 🧾 Create user doc if it doesn't exist
-      const userRef = doc(db, "users", user.uid);
+      // Ensure user doc
+      const userRef = doc(db, "users", signedUser.uid);
       const userSnap = await getDoc(userRef);
-
       if (!userSnap.exists()) {
         await setDoc(userRef, {
-          email: user.email,
-          full_name: user.displayName || "",
-          profile_image: user.photoURL || "",
+          email: signedUser.email,
+          full_name: signedUser.displayName || "",
+          profile_image: signedUser.photoURL || "",
           createdAt: new Date(),
         });
-
-        confetti({ particleCount: 300, spread: 70, origin: { y: 0.6 } });
+        confetti({ particleCount: 220, spread: 60, origin: { y: 0.6 } });
         setShowNewUserModal(true);
       } else {
         notifications.show({
-          title: "Signed In Successfully",
+          title: "Signed in",
           message: "Welcome back to SyllabusDB!",
           color: "green",
           icon: <IconSparkles size={16} />,
@@ -168,11 +180,13 @@ export default function Header() {
 
       navigate("/");
       setSignInError("");
-      closeModal();
+      closeSignIn();
+      closeMobile();
     } catch (error) {
-      console.error("❌ Google sign-in failed:", error);
+      console.error("Google sign-in failed:", error);
       setSignInError("Something went wrong. Please try again.");
-      // 🔁 Rollback: re-assign anonUID to previously cleared docs
+
+      // Rollback
       if (anonUID && docPathsToClaim.length > 0) {
         try {
           const batch = writeBatch(db);
@@ -181,7 +195,6 @@ export default function Header() {
             batch.update(ref, { owner: anonUID });
           });
           await batch.commit();
-
           sessionStorage.removeItem("pendingSyllabusClaims");
         } catch (rollbackError) {
           console.error(rollbackError);
@@ -189,18 +202,24 @@ export default function Header() {
       }
     }
   };
-  // helper: initials fallback for avatar
-  const initials = (name) => {
-    if (!name) return "U";
-    const parts = name.trim().split(/\s+/);
-    const first = parts[0]?.[0] || "";
-    const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
-    return (first + last).toUpperCase();
+
+  const handleSignOut = async () => {
+    await getAuth().signOut();
+    navigate("/");
+    notifications.show({
+      title: "Signed out",
+      message: "You have been signed out successfully.",
+      color: "red",
+      position: "bottom-center",
+      icon: <IconLogout size={16} />,
+    });
   };
+
   return (
     <Box className={`${classes.header} ${scrolled ? classes.scrolled : ""}`}>
       <div className={classes.headerInner}>
-        <div
+        {/* Logo */}
+        <button
           className={classes.logo}
           onClick={() => navigate("/")}
           aria-label="SyllabusDB Home"
@@ -208,182 +227,273 @@ export default function Header() {
           <Text fw={800} size="xl" className={classes.wordmark}>
             Syllabus<span className={classes.brand}>DB</span>
           </Text>
-        </div>
+        </button>
 
-        <Group className={classes.rightSide} gap="xs">
+        {/* Right side actions */}
+        <Group className={classes.rightSide} gap="sm">
+          <Burger
+            hiddenFrom="sm"
+            size="sm"
+            opened={isMobileOpen}
+            onClick={toggleMobile}
+            aria-label="Open menu"
+          />
           <Button
-            variant="default"
+            variant="light"
+            color="blue"
             onClick={() => navigate("/uploadsyllabus")}
             visibleFrom="sm"
-            size="xs"
+            size="sm"
           >
             Upload Syllabus
           </Button>
 
           {isAdmin && (
             <Button
-              variant="outline"
+              variant="subtle"
               onClick={() => navigate("/admin")}
               visibleFrom="sm"
-              size="xs"
+              size="sm"
             >
               Admin
             </Button>
           )}
 
-          {(!user || isAnonymous) && (
-            <Button
-              onClick={openModal}
-              variant="filled"
-              visibleFrom="sm"
-              size="xs"
-            >
-              Sign In
-            </Button>
-          )}
+          {/* Desktop account menu */}
+          {user && !isAnonymous ? (
+            <Menu shadow="md" width={240} position="bottom-end" withinPortal>
+              <Menu.Target>
+                <Button
+                  variant="subtle"
+                  size="sm"
+                  className={classes.accountBtn}
+                  leftSection={
+                    userData?.profile_image ? (
+                      <Avatar
+                        src={userData.profile_image}
+                        radius="xl"
+                        size="sm"
+                      />
+                    ) : (
+                      <Avatar radius="xl" size="sm" color="blue">
+                        {initials}
+                      </Avatar>
+                    )
+                  }
+                  rightSection={<IconChevronDown size={14} />}
+                  visibleFrom="sm"
+                >
+                  {userData?.full_name || "Account"}
+                </Button>
+              </Menu.Target>
 
-          <Menu shadow="md" width={220} position="bottom-end" withinPortal>
-            <Menu.Target>
-              <div>
-                {user && !isAnonymous ? (
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    className={classes.accountBtn}
-                    leftSection={
-                      userData?.profile_image ? (
-                        <Avatar
-                          src={userData.profile_image}
-                          radius="xl"
-                          size="sm"
-                        />
-                      ) : (
-                        <Avatar radius="xl" size="sm" color="gray">
-                          {initials(userData?.full_name)}
-                        </Avatar>
-                      )
-                    }
-                    rightSection={<IconChevronDown size={14} />}
+              <Menu.Dropdown>
+                {!isHome && (
+                  <Menu.Item
+                    leftSection={<IconHome size={16} />}
+                    onClick={() => navigate("/")}
                   >
-                    {userData?.full_name || "Account"}
-                  </Button>
-                ) : (
-                  <Burger hiddenFrom="sm" size="sm" />
+                    Home
+                  </Menu.Item>
                 )}
-              </div>
-            </Menu.Target>
-
-            <Menu.Dropdown>
-              <Menu.Item
-                leftSection={<IconHome size={16} />}
-                onClick={() => navigate("/")}
-              >
-                Home
-              </Menu.Item>
-
-              <Menu.Divider />
-              <Menu.Item
-                leftSection={<IconUpload size={16} />}
-                onClick={() => navigate("/uploadsyllabus")}
-              >
-                Upload Syllabus
-              </Menu.Item>
-
-              {user && !isAnonymous && (
-                <>
-                  <Menu.Divider />
-                  <Menu.Item
-                    onClick={() => navigate("/myuploads")}
-                    leftSection={<IconPhoto size={16} />}
-                  >
-                    My Uploads
-                  </Menu.Item>
-                  <Menu.Item
-                    onClick={() => navigate("/settings")}
-                    leftSection={<IconSettings size={16} />}
-                  >
-                    Settings
-                  </Menu.Item>
-                </>
-              )}
-
-              {isAdmin && (
-                <>
-                  <Menu.Divider />
+                <Menu.Item
+                  leftSection={<IconUpload size={16} />}
+                  onClick={() => navigate("/uploadsyllabus")}
+                >
+                  Upload Syllabus
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<IconPhoto size={16} />}
+                  onClick={() => navigate("/myuploads")}
+                >
+                  My Uploads
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<IconSettings size={16} />}
+                  onClick={() => navigate("/settings")}
+                >
+                  Settings
+                </Menu.Item>
+                {isAdmin && (
                   <Menu.Item onClick={() => navigate("/admin")}>
                     Admin
                   </Menu.Item>
-                </>
-              )}
-
-              <Menu.Divider />
-
-              {user && !isAnonymous ? (
+                )}
+                <Menu.Divider />
                 <Menu.Item
                   color="red"
-                  onClick={async () => {
-                    const auth = getAuth();
-                    await auth.signOut();
-                    navigate("/");
-                    notifications.show({
-                      title: "Signed Out",
-                      message: "You have been signed out successfully.",
-                      color: "red",
-                      position: "bottom-center",
-                      icon: <IconLogout size={16} />,
-                    });
-                  }}
                   leftSection={<IconLogout size={16} />}
+                  onClick={handleSignOut}
                 >
                   Sign Out
                 </Menu.Item>
-              ) : (
-                <Menu.Item
-                  color="blue"
-                  leftSection={<IconLock size={16} />}
-                  onClick={openModal}
-                >
-                  Sign In
-                </Menu.Item>
-              )}
-            </Menu.Dropdown>
-          </Menu>
+              </Menu.Dropdown>
+            </Menu>
+          ) : (
+            <>
+              <Button
+                onClick={openSignIn}
+                variant="outline"
+                size="sm"
+                visibleFrom="sm"
+              >
+                Sign In
+              </Button>
+            </>
+          )}
         </Group>
       </div>
 
+      {/* Mobile drawer */}
+      <Drawer
+        opened={isMobileOpen}
+        onClose={closeMobile}
+        padding="md"
+        size="80%"
+        position="right"
+      >
+        <Group align="center" gap="sm" mb="md">
+          {user && !isAnonymous ? (
+            <>
+              {userData?.profile_image ? (
+                <Avatar src={userData.profile_image} radius="xl" />
+              ) : (
+                <Avatar radius="xl" color="blue">
+                  {initials}
+                </Avatar>
+              )}
+              <div>
+                <Text fw={600}>{userData?.full_name || "Account"}</Text>
+                <Text size="xs" c="dimmed">
+                  {user?.email || "Signed in"}
+                </Text>
+              </div>
+            </>
+          ) : (
+            <>
+              <Avatar radius="xl" color="gray">
+                <IconUser size={16} />
+              </Avatar>
+              <Text fw={600}>Guest</Text>
+            </>
+          )}
+        </Group>
+
+        <Divider my="sm" />
+        {!isHome && (
+          <Button
+            fullWidth
+            variant="light"
+            leftSection={<IconHome size={16} />}
+            mb="xs"
+            onClick={() => {
+              navigate("/");
+              closeMobile();
+            }}
+          >
+            Home
+          </Button>
+        )}
+
+        <Button
+          fullWidth
+          variant="light"
+          leftSection={<IconUpload size={16} />}
+          mb="xs"
+          onClick={() => {
+            navigate("/uploadsyllabus");
+            closeMobile();
+          }}
+        >
+          Upload Syllabus
+        </Button>
+        {user && !isAnonymous && (
+          <>
+            <Button
+              fullWidth
+              variant="light"
+              leftSection={<IconPhoto size={16} />}
+              mb="xs"
+              onClick={() => {
+                navigate("/myuploads");
+                closeMobile();
+              }}
+            >
+              My Uploads
+            </Button>
+            <Button
+              fullWidth
+              variant="light"
+              leftSection={<IconSettings size={16} />}
+              mb="xs"
+              onClick={() => {
+                navigate("/settings");
+                closeMobile();
+              }}
+            >
+              Settings
+            </Button>
+          </>
+        )}
+        {isAdmin && (
+          <Button
+            fullWidth
+            variant="light"
+            mb="xs"
+            onClick={() => {
+              navigate("/admin");
+              closeMobile();
+            }}
+          >
+            Admin
+          </Button>
+        )}
+
+        <Divider my="sm" />
+
+        {user && !isAnonymous ? (
+          <Button
+            fullWidth
+            color="red"
+            leftSection={<IconLogout size={16} />}
+            onClick={() => {
+              handleSignOut();
+              closeMobile();
+            }}
+          >
+            Sign Out
+          </Button>
+        ) : (
+          <Button
+            fullWidth
+            leftSection={<IconLock size={16} />}
+            onClick={() => {
+              openSignIn();
+              closeMobile();
+            }}
+          >
+            Sign In
+          </Button>
+        )}
+      </Drawer>
+
       {/* Sign-in modal */}
       <Modal
-        opened={modalOpened}
+        opened={isSignInOpen}
         onClose={() => {
-          closeModal();
+          closeSignIn();
           setSignInError("");
         }}
-        title="Sign In to SyllabusDB"
+        title="Welcome to SyllabusDB"
         radius="md"
         size="md"
       >
         <Text size="sm" mb="sm">
-          <strong>Note:</strong> You don’t need to sign in to upload a syllabus.
-          But signing in lets you <strong>track and manage your uploads</strong>{" "}
-          easily.
+          Sign in with Google to easily manage your uploads and get
+          notifications about their status.
         </Text>
 
-        {signInError && (
-          <Box
-            bg="#ffe0e0"
-            c="#b00020"
-            p="sm"
-            mb="sm"
-            style={{
-              borderRadius: 8,
-              fontSize: 13,
-              textAlign: "center",
-              border: "1px solid #b00020",
-            }}
-          >
-            {signInError}
-          </Box>
-        )}
+        {signInError && <Box className={classes.errorBox}>{signInError}</Box>}
 
         <Button
           fullWidth
@@ -403,6 +513,7 @@ export default function Header() {
         </Button>
       </Modal>
 
+      {/* New user modal */}
       {showNewUserModal && (
         <Modal
           opened
@@ -412,34 +523,25 @@ export default function Header() {
           padding="lg"
           withCloseButton={false}
         >
-          <div style={{ textAlign: "center" }}>
-            <h2 style={{ marginBottom: "1rem", fontSize: "1.5rem" }}>
+          <div className={classes.welcomeBox}>
+            <Title order={3} mb="sm">
               🎓 Welcome to SyllabusDB
-            </h2>
-
-            <p style={{ marginBottom: "1rem" }}>
-              Want to get email updates when your syllabus or college request is
+            </Title>
+            <Text mb="xs">
+              Get email updates when your syllabus or college request is
               approved?
-            </p>
-
-            <p
-              style={{
-                fontSize: "0.9rem",
-                color: "#666",
-                marginBottom: "1.5rem",
-              }}
-            >
+            </Text>
+            <Text size="sm" c="dimmed" mb="md">
               You can change this anytime in Settings.
-            </p>
+            </Text>
 
-            <div
-              style={{ display: "flex", justifyContent: "center", gap: "1rem" }}
-            >
+            <Group justify="center" gap="md">
               <Button
                 onClick={async () => {
                   const db = getFirestore();
-                  const auth = getAuth();
-                  const userRef = doc(db, "users", auth.currentUser.uid);
+                  const current = getAuth().currentUser;
+                  if (!current) return setShowNewUserModal(false);
+                  const userRef = doc(db, "users", current.uid);
                   await setDoc(
                     userRef,
                     { wantsEmailNotifications: true },
@@ -456,7 +558,7 @@ export default function Header() {
               >
                 No
               </Button>
-            </div>
+            </Group>
           </div>
         </Modal>
       )}
