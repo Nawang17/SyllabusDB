@@ -399,8 +399,12 @@ export default function AdminApprovalPage() {
                                 📚 <strong>{s.courseId}</strong>:{" "}
                                 {s.courseTitle}
                                 <br />
-                                <strong>Experience:</strong>{" "}
-                                {s.experience_text || "None"}
+                                {s.experience_text && (
+                                  <>
+                                    <strong>Experience:</strong>{" "}
+                                    {s.experience_text}
+                                  </>
+                                )}
                               </div>
                               <div className="syllabus-actions">
                                 <a

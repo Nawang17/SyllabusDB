@@ -221,10 +221,15 @@ export default function Header() {
         {/* Logo */}
         <button
           className={classes.logo}
-          onClick={() => navigate("/")}
+          onClick={() => {
+            navigate("/");
+            if (location.pathname === "/") {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }}
           aria-label="SyllabusDB Home"
         >
-          <Text fw={800} size="xl" className={classes.wordmark}>
+          <Text c={"black"} fw={800} size="xl" className={classes.wordmark}>
             Syllabus<span className={classes.brand}>DB</span>
           </Text>
         </button>

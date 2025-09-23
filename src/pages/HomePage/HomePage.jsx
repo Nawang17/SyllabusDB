@@ -225,9 +225,9 @@ export default function HomePage() {
           <h3>Trusted & Verified</h3>
           <p>How we keep things safe and reliable:</p>
           <ul className="trust-list">
-            <li>▪️ Every syllabus is reviewed before approval</li>
-            <li>▪️ PDF uploads are scanned with antivirus tools</li>
-            <li>▪️ Most uploads are approved within 24 hours</li>
+            <p>✔️ Every syllabus is manually reviewed before approval</p>
+            <p>✔️ PDF uploads are scanned with antivirus tools</p>
+            <p>✔️ Most uploads are approved within 12 hours</p>
           </ul>
           <p>
             SyllabusDB is dedicated to maintaining a safe and reliable platform
