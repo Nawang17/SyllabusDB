@@ -1,76 +1,66 @@
+// src/pages/GuidelinesPage.jsx
 import { useEffect } from "react";
 import "./GuideLinesPage.css";
 
 export default function GuidelinesPage({ ismodal }) {
   useEffect(() => {
     !ismodal && window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  }, [ismodal]);
 
   return (
     <div
-      style={{
-        marginTop: ismodal ? 0 : "2rem",
-      }}
+      style={{ marginTop: ismodal ? 0 : "2rem" }}
       className="guidelines-page"
     >
       <h1>Guidelines</h1>
       <p>
-        SyllabusDB is a student-powered platform created to help others make
-        better decisions when choosing classes. To keep the site reliable, safe,
-        and legally compliant, please follow the guidelines below.
+        SyllabusDB helps students choose classes by sharing past course syllabi.
+        Follow these guidelines so uploads stay useful, safe, and reviewable.
       </p>
 
       <h2>What You Can Upload</h2>
       <ul className="guidelines-list">
-        <li>Official syllabi or course outlines from classes you have taken</li>
-        <li>Files in PDF format only (maximum size: 5MB)</li>
         <li>
-          Documents that do not contain personal information (yours or anyone
-          else’s)
+          Official course syllabi or course outlines from classes you took
         </li>
-        <li>Educational content that is factual and relevant to the course</li>
+        <li>PDF files only, up to 5 MB</li>
+        <li>Documents without personal information</li>
+        <li>Material that is factual and directly related to the course</li>
       </ul>
 
       <h2>Do Not Upload</h2>
       <ul className="guidelines-list">
-        <li>Fake, altered, or misleading documents</li>
+        <li>Edited, fake, or misleading files</li>
+        <li>Homework, quizzes, exams, solutions, or textbook pages</li>
         <li>
-          Homework assignments, quizzes, exams, solution keys, or textbook
-          material
+          Confidential or restricted documents, including files marked “do not
+          distribute”
         </li>
-        <li>
-          Confidential or restricted documents, including anything marked “do
-          not distribute”
-        </li>
-        <li>Advertisements, spam, or unrelated content</li>
+        <li>Ads, spam, or unrelated content</li>
       </ul>
 
-      <h2>Keeping the Platform Safe</h2>
+      <h2>How We Review</h2>
       <ul className="guidelines-list">
-        <li>Every upload is manually reviewed before being made public</li>
-        <li>Files are scanned for viruses and flagged content</li>
-        <li>
-          Violations may lead to rejected uploads or a permanent block from
-          submitting
-        </li>
+        <li>All uploads are reviewed before they appear on the site</li>
+        <li>Files are scanned for malware and flagged content</li>
+        <li>Violations may be rejected or lead to loss of upload access</li>
       </ul>
 
-      <h2>Legal Reminder</h2>
-      <p>
-        Uploads must follow U.S. fair use standards under Section 107.
-        SyllabusDB is for educational, non-commercial sharing. If a rights
-        holder submits a verified request, we will remove the content promptly.
-      </p>
+      <h2>Important Notes</h2>
+      <ul className="guidelines-list">
+        <li>
+          Instructors can change courses over time. Treat syllabi as references
+        </li>
+        <li>
+          If a rights holder requests removal with proof, we remove the content.
+          See <a href="/takedown">Takedown Policy</a> for steps
+        </li>
+      </ul>
 
       <p className="guidelines-footer">
-        This platform exists to support students. Please help keep it
-        respectful, helpful, and trustworthy for everyone.
+        This platform is for students. Keep it respectful, helpful, and
+        accurate.
       </p>
-
-      <i>
-        Note: Syllabi are shared for reference. Instructors may change course
-        structure or content in future semesters.
-      </i>
     </div>
   );
 }

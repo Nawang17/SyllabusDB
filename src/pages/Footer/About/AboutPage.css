@@ -1,18 +1,79 @@
+/* src/pages/AboutPage.css */
+
 .about-page {
-  max-width: 1200px;
-  margin: 4rem auto;
-  padding: 0 1.5rem;
-  font-size: 1rem;
-  line-height: 1.6;
-  padding: 0 2rem;
+  max-width: 1150px;
+  margin: 0 auto;
+  padding: 2rem 2rem 3rem 2rem;
+  color: #0f172a; /* slate-900 */
+  font-size: 16px;
+  line-height: 1.7;
+  background: transparent;
 }
 
 .about-page h1 {
-  font-size: 2rem;
+  font-size: clamp(1.7rem, 1.2rem + 1.5vw, 2.3rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
   margin-bottom: 1rem;
-  text-align: center;
+}
+
+.about-page h2 {
+  font-size: clamp(1.1rem, 1rem + 0.5vw, 1.4rem);
+  font-weight: 700;
+  margin: 1.8rem 0 0.7rem;
+  color: #1e3a8a; /* indigo-900 accent */
 }
 
 .about-page p {
-  margin-bottom: 1.5rem;
+  margin: 0.75rem 0;
+  color: #1f2937; /* gray-800 */
+}
+
+.about-page ul {
+  margin: 0.5rem 0 1rem 1.25rem;
+  padding: 0;
+}
+
+.about-page li {
+  margin: 0.4rem 0;
+  padding-left: 0.25rem;
+}
+
+.about-page a {
+  color: #1e88e5;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(30, 136, 229, 0.25);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.about-page a:hover {
+  color: #1565c0;
+  border-bottom-color: rgba(21, 101, 192, 0.4);
+}
+
+/* Subtle section spacing */
+.about-page h2 + p,
+.about-page h2 + ul {
+  margin-top: 0.35rem;
+}
+
+.about-page p + h2,
+.about-page ul + h2 {
+  margin-top: 1.6rem;
+}
+
+/* Responsive adjustments */
+@media (min-width: 640px) {
+  .about-page {
+    padding: 2.5rem 1.5rem 3.5rem;
+    font-size: 17px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .about-page {
+    padding: 3rem 0 4rem;
+    font-size: 18px;
+  }
 }
