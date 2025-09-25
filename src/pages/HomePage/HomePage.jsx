@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   collection,
@@ -15,69 +15,138 @@ import studentImage from "../../assets/studentshangingout.jpg";
 import verifiedImage from "../../assets/verified-illustration.jpg";
 import CountUp from "react-countup";
 
+const CACHE_KEY = "topColleges:v1";
+const CACHE_TTL_MS = 60 * 1000; // 1 minute
+function useOnScreen(ref, rootMargin = "200px") {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setVisible(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref, rootMargin]);
+  return visible;
+}
+
 export default function HomePage() {
   const [colleges, setColleges] = useState([]);
-  const [Searchquery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
   const [loading, setLoading] = useState(true);
   const [totalUploads, setTotalUploads] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [animateCount, setAnimateCount] = useState(false);
+
   const searchInputRef = useRef(null);
+  const scrollerRef = useRef(null);
+  const scrollerIsNear = useOnScreen(scrollerRef);
   const navigate = useNavigate();
-  const fetchTopColleges = async () => {
+
+  const fetchTopColleges = async (toggleLoading = false) => {
     try {
+      if (toggleLoading) setLoading(true);
+
       const q = query(
         collection(db, "colleges"),
         orderBy("approvedSyllabiTotal", "desc"),
         limit(5)
       );
       const snapshot = await getDocs(q);
+      const data = snapshot.docs.map((d) => {
+        const x = d.data();
+        return {
+          id: d.id,
+          name: x.name,
+          image_url: x.image_url,
+          uploads: x.approvedSyllabiTotal || 0,
+        };
+      });
 
-      const collegesData = snapshot.docs
-        .map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            name: data.name,
-            image_url: data.image_url,
-            uploads: data.approvedSyllabiTotal || 0,
-          };
-        })
-        .filter((college) => college.approved !== false);
-      console.log("Fetched colleges:", collegesData);
-      setColleges(collegesData);
+      setColleges(data);
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
     } catch (err) {
       console.error("Error fetching top colleges:", err);
     } finally {
-      setLoading(false);
+      if (toggleLoading) setLoading(false);
     }
   };
+
+  // SWR: show cache instantly, refresh in bg
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    // start both in parallel
-    fetchTopColleges();
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (raw) {
+      try {
+        const { data, ts } = JSON.parse(raw);
+        if (Array.isArray(data)) {
+          setColleges(data);
+          setLoading(false);
+        }
+        if (!ts || Date.now() - ts > CACHE_TTL_MS) {
+          void fetchTopColleges(true);
+        }
+      } catch {
+        void fetchTopColleges(true);
+      }
+    } else {
+      void fetchTopColleges(true);
+    }
 
-    //  Live global total from stats/global
+    // Live global total from stats/global
     const unsub = onSnapshot(
       doc(db, "stats", "global"),
-      (snap) => {
-        const data = snap.data();
-        setTotalUploads(data?.total_syllabi || 0);
-      },
-      (err) => {
-        console.error("stats/global listener error:", err);
-      }
+      (snap) => setTotalUploads(snap.data()?.total_syllabi || 0),
+      (err) => console.error("stats/global listener error:", err)
     );
 
+    // Animate CountUp only when visible (and respect reduced motion)
+    const countEl = document.querySelector(".hero-syllabi-count");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (!reduce.matches && countEl) {
+      const io = new IntersectionObserver(
+        ([e]) => {
+          if (e.isIntersecting) {
+            setAnimateCount(true);
+            io.disconnect();
+          }
+        },
+        { rootMargin: "120px" }
+      );
+      io.observe(countEl);
+      return () => {
+        unsub();
+        io.disconnect();
+      };
+    }
     return () => unsub();
   }, []);
 
-  const filtered = colleges.filter((college) =>
-    college.name.toLowerCase().includes(Searchquery.toLowerCase())
-  );
+  // debounce search
+  useEffect(() => {
+    const t = setTimeout(
+      () => setDebounced(searchQuery.trim().toLowerCase()),
+      120
+    );
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  const filtered = useMemo(() => {
+    if (!debounced) return colleges;
+    return colleges.filter((c) => c.name.toLowerCase().includes(debounced));
+  }, [colleges, debounced]);
 
   const handleKeyDown = (e) => {
-    if (Searchquery && filtered.length > 0) {
+    if (debounced && filtered.length > 0) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setSelectedIndex((prev) => (prev + 1) % filtered.length);
@@ -93,13 +162,14 @@ export default function HomePage() {
   };
 
   const highlightMatch = (name) => {
-    const index = name.toLowerCase().indexOf(Searchquery.toLowerCase());
+    if (!debounced) return name;
+    const index = name.toLowerCase().indexOf(debounced);
     if (index === -1) return name;
     return (
       <>
         {name.slice(0, index)}
-        <strong>{name.slice(index, index + Searchquery.length)}</strong>
-        {name.slice(index + Searchquery.length)}
+        <strong>{name.slice(index, index + debounced.length)}</strong>
+        {name.slice(index + debounced.length)}
       </>
     );
   };
@@ -114,7 +184,19 @@ export default function HomePage() {
 
         <p className="hero-syllabi-count">
           <strong>
-            <CountUp start={0} end={totalUploads} duration={2} separator="," />
+            {animateCount ? (
+              <CountUp
+                start={Math.max(
+                  0,
+                  totalUploads - Math.floor(totalUploads * 0.05)
+                )}
+                end={totalUploads}
+                duration={0.7}
+                separator=","
+              />
+            ) : (
+              totalUploads.toLocaleString()
+            )}
           </strong>{" "}
           syllabi available
         </p>
@@ -124,7 +206,7 @@ export default function HomePage() {
             type="text"
             className="search-input"
             placeholder="Search for your college..."
-            value={Searchquery}
+            value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setSelectedIndex(-1);
@@ -132,13 +214,15 @@ export default function HomePage() {
             onKeyDown={handleKeyDown}
             ref={searchInputRef}
             aria-label="Search for a college"
+            enterKeyHint="search"
+            autoComplete="off"
           />
-          {Searchquery && (
+          {searchQuery && (
             <button className="clear-btn" onClick={() => setSearchQuery("")}>
               ×
             </button>
           )}
-          {Searchquery && (
+          {searchQuery && (
             <div className="results-box">
               {filtered.length > 0 ? (
                 filtered.map((college, index) => (
@@ -168,10 +252,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="college-scroll-wrapper">
+      {/* Below-the-fold — let browser skip layout/paint until near */}
+      <section
+        ref={scrollerRef}
+        className="college-scroll-wrapper"
+        style={{ contentVisibility: "auto", containIntrinsicSize: "640px" }}
+      >
         <h2 className="scroll-title">Most Shared Syllabi</h2>
         <div className="college-scroll">
-          {loading
+          {loading || !scrollerIsNear
             ? [...Array(4)].map((_, i) => (
                 <div key={i} className="college-card skeleton">
                   <div className="skeleton-img" />
@@ -179,36 +268,33 @@ export default function HomePage() {
                   <div className="skeleton-line long" />
                 </div>
               ))
-            : colleges
-                .sort((a, b) => b.uploads - a.uploads)
-                .slice(0, 10)
-                .map((college, i) => (
-                  <div
-                    key={college.id}
-                    className="college-card fade-in"
-                    onClick={() => navigate(`/college/${college.id}`)}
-                  >
-                    <img
-                      loading="lazy"
-                      src={college.image_url}
-                      alt={college.name}
-                      className="college-img"
-                      onError={(e) =>
-                        (e.target.src =
-                          "https://via.placeholder.com/300x200?text=Image+Unavailable")
-                      }
-                    />
-                    <div className="college-name">
-                      {i + 1}. {college.name}
-                    </div>
-                    {college.uploads > 0 && (
-                      <div className="college-count">
-                        {college.uploads} syllabi
-                      </div>
-                    )}
+            : filtered.map((college, i) => (
+                <div
+                  key={college.id}
+                  className="college-card fade-in"
+                  onClick={() => navigate(`/college/${college.id}`)}
+                >
+                  <img
+                    loading="lazy"
+                    src={college.image_url}
+                    alt={college.name}
+                    className="college-img"
+                    onError={(e) => {
+                      e.currentTarget.src =
+                        "https://via.placeholder.com/300x200?text=Image+Unavailable";
+                    }}
+                  />
+                  <div className="college-name">
+                    {i + 1}. {college.name}
                   </div>
-                ))}
-          {!loading && (
+                  {college.uploads > 0 && (
+                    <div className="college-count">
+                      {college.uploads} syllabi
+                    </div>
+                  )}
+                </div>
+              ))}
+          {!loading && scrollerIsNear && (
             <div
               className="college-card view-all-card-link fade-in"
               onClick={() => navigate("/colleges")}
@@ -219,7 +305,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="why-section fade-in">
+      <section
+        className="why-section fade-in"
+        style={{ contentVisibility: "auto", containIntrinsicSize: "720px" }}
+      >
         <img
           loading="lazy"
           src={studentImage}
@@ -240,7 +329,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="trust-section fade-in">
+      <section
+        className="trust-section fade-in"
+        style={{ contentVisibility: "auto", containIntrinsicSize: "680px" }}
+      >
         <div className="trust-content">
           <h3>Trusted & Verified</h3>
           <p>How we keep things safe and reliable:</p>
