@@ -15,8 +15,12 @@ import studentImage from "../../assets/studentshangingout.jpg";
 import verifiedImage from "../../assets/verified-illustration.jpg";
 import CountUp from "react-countup";
 
-const CACHE_KEY = "topColleges:v1";
-const CACHE_TTL_MS = 60 * 1000; // 1 minute
+const TOP_CACHE_KEY = "topColleges:v1";
+const TOP_CACHE_TTL_MS = 60 * 1000; // 1 minute
+
+const IDX_CACHE_KEY = "collegesIndex:v1";
+const IDX_CACHE_TTL_MS = 60 * 1000; // 1 minute
+
 function useOnScreen(ref, rootMargin = "200px") {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
@@ -38,12 +42,20 @@ function useOnScreen(ref, rootMargin = "200px") {
 }
 
 export default function HomePage() {
-  const [colleges, setColleges] = useState([]);
+  // Top list for scroller
+  const [topColleges, setTopColleges] = useState([]);
+  const [loadingTop, setLoadingTop] = useState(true);
+
+  // Search index (full list)
+  const [searchIndex, setSearchIndex] = useState([]); // [{id,name,image_url?}]
+  const [loadingIndex, setLoadingIndex] = useState(false);
+  const [indexLoadedOnce, setIndexLoadedOnce] = useState(false);
+
+  // UI states
   const [searchQuery, setSearchQuery] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [totalUploads, setTotalUploads] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [totalUploads, setTotalUploads] = useState(0);
   const [animateCount, setAnimateCount] = useState(false);
 
   const searchInputRef = useRef(null);
@@ -51,10 +63,10 @@ export default function HomePage() {
   const scrollerIsNear = useOnScreen(scrollerRef);
   const navigate = useNavigate();
 
+  // ---- Fetch Top N (fast scroller) ----
   const fetchTopColleges = async (toggleLoading = false) => {
     try {
-      if (toggleLoading) setLoading(true);
-
+      if (toggleLoading) setLoadingTop(true);
       const q = query(
         collection(db, "colleges"),
         orderBy("approvedSyllabiTotal", "desc"),
@@ -70,30 +82,85 @@ export default function HomePage() {
           uploads: x.approvedSyllabiTotal || 0,
         };
       });
-
-      setColleges(data);
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
+      setTopColleges(data);
+      localStorage.setItem(
+        TOP_CACHE_KEY,
+        JSON.stringify({ data, ts: Date.now() })
+      );
     } catch (err) {
       console.error("Error fetching top colleges:", err);
     } finally {
-      if (toggleLoading) setLoading(false);
+      if (toggleLoading) setLoadingTop(false);
     }
   };
 
-  // SWR: show cache instantly, refresh in bg
+  // ---- Fetch Search Index (ALL colleges, light fields) ----
+  const fetchSearchIndex = async (force = false) => {
+    try {
+      // SWR cache
+      if (!force) {
+        const raw = localStorage.getItem(IDX_CACHE_KEY);
+        if (raw) {
+          try {
+            const { data, ts } = JSON.parse(raw);
+            if (Array.isArray(data)) {
+              setSearchIndex(data);
+              setIndexLoadedOnce(true);
+              if (!ts || Date.now() - ts > IDX_CACHE_TTL_MS) {
+                // refresh in background
+                void fetchSearchIndex(true);
+              }
+              return;
+            }
+          } catch {
+            /* fall through */
+          }
+        }
+      }
+
+      setLoadingIndex(true);
+      const snap = await getDocs(collection(db, "colleges"));
+      const all = snap.docs
+        .map((d) => {
+          const x = d.data();
+          return {
+            id: d.id,
+            name: x.name || "",
+            approved: x.approved !== false,
+          };
+        })
+        .filter((c) => c.approved && c.name);
+      setSearchIndex(all);
+      setIndexLoadedOnce(true);
+      localStorage.setItem(
+        IDX_CACHE_KEY,
+        JSON.stringify({ data: all, ts: Date.now() })
+      );
+    } catch (e) {
+      console.error("Error fetching search index:", e);
+    } finally {
+      setLoadingIndex(false);
+    }
+  };
+
+  // ---- Initial mount: SWR for top list + stats listener + CountUp gate ----
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    const raw = localStorage.getItem(CACHE_KEY);
+    // Top list SWR
+    const raw = localStorage.getItem(TOP_CACHE_KEY);
     if (raw) {
       try {
         const { data, ts } = JSON.parse(raw);
         if (Array.isArray(data)) {
-          setColleges(data);
-          setLoading(false);
+          setTopColleges(data);
+          setLoadingTop(false);
         }
-        if (!ts || Date.now() - ts > CACHE_TTL_MS) {
+        if (!ts || Date.now() - ts > TOP_CACHE_TTL_MS) {
           void fetchTopColleges(true);
+        } else {
+          // still revalidate in background to reflect console edits quickly
+          void fetchTopColleges(false);
         }
       } catch {
         void fetchTopColleges(true);
@@ -102,18 +169,19 @@ export default function HomePage() {
       void fetchTopColleges(true);
     }
 
-    // Live global total from stats/global
-    const unsub = onSnapshot(
+    // Stats listener (live)
+    const unsubStats = onSnapshot(
       doc(db, "stats", "global"),
       (snap) => setTotalUploads(snap.data()?.total_syllabi || 0),
       (err) => console.error("stats/global listener error:", err)
     );
 
-    // Animate CountUp only when visible (and respect reduced motion)
+    // CountUp visibility (respect reduced motion)
     const countEl = document.querySelector(".hero-syllabi-count");
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let io;
     if (!reduce.matches && countEl) {
-      const io = new IntersectionObserver(
+      io = new IntersectionObserver(
         ([e]) => {
           if (e.isIntersecting) {
             setAnimateCount(true);
@@ -123,15 +191,14 @@ export default function HomePage() {
         { rootMargin: "120px" }
       );
       io.observe(countEl);
-      return () => {
-        unsub();
-        io.disconnect();
-      };
     }
-    return () => unsub();
+    return () => {
+      unsubStats();
+      if (io) io.disconnect();
+    };
   }, []);
 
-  // debounce search
+  // ---- Debounce search input ----
   useEffect(() => {
     const t = setTimeout(
       () => setDebounced(searchQuery.trim().toLowerCase()),
@@ -140,10 +207,27 @@ export default function HomePage() {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
+  // ---- Lazy-load search index on first interaction ----
+  const onSearchFocus = () => {
+    if (!indexLoadedOnce && !loadingIndex) void fetchSearchIndex(false);
+  };
+
+  // Optional: also trigger when user starts typing
+  useEffect(() => {
+    if (searchQuery && !indexLoadedOnce && !loadingIndex) {
+      void fetchSearchIndex(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
+
+  // ---- Filter against the FULL INDEX, not the top list ----
   const filtered = useMemo(() => {
-    if (!debounced) return colleges;
-    return colleges.filter((c) => c.name.toLowerCase().includes(debounced));
-  }, [colleges, debounced]);
+    if (!debounced) return [];
+    const q = debounced;
+    return searchIndex
+      .filter((c) => c.name.toLowerCase().includes(q))
+      .slice(0, 20); // cap dropdown size for perf/UX
+  }, [searchIndex, debounced]);
 
   const handleKeyDown = (e) => {
     if (debounced && filtered.length > 0) {
@@ -207,6 +291,7 @@ export default function HomePage() {
             className="search-input"
             placeholder="Search for your college..."
             value={searchQuery}
+            onFocus={onSearchFocus}
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setSelectedIndex(-1);
@@ -224,7 +309,9 @@ export default function HomePage() {
           )}
           {searchQuery && (
             <div className="results-box">
-              {filtered.length > 0 ? (
+              {loadingIndex && !indexLoadedOnce ? (
+                <div className="no-result">Loading colleges…</div>
+              ) : filtered.length > 0 ? (
                 filtered.map((college, index) => (
                   <div
                     key={college.id}
@@ -252,7 +339,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Below-the-fold — let browser skip layout/paint until near */}
+      {/* Below-the-fold — top scroller only uses TOP LIST */}
       <section
         ref={scrollerRef}
         className="college-scroll-wrapper"
@@ -260,7 +347,7 @@ export default function HomePage() {
       >
         <h2 className="scroll-title">Most Shared Syllabi</h2>
         <div className="college-scroll">
-          {loading || !scrollerIsNear
+          {loadingTop || !scrollerIsNear
             ? [...Array(4)].map((_, i) => (
                 <div key={i} className="college-card skeleton">
                   <div className="skeleton-img" />
@@ -268,7 +355,7 @@ export default function HomePage() {
                   <div className="skeleton-line long" />
                 </div>
               ))
-            : filtered.map((college, i) => (
+            : topColleges.map((college, i) => (
                 <div
                   key={college.id}
                   className="college-card fade-in"
@@ -294,7 +381,7 @@ export default function HomePage() {
                   )}
                 </div>
               ))}
-          {!loading && scrollerIsNear && (
+          {!loadingTop && scrollerIsNear && (
             <div
               className="college-card view-all-card-link fade-in"
               onClick={() => navigate("/colleges")}
