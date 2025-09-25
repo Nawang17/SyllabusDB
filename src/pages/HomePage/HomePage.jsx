@@ -1,6 +1,14 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
-import { collection, getDocs } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+} from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
 import "./HomePage.css";
 import studentImage from "../../assets/studentshangingout.jpg";
@@ -15,41 +23,53 @@ export default function HomePage() {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const searchInputRef = useRef(null);
   const navigate = useNavigate();
+  const fetchTopColleges = async () => {
+    try {
+      const q = query(
+        collection(db, "colleges"),
+        orderBy("approvedSyllabiTotal", "desc"),
+        limit(5)
+      );
+      const snapshot = await getDocs(q);
 
+      const collegesData = snapshot.docs
+        .map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.name,
+            image_url: data.image_url,
+            uploads: data.approvedSyllabiTotal || 0,
+          };
+        })
+        .filter((college) => college.approved !== false);
+      console.log("Fetched colleges:", collegesData);
+      setColleges(collegesData);
+    } catch (err) {
+      console.error("Error fetching top colleges:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    const fetchCollegesWithCounts = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, "colleges"));
-        let uploadsSum = 0;
-        const collegesData = snapshot.docs
-          .map((doc) => {
-            const data = doc.data();
-            const uploads = data.approvedSyllabiTotal || 0;
+    // start both in parallel
+    fetchTopColleges();
 
-            return {
-              id: doc.id,
-              name: data.name,
-              image_url: data.image_url,
-              uploads,
-              approved: data.approved, // include this so we can filter
-            };
-          })
-          .filter((college) => college.approved !== false); // only include approved or undefined
-
-        uploadsSum = collegesData.reduce((sum, c) => sum + c.uploads, 0);
-
-        setColleges(collegesData);
-        setTotalUploads(uploadsSum);
-      } catch (error) {
-        console.error("Error fetching colleges:", error);
-      } finally {
-        setLoading(false);
+    //  Live global total from stats/global
+    const unsub = onSnapshot(
+      doc(db, "stats", "global"),
+      (snap) => {
+        const data = snap.data();
+        setTotalUploads(data?.total_syllabi || 0);
+      },
+      (err) => {
+        console.error("stats/global listener error:", err);
       }
-    };
+    );
 
-    fetchCollegesWithCounts();
+    return () => unsub();
   }, []);
 
   const filtered = colleges.filter((college) =>

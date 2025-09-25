@@ -11,6 +11,8 @@ import {
   query,
   where,
   increment,
+  setDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { ref as storageRef, deleteObject } from "firebase/storage";
 import "./AdminApprovalPage.css";
@@ -257,6 +259,15 @@ export default function AdminApprovalPage() {
     await updateDoc(collegeRef, {
       approvedSyllabiTotal: increment(1),
     });
+
+    await setDoc(
+      doc(db, "stats", "global"),
+      {
+        total_syllabi: increment(1),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
     setSyllabi((prev) => prev.filter((s) => s.ref.id !== ref.id));
 
     const email = await shouldNotifyUser(owner);
