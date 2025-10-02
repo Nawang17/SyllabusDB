@@ -165,6 +165,7 @@ export default function Header() {
           full_name: signedUser.displayName || "",
           profile_image: signedUser.photoURL || "",
           createdAt: new Date(),
+          wantsEmailNotifications: true,
         });
         confetti({ particleCount: 220, spread: 60, origin: { y: 0.6 } });
         setShowNewUserModal(true);
@@ -523,45 +524,38 @@ export default function Header() {
         <Modal
           opened
           onClose={() => setShowNewUserModal(false)}
-          centered
           radius="md"
           padding="lg"
           withCloseButton={false}
+          classNames={{ content: classes.popoutModal }}
         >
           <div className={classes.welcomeBox}>
-            <Title order={3} mb="sm">
+            <Title order={3} mb="xs">
               🎓 Welcome to SyllabusDB
             </Title>
-            <Text mb="xs">
-              Get email updates when your syllabus or college request is
-              approved?
-            </Text>
-            <Text size="sm" c="dimmed" mb="md">
-              You can change this anytime in Settings.
+            <Text size="md" mb="md">
+              Thanks for joining! Here you can browse and upload syllabi to help
+              other students make better course choices. Start exploring or add
+              your first syllabus.
             </Text>
 
-            <Group justify="center" gap="md">
+            <Group justify="center" mt="md">
               <Button
-                onClick={async () => {
-                  const db = getFirestore();
-                  const current = getAuth().currentUser;
-                  if (!current) return setShowNewUserModal(false);
-                  const userRef = doc(db, "users", current.uid);
-                  await setDoc(
-                    userRef,
-                    { wantsEmailNotifications: true },
-                    { merge: true }
-                  );
+                variant="filled"
+                color="blue"
+                onClick={() => {
                   setShowNewUserModal(false);
+                  navigate("/uploadsyllabus");
                 }}
               >
-                Yes
+                Upload a Syllabus
               </Button>
               <Button
-                variant="default"
+                variant="outline"
+                color="gray"
                 onClick={() => setShowNewUserModal(false)}
               >
-                No
+                Start Browsing
               </Button>
             </Group>
           </div>

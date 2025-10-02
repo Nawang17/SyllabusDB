@@ -436,11 +436,37 @@ export default function MyUploadsPage() {
                 </Group>
 
                 <Divider my="xs" />
-
+                {/* left-side actions */}
+                <Group gap="xs" align="flex-start">
+                  <Button
+                    color="indigo"
+                    variant="light"
+                    size="xs"
+                    leftSection={<IconPencil size={16} />}
+                    onClick={() => openExperienceModal(row)}
+                  >
+                    {syllabus?.experience_text
+                      ? "Edit experience"
+                      : "Add experience"}
+                  </Button>
+                  {syllabus?.pdf_url && (
+                    <Button
+                      component="a"
+                      href={syllabus.pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      variant="subtle"
+                      size="xs"
+                      // leftSection={<IconFileText size={16} />} // optional
+                    >
+                      View PDF
+                    </Button>
+                  )}
+                </Group>
                 {/* Experience summary */}
-                <Group justify="space-between" align="flex-start">
+                <Group justify="space-between" mt={10}>
                   <div style={{ flex: 1 }}>
-                    {syllabus?.experience_text ? (
+                    {syllabus?.experience_text && (
                       <Paper withBorder p="sm" radius="md">
                         <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>
                           {syllabus.experience_text}
@@ -451,39 +477,8 @@ export default function MyUploadsPage() {
                             : ""}
                         </Text>
                       </Paper>
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        No experience yet.
-                      </Text>
                     )}
                   </div>
-
-                  {/* Right-side actions */}
-                  <Group gap="xs" align="flex-start">
-                    <Button
-                      variant="light"
-                      size="xs"
-                      leftSection={<IconPencil size={16} />}
-                      onClick={() => openExperienceModal(row)}
-                    >
-                      {syllabus?.experience_text
-                        ? "Edit experience"
-                        : "Add experience"}
-                    </Button>
-                    {syllabus?.pdf_url && (
-                      <Button
-                        component="a"
-                        href={syllabus.pdf_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="subtle"
-                        size="xs"
-                        // leftSection={<IconFileText size={16} />} // optional
-                      >
-                        View PDF
-                      </Button>
-                    )}
-                  </Group>
                 </Group>
               </Card>
             );

@@ -84,6 +84,28 @@
 .welcomeBox {
   text-align: center;
 }
+.popoutModal {
+  animation: popout 0.35s ease-out;
+  transform-origin: center;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: white;
+  border-radius: 16px;
+}
+
+@keyframes popout {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 
 /* Makes the benefit badges wrap nicely on small screens */
 .mantine-Group-root > .mantine-Badge-root {
