@@ -6,6 +6,8 @@ import {
   where,
   doc,
   getDoc,
+  updateDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import {
@@ -14,20 +16,28 @@ import {
   Card,
   Text,
   Badge,
-  Loader,
   Group,
   Stack,
-  Select,
-  SegmentedControl,
   Chip,
   Button,
-  Tooltip,
   Skeleton,
   TextInput,
+  Textarea,
+  Modal,
+  Paper,
+  Divider,
 } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { notifications } from "@mantine/notifications";
 import { db } from "../../../../firebaseConfig";
 import { useNavigate } from "react-router";
-import { IconRefresh, IconX } from "@tabler/icons-react";
+import {
+  IconX,
+  IconPencil,
+  IconCheck,
+  IconTrash,
+  IconFileText,
+} from "@tabler/icons-react";
 
 function toTitleCaseCollege(slug) {
   if (!slug) return "Unknown College";
@@ -38,6 +48,14 @@ function dt(s) {
   return s?.toDate ? s.toDate() : new Date(0);
 }
 
+function fmtDate(d) {
+  try {
+    return d?.toLocaleString?.() ?? "";
+  } catch {
+    return "";
+  }
+}
+
 export default function MyUploadsPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,11 +63,21 @@ export default function MyUploadsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [termFilter, setTermFilter] = useState(null);
   const [yearFilter, setYearFilter] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("all"); // all | approved | pending
+  const [statusFilter, setStatusFilter] = useState("all");
   const [collegeFilter, setCollegeFilter] = useState(null);
-  const [sortBy, setSortBy] = useState("newest"); // newest | oldest | az
+  const [sortBy, setSortBy] = useState("newest");
 
   const navigate = useNavigate();
+
+  // Modal state for Add/Edit/Delete Experience
+  const [expModalOpened, { open: openExpModal, close: closeExpModal }] =
+    useDisclosure(false);
+  const [expDraft, setExpDraft] = useState("");
+  const [expSaving, setExpSaving] = useState(false);
+  const [activeRow, setActiveRow] = useState(null);
+
+  const EXP_MAX = 500;
+  const EXP_MIN = 8;
 
   useEffect(() => {
     const fetchUploadsWithCourseInfo = async () => {
@@ -93,8 +121,9 @@ export default function MyUploadsPage() {
 
             return {
               id: docSnap.id,
+              ref: docSnap.ref,
               syllabus,
-              course: { ...courseData, collegeId },
+              course: { ...courseData, collegeId, code: courseId },
             };
           })
         );
@@ -113,27 +142,9 @@ export default function MyUploadsPage() {
     fetchUploadsWithCourseInfo();
   }, [navigate]);
 
-  // derived filter options
-  const { termOptions, yearOptions, collegeOptions } = useMemo(() => {
-    const terms = new Set();
-    const years = new Set();
-    const colleges = new Set();
-    rows.forEach(({ syllabus, course }) => {
-      if (syllabus?.term) terms.add(String(syllabus.term));
-      if (syllabus?.year) years.add(String(syllabus.year));
-      if (course?.collegeId) colleges.add(toTitleCaseCollege(course.collegeId));
-    });
-
-    const makeOpts = (arr) => arr.map((v) => ({ value: v, label: v }));
-
-    return {
-      termOptions: makeOpts([...terms].sort((a, b) => a.localeCompare(b))),
-      // years descending makes sense for quick picking
-      yearOptions: makeOpts([...years].sort((a, b) => Number(b) - Number(a))),
-      collegeOptions: makeOpts(
-        [...colleges].sort((a, b) => a.localeCompare(b))
-      ),
-    };
+  useMemo(() => {
+    // just to keep parity with your earlier options calculation (unused here)
+    return null;
   }, [rows]);
 
   // debounce search
@@ -210,6 +221,119 @@ export default function MyUploadsPage() {
     setSortBy("newest");
   };
 
+  const openExperienceModal = (row) => {
+    setActiveRow(row);
+    setExpDraft(row?.syllabus?.experience_text ?? "");
+    openExpModal();
+  };
+
+  const saveExperience = async () => {
+    if (!activeRow) return;
+    const trimmed = expDraft.trim();
+
+    if (trimmed.length && trimmed.length < EXP_MIN) {
+      notifications.show({
+        color: "orange",
+        title: "Too short",
+        message: `Please add at least ${EXP_MIN} characters.`,
+      });
+      return;
+    }
+    if (trimmed.length > EXP_MAX) {
+      notifications.show({
+        color: "orange",
+        title: "Too long",
+        message: `Keep it under ${EXP_MAX} characters.`,
+      });
+      return;
+    }
+
+    try {
+      setExpSaving(true);
+      await updateDoc(activeRow.ref, {
+        experience_text: trimmed || null,
+        experience_updatedAt: serverTimestamp(),
+      });
+
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === activeRow.id
+            ? {
+                ...r,
+                syllabus: {
+                  ...r.syllabus,
+                  experience_text: trimmed || null,
+                  experience_updatedAt: { toDate: () => new Date() },
+                },
+              }
+            : r
+        )
+      );
+
+      notifications.show({
+        icon: <IconCheck size={16} />,
+        title: trimmed ? "Experience saved" : "Experience removed",
+        message: trimmed
+          ? "Your course experience was saved."
+          : "Experience was cleared.",
+      });
+      closeExpModal();
+      setActiveRow(null);
+      setExpDraft("");
+    } catch (e) {
+      console.error(e);
+      notifications.show({
+        color: "red",
+        title: "Failed to save",
+        message: "Could not update experience. Please try again.",
+      });
+    } finally {
+      setExpSaving(false);
+    }
+  };
+
+  const deleteExperience = async () => {
+    if (!activeRow) return;
+    try {
+      setExpSaving(true);
+      await updateDoc(activeRow.ref, {
+        experience_text: null,
+        experience_updatedAt: serverTimestamp(),
+      });
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === activeRow.id
+            ? {
+                ...r,
+                syllabus: {
+                  ...r.syllabus,
+                  experience_text: null,
+                  experience_updatedAt: { toDate: () => new Date() },
+                },
+              }
+            : r
+        )
+      );
+      notifications.show({
+        icon: <IconTrash size={16} />,
+        title: "Experience removed",
+        message: "Your course experience was deleted.",
+      });
+      closeExpModal();
+      setActiveRow(null);
+      setExpDraft("");
+    } catch (e) {
+      console.error(e);
+      notifications.show({
+        color: "red",
+        title: "Failed to delete",
+        message: "Could not delete experience. Please try again.",
+      });
+    } finally {
+      setExpSaving(false);
+    }
+  };
+
   return (
     <Container size="1200px" py="xl" px="2rem">
       <Group justify="space-between" align="end" mb="xs">
@@ -220,100 +344,30 @@ export default function MyUploadsPage() {
             {rows.length !== 1 ? "s" : ""}
           </Text>
         </div>
-
-        {/* <Group gap="xs">
-          <Tooltip label="Reset filters" withArrow>
-            <Button
-              variant="light"
-              leftSection={<IconRefresh size={16} />}
-              onClick={clearAll}
-            >
-              Reset
-            </Button>
-          </Tooltip>
-        </Group> */}
       </Group>
 
-      {/* Controls */}
       <Card withBorder radius="md" mb="md" p="md">
         <Stack gap="sm">
           <TextInput
-            style={{
-              width: "100%",
-            }}
             label="Search"
             placeholder="Search by course, code, or professor"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.currentTarget.value)}
           />
-          {/* <Group grow wrap="wrap">
-            <Select
-              style={{
-                width: "100%",
-              }}
-              label="Term"
-              placeholder="All"
-              data={termOptions}
-              clearable
-              value={termFilter}
-              onChange={setTermFilter}
-            />
-            <Select
-              style={{
-                width: "100%",
-              }}
-              label="Year"
-              placeholder="All"
-              data={yearOptions}
-              clearable
-              value={yearFilter}
-              onChange={setYearFilter}
-            />
-            <Select
-              style={{
-                width: "100%",
-              }}
-              label="College"
-              placeholder="All"
-              data={collegeOptions}
-              clearable
-              value={collegeFilter}
-              onChange={setCollegeFilter}
-            />
-          </Group> */}
-
           <Group justify="space-between" wrap="wrap">
-            <Group>
-              <Chip.Group
-                multiple={false}
-                value={statusFilter}
-                onChange={setStatusFilter}
-              >
-                <Chip value="all">All</Chip>
-                <Chip value="approved">Approved</Chip>
-                <Chip value="pending">Pending</Chip>
-              </Chip.Group>
-            </Group>
-
-            {/* <Group>
-              <Text size="sm" fw={500} style={{ marginRight: 8 }}>
-                Sort:
-              </Text>
-              <SegmentedControl
-                value={sortBy}
-                onChange={setSortBy}
-                data={[
-                  { label: "Newest", value: "newest" },
-                  { label: "Oldest", value: "oldest" },
-                  { label: "A-Z", value: "az" },
-                ]}
-              />
-            </Group> */}
+            <Chip.Group
+              multiple={false}
+              value={statusFilter}
+              onChange={setStatusFilter}
+            >
+              <Chip value="all">All</Chip>
+              <Chip value="approved">Approved</Chip>
+              <Chip value="pending">Pending</Chip>
+            </Chip.Group>
           </Group>
         </Stack>
       </Card>
 
-      {/* Content */}
       {loading ? (
         <Stack>
           {[...Array(4)].map((_, i) => (
@@ -343,10 +397,14 @@ export default function MyUploadsPage() {
         </Card>
       ) : (
         <Stack gap="md">
-          {filtered.map(({ id, syllabus, course }) => {
+          {filtered.map((row) => {
+            const { id, syllabus, course } = row;
             const approved = Boolean(syllabus?.approved);
             const createdAt = syllabus?.createdAt?.toDate?.()
               ? syllabus.createdAt.toDate()
+              : null;
+            const updatedAt = syllabus?.experience_updatedAt?.toDate?.()
+              ? syllabus.experience_updatedAt.toDate()
               : null;
 
             return (
@@ -366,38 +424,138 @@ export default function MyUploadsPage() {
                   </Badge>
                 </Group>
 
-                <Group justify="space-between" wrap="wrap">
+                <Group justify="space-between" wrap="wrap" mb="xs">
                   <Text size="sm">
                     Professor: {syllabus?.professor || "N/A"}
                   </Text>
-
                   {createdAt && (
                     <Text size="sm" c="dimmed">
-                      Uploaded: {createdAt.toLocaleString()}
+                      Uploaded: {fmtDate(createdAt)}
                     </Text>
                   )}
                 </Group>
-                {syllabus?.experience_text && (
-                  <Text mt="sm" size="sm">
-                    Experience: {syllabus?.experience_text}
-                  </Text>
-                )}
 
-                {syllabus?.pdf_url && (
-                  <a
-                    href={syllabus.pdf_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ display: "inline-block", marginTop: 8 }}
-                  >
-                    View PDF
-                  </a>
-                )}
+                <Divider my="xs" />
+
+                {/* Experience summary */}
+                <Group justify="space-between" align="flex-start">
+                  <div style={{ flex: 1 }}>
+                    {syllabus?.experience_text ? (
+                      <Paper withBorder p="sm" radius="md">
+                        <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>
+                          {syllabus.experience_text}
+                        </Text>
+                        <Text size="xs" c="dimmed" mt="xs">
+                          {updatedAt
+                            ? `Last updated: ${fmtDate(updatedAt)}`
+                            : ""}
+                        </Text>
+                      </Paper>
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        No experience yet.
+                      </Text>
+                    )}
+                  </div>
+
+                  {/* Right-side actions */}
+                  <Group gap="xs" align="flex-start">
+                    <Button
+                      variant="light"
+                      size="xs"
+                      leftSection={<IconPencil size={16} />}
+                      onClick={() => openExperienceModal(row)}
+                    >
+                      {syllabus?.experience_text
+                        ? "Edit experience"
+                        : "Add experience"}
+                    </Button>
+                    {syllabus?.pdf_url && (
+                      <Button
+                        component="a"
+                        href={syllabus.pdf_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="subtle"
+                        size="xs"
+                        // leftSection={<IconFileText size={16} />} // optional
+                      >
+                        View PDF
+                      </Button>
+                    )}
+                  </Group>
+                </Group>
               </Card>
             );
           })}
         </Stack>
       )}
+
+      {/* Edit/Delete Experience Modal */}
+      <Modal
+        opened={expModalOpened}
+        onClose={() => {
+          closeExpModal();
+          setActiveRow(null);
+          setExpDraft("");
+        }}
+        title="Edit experience"
+        centered
+        radius="md"
+      >
+        <Stack>
+          <Textarea
+            autosize
+            minRows={4}
+            maxRows={8}
+            placeholder="Grading style, workload, exam/essay balance, tips..."
+            value={expDraft}
+            onChange={(e) => setExpDraft(e.currentTarget.value)}
+            maxLength={EXP_MAX}
+            description={`${expDraft.trim().length}/${EXP_MAX} characters`}
+          />
+
+          <Group justify="space-between" mt="xs">
+            <Button
+              variant="default"
+              leftSection={<IconX size={16} />}
+              onClick={() => {
+                closeExpModal();
+                setActiveRow(null);
+                setExpDraft("");
+              }}
+            >
+              Cancel
+            </Button>
+
+            <Group>
+              <Button
+                color="red"
+                variant="light"
+                leftSection={<IconTrash size={16} />}
+                loading={expSaving}
+                onClick={deleteExperience}
+                disabled={!activeRow?.syllabus} // minor guard; remove if not needed
+              >
+                Delete
+              </Button>
+
+              <Button
+                leftSection={<IconCheck size={16} />}
+                loading={expSaving}
+                onClick={saveExperience}
+                disabled={
+                  expDraft.trim() ===
+                    (activeRow?.syllabus?.experience_text ?? "").trim() &&
+                  !!activeRow?.syllabus?.experience_text
+                }
+              >
+                Save
+              </Button>
+            </Group>
+          </Group>
+        </Stack>
+      </Modal>
     </Container>
   );
 }
