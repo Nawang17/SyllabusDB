@@ -55,7 +55,7 @@ export default function AdminApprovalPage() {
   };
   const sendNotificationEmail = async ({ email, subject, message }) => {
     try {
-      await fetch("https://syllabusdbserver.onrender.com/notify-user", {
+      await fetch("https://syllabusdbserver-agza.onrender.com/notify-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, subject, message }),
@@ -129,7 +129,7 @@ export default function AdminApprovalPage() {
     setScanningIds((prev) => ({ ...prev, [id]: true }));
     try {
       const res = await fetch(
-        `https://syllabusdbserver.onrender.com/scan?url=${encodeURIComponent(
+        `https://syllabusdbserver-agza.onrender.com/scan?url=${encodeURIComponent(
           pdf_url
         )}`
       );

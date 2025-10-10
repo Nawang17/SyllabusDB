@@ -73,7 +73,7 @@ export default function RequestCollege() {
       setError("Something went wrong. Please try again.");
     } finally {
       await fetch(
-        "https://syllabusdbserver.onrender.com/notify-college-request",
+        "https://syllabusdbserver-agza.onrender.com/notify-college-request",
         {
           method: "POST",
           headers: {

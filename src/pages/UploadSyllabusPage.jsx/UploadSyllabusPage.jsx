@@ -261,7 +261,7 @@ export default function UploadSyllabus() {
       setShowModal(true);
 
       // optional: also notify your server with minimal info + whether experience was provided
-      await fetch("https://syllabusdbserver.onrender.com/notify-upload", {
+      await fetch("https://syllabusdbserver-agza.onrender.com/notify-upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
