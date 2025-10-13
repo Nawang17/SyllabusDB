@@ -389,8 +389,8 @@ export default function AdminApprovalPage() {
                           onClick={() => toggleOwner(college, owner)}
                           className="dropdown-btn inner"
                         >
-                          {openOwners[key] ? "▼" : "►"} 👤 ...{owner.slice(-5)}{" "}
-                          ({items.length})
+                          {openOwners[key] ? "▼" : "►"} 👤 {owner.slice(0, 23)}
+                          ... ({items.length})
                         </button>
 
                         {openOwners[key] &&
