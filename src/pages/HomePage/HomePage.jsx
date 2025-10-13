@@ -405,10 +405,9 @@ export default function HomePage() {
         <div className="why-content">
           <h3>Why this matters</h3>
           <p>
-            SyllabusDB helps students preview real course syllabi so they can
-            choose classes with confidence. When you upload a syllabus, you’re
-            supporting fellow students and building a more transparent, helpful
-            campus culture.
+            SyllabusDB lets students see real class syllabi before registering.
+            When you upload one, you help others choose classes with confidence
+            and make course planning easier for future students.
           </p>
           <button onClick={() => navigate("/uploadsyllabus")} className="btn">
             Upload a Syllabus
