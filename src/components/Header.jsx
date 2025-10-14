@@ -35,6 +35,7 @@ import {
 import confetti from "canvas-confetti";
 import classes from "./styles/Header.module.css";
 import { notifications } from "@mantine/notifications";
+
 import {
   collectionGroup,
   doc,
@@ -47,6 +48,7 @@ import {
   where,
   deleteField,
 } from "firebase/firestore";
+import { analytics } from "../../firebaseConfig";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -167,6 +169,9 @@ export default function Header() {
           createdAt: new Date(),
           wantsEmailNotifications: true,
         });
+        if (analytics) {
+          analytics.logEvent("sign_up", { method: "Google" });
+        }
         confetti({ particleCount: 220, spread: 60, origin: { y: 0.6 } });
         navigate("/");
 

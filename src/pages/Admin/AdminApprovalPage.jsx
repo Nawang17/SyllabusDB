@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { db, storage, auth } from "../../../firebaseConfig";
+import { db, storage, auth, analytics } from "../../../firebaseConfig";
 import {
   collectionGroup,
   getDocs,
@@ -74,6 +74,11 @@ export default function AdminApprovalPage() {
 
     await updateDoc(collegeRef, { approved: true });
     setCollegeRequests((prev) => prev.filter((c) => c.id !== id));
+    if (analytics) {
+      analytics.logEvent("college_approved", {
+        name: data.name,
+      });
+    }
 
     const email = await shouldNotifyUser(data.owner);
     if (email) {
@@ -269,7 +274,11 @@ export default function AdminApprovalPage() {
       { merge: true }
     );
     setSyllabi((prev) => prev.filter((s) => s.ref.id !== ref.id));
-
+    if (analytics) {
+      analytics.logEvent("syllabus_approved", {
+        collegeId,
+      });
+    }
     const email = await shouldNotifyUser(owner);
     if (email) {
       await sendNotificationEmail({
