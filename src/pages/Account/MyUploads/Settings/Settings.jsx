@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   Container,
@@ -9,35 +9,51 @@ import {
   Switch,
   Card,
   Divider,
+  Button,
 } from "@mantine/core";
 import { useNavigate } from "react-router";
 import { db } from "../../../../../firebaseConfig";
 
 export default function SettingsPage() {
+  const [authResolved, setAuthResolved] = useState(false);
+  const [authUser, setAuthUser] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [userDocExists, setUserDocExists] = useState(false);
-  // Add a new state to manage the disable status of the switch
   const [isSaving, setIsSaving] = useState(false);
+
   const navigate = useNavigate();
   const auth = getAuth();
-  const user = auth.currentUser;
 
+  // 1) Resolve auth state exactly once on mount
   useEffect(() => {
-    if (!user || user.isAnonymous) {
-      navigate("/");
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setAuthUser(u && !u.isAnonymous ? u : null);
+      setAuthResolved(true);
+    });
+    return unsub;
+  }, [auth]);
+
+  // 2) After auth is resolved, fetch settings if signed in
+  useEffect(() => {
+    if (!authResolved) return;
+
+    if (!authUser) {
+      // Not signed in; stop loading and show the message
+      setLoading(false);
       return;
     }
 
     const fetchSettings = async () => {
       try {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
+        const userRef = doc(db, "users", authUser.uid);
+        const snap = await getDoc(userRef);
 
-        if (userSnap.exists()) {
+        if (snap.exists()) {
           setUserDocExists(true);
           setNotificationsEnabled(
-            userSnap.data()?.wantsEmailNotifications || false
+            snap.data()?.wantsEmailNotifications || false
           );
         } else {
           setUserDocExists(false);
@@ -50,15 +66,14 @@ export default function SettingsPage() {
     };
 
     fetchSettings();
-  }, [user, navigate]);
+  }, [authResolved, authUser]);
 
   const handleToggle = async (checked) => {
-    // Immediately set the UI state for responsiveness
+    if (!authUser) return;
     setNotificationsEnabled(checked);
-    // Disable the switch to prevent further clicks
     setIsSaving(true);
     try {
-      const userRef = doc(db, "users", user.uid);
+      const userRef = doc(db, "users", authUser.uid);
       await setDoc(
         userRef,
         { wantsEmailNotifications: checked },
@@ -66,15 +81,47 @@ export default function SettingsPage() {
       );
     } catch (e) {
       console.error("Failed to save setting:", e);
-      // If saving fails, revert the UI state
-      setNotificationsEnabled(!checked);
-      // Optionally, show an error message to the user here
+      setNotificationsEnabled((prev) => !prev);
     } finally {
-      // Re-enable the switch once the operation is complete (success or failure)
       setIsSaving(false);
     }
   };
 
+  // Still resolving initial auth? Show loader.
+  if (!authResolved || loading) {
+    return (
+      <Container size="1200px" py="xl" px="2rem">
+        <Loader
+          style={{
+            marginTop: "2rem",
+            margin: "0 auto",
+            display: "block",
+          }}
+        />
+      </Container>
+    );
+  }
+
+  // Auth resolved and no user
+  if (!authUser) {
+    return (
+      <Container size="1200px" py="xl" px="2rem">
+        <Card shadow="sm" radius="md" withBorder p="lg">
+          <Title order={3} mb="sm">
+            You’re not signed in
+          </Title>
+          <Text mb="md" c="dimmed">
+            Please sign in to view and manage your settings.
+          </Text>
+          <Button onClick={() => navigate("/")} variant="light">
+            Go to Home Page
+          </Button>
+        </Card>
+      </Container>
+    );
+  }
+
+  // Signed in view
   return (
     <Container size="1200px" py="xl" px="2rem">
       <Title order={2} mb="md">
@@ -84,12 +131,11 @@ export default function SettingsPage() {
         Manage your notification preferences
       </Text>
 
-      {loading ? (
-        <Loader style={{ marginTop: "2rem" }} />
-      ) : !userDocExists ? (
+      {!userDocExists ? (
         <Card shadow="sm" radius="md" withBorder mt="md" p="lg">
           <Text>
-            You don't have a user profile yet. Please resign in to create one.
+            You don’t have a user profile yet. Please sign out and sign back in
+            to create one.
           </Text>
         </Card>
       ) : (
@@ -98,29 +144,28 @@ export default function SettingsPage() {
             checked={notificationsEnabled}
             onChange={(e) => handleToggle(e.currentTarget.checked)}
             label="Email me when my syllabus or college request is approved or rejected"
-            // Disable the switch if data is being saved
             onLabel="Yes"
             offLabel="No"
             disabled={isSaving}
           />
-
           <Text size="xs" pt="md" c="dimmed">
             You can change this anytime. All emails will be sent from{" "}
             <strong>no-reply@syllabusdb.com</strong>.
           </Text>
-
           <Divider my="md" />
-
           <Text size="xs">Account created</Text>
           <Text size="xs" pt="4px" c="dimmed">
-            {user?.metadata?.creationTime
-              ? new Date(user.metadata.creationTime).toLocaleString("default", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                  hour: "numeric",
-                  minute: "numeric",
-                })
+            {authUser?.metadata?.creationTime
+              ? new Date(authUser.metadata.creationTime).toLocaleString(
+                  "default",
+                  {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "numeric",
+                    minute: "numeric",
+                  }
+                )
               : "Unknown"}
           </Text>
         </Card>

@@ -9,7 +9,7 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   Container,
   Title,
@@ -31,13 +31,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { db } from "../../../../firebaseConfig";
 import { useNavigate } from "react-router";
-import {
-  IconX,
-  IconPencil,
-  IconCheck,
-  IconTrash,
-  IconFileText,
-} from "@tabler/icons-react";
+import { IconX, IconPencil, IconCheck, IconTrash } from "@tabler/icons-react";
 
 function toTitleCaseCollege(slug) {
   if (!slug) return "Unknown College";
@@ -57,17 +51,22 @@ function fmtDate(d) {
 }
 
 export default function MyUploadsPage() {
+  // Auth gate
+  const [authResolved, setAuthResolved] = useState(false);
+  const [authUser, setAuthUser] = useState(null);
+
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [termFilter, setTermFilter] = useState(null);
   const [yearFilter, setYearFilter] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("all");
   const [collegeFilter, setCollegeFilter] = useState(null);
   const [sortBy, setSortBy] = useState("newest");
 
   const navigate = useNavigate();
+  const auth = getAuth();
 
   // Modal state for Add/Edit/Delete Experience
   const [expModalOpened, { open: openExpModal, close: closeExpModal }] =
@@ -79,21 +78,31 @@ export default function MyUploadsPage() {
   const EXP_MAX = 500;
   const EXP_MIN = 8;
 
+  // 1) Resolve auth once (handles deep links / refresh)
   useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setAuthUser(u && !u.isAnonymous ? u : null);
+      setAuthResolved(true);
+    });
+    return unsub;
+  }, [auth]);
+
+  // 2) After auth resolves, fetch uploads if signed in
+  useEffect(() => {
+    if (!authResolved) return;
+
+    if (!authUser) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
     const fetchUploadsWithCourseInfo = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-
-      if (!user || user.isAnonymous) {
-        navigate("/");
-        return;
-      }
-
       try {
         setLoading(true);
         const q = fbQuery(
           collectionGroup(db, "syllabi"),
-          where("owner", "==", user.uid)
+          where("owner", "==", authUser.uid)
         );
         const snapshot = await getDocs(q);
 
@@ -140,12 +149,9 @@ export default function MyUploadsPage() {
     };
 
     fetchUploadsWithCourseInfo();
-  }, [navigate]);
+  }, [authResolved, authUser]);
 
-  useMemo(() => {
-    // just to keep parity with your earlier options calculation (unused here)
-    return null;
-  }, [rows]);
+  useMemo(() => null, [rows]);
 
   // debounce search
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
@@ -334,6 +340,47 @@ export default function MyUploadsPage() {
     }
   };
 
+  // Loading skeletons while fetching / resolving
+  if (!authResolved || loading) {
+    return (
+      <Container size="1200px" py="xl" px="2rem">
+        <Title order={2} mb="xs">
+          My Uploaded Syllabi
+        </Title>
+        <Stack>
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} withBorder radius="md">
+              <Skeleton height={16} width="60%" mb="xs" />
+              <Skeleton height={12} width="40%" mb="sm" />
+              <Skeleton height={12} width="30%" mb="sm" />
+              <Skeleton height={10} width="25%" />
+            </Card>
+          ))}
+        </Stack>
+      </Container>
+    );
+  }
+
+  // Signed-out UI (no redirect)
+  if (!authUser) {
+    return (
+      <Container size="1200px" py="xl" px="2rem">
+        <Card shadow="sm" radius="md" withBorder p="lg">
+          <Title order={3} mb="sm">
+            You’re not signed in
+          </Title>
+          <Text mb="md" c="dimmed">
+            Please sign in to view your uploads.
+          </Text>
+          <Button onClick={() => navigate("/")} variant="light">
+            Go to Home Page
+          </Button>
+        </Card>
+      </Container>
+    );
+  }
+
+  // Signed-in UI
   return (
     <Container size="1200px" py="xl" px="2rem">
       <Group justify="space-between" align="end" mb="xs">
@@ -368,18 +415,7 @@ export default function MyUploadsPage() {
         </Stack>
       </Card>
 
-      {loading ? (
-        <Stack>
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} withBorder radius="md">
-              <Skeleton height={16} width="60%" mb="xs" />
-              <Skeleton height={12} width="40%" mb="sm" />
-              <Skeleton height={12} width="30%" mb="sm" />
-              <Skeleton height={10} width="25%" />
-            </Card>
-          ))}
-        </Stack>
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <Card withBorder radius="md" p="lg" style={{ textAlign: "center" }}>
           <Text fw={600} mb={4}>
             No results
@@ -436,7 +472,7 @@ export default function MyUploadsPage() {
                 </Group>
 
                 <Divider my="xs" />
-                {/* left-side actions */}
+
                 <Group gap="xs" align="flex-start">
                   <Button
                     color="indigo"
@@ -457,13 +493,12 @@ export default function MyUploadsPage() {
                       rel="noopener noreferrer"
                       variant="subtle"
                       size="xs"
-                      // leftSection={<IconFileText size={16} />} // optional
                     >
                       View PDF
                     </Button>
                   )}
                 </Group>
-                {/* Experience summary */}
+
                 <Group justify="space-between" mt={10}>
                   <div style={{ flex: 1 }}>
                     {syllabus?.experience_text && (
@@ -530,7 +565,7 @@ export default function MyUploadsPage() {
                 leftSection={<IconTrash size={16} />}
                 loading={expSaving}
                 onClick={deleteExperience}
-                disabled={!activeRow?.syllabus} // minor guard; remove if not needed
+                disabled={!activeRow?.syllabus}
               >
                 Delete
               </Button>

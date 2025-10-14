@@ -168,6 +168,8 @@ export default function Header() {
           wantsEmailNotifications: true,
         });
         confetti({ particleCount: 220, spread: 60, origin: { y: 0.6 } });
+        navigate("/");
+
         setShowNewUserModal(true);
       } else {
         notifications.show({
@@ -177,9 +179,14 @@ export default function Header() {
           icon: <IconSparkles size={16} />,
           position: "bottom-center",
         });
+        if (
+          location.pathname !== "/settings" &&
+          location.pathname !== "/myuploads"
+        ) {
+          navigate("/");
+        }
       }
 
-      navigate("/");
       setSignInError("");
       closeSignIn();
       closeMobile();
