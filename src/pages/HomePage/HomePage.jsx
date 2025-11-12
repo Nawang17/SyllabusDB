@@ -427,12 +427,12 @@ export default function HomePage() {
   };
 
   // ---- Lazy-load recent syllabi when section is visible ----
-  useEffect(() => {
-    if (isRecentVisible && recentSyllabi.length === 0 && !loadingRecent) {
-      void fetchRecentSyllabi();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRecentVisible]);
+  // useEffect(() => {
+  //   if (isRecentVisible && recentSyllabi.length === 0 && !loadingRecent) {
+  //     void fetchRecentSyllabi();
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [isRecentVisible]);
 
   return (
     <div className="home-page">
@@ -569,7 +569,8 @@ export default function HomePage() {
       </section>
 
       {/* Recently Uploaded Syllabi (approved only, hydrated with course info) */}
-      <section
+      {/* fix permission , right now only admin can get the data */}
+      {/* <section
         ref={recentRef}
         className="recent-syllabi-section fade-in"
         style={{ contentVisibility: "auto", containIntrinsicSize: "540px" }}
@@ -609,7 +610,7 @@ export default function HomePage() {
                 );
               })}
         </div>
-      </section>
+      </section> */}
 
       <section
         className="why-section fade-in"
