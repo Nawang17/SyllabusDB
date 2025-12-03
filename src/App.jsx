@@ -31,6 +31,10 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/college/:collegeId" element={<CollegePage />} />
+          <Route
+            path="/uploadSyllabus/:collegeName"
+            element={<UploadSyllabusPage />}
+          />
           <Route path="/uploadSyllabus" element={<UploadSyllabusPage />} />
           <Route path="/colleges" element={<AllCollegesPage />} />
           <Route

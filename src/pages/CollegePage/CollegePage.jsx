@@ -200,7 +200,7 @@ export default function CollegePage() {
               </Link>
             </div>
             {courses.length > 0 && (
-              <Button onClick={() => navigate("/uploadsyllabus")}>
+              <Button onClick={() => navigate(`/uploadsyllabus/${collegeId}`)}>
                 Upload Syllabus
               </Button>
             )}
@@ -242,7 +242,9 @@ export default function CollegePage() {
                       <p> Be the first to share a syllabus!</p>
                     </>
                   )}
-                  <Button onClick={() => navigate("/uploadsyllabus")}>
+                  <Button
+                    onClick={() => navigate(`/uploadsyllabus/${collegeId}`)}
+                  >
                     Upload Syllabus
                   </Button>
                 </div>

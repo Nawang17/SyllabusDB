@@ -10,7 +10,7 @@ import {
   where,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import "./UploadSyllabusPage.css";
 import { Button, Modal, Select, Textarea } from "@mantine/core";
 import { getAuth, signInAnonymously } from "firebase/auth";
@@ -20,7 +20,9 @@ import TermsOfService from "../Footer/TermsOfService/TermsOfService";
 import GuidelinesPage from "../Footer/GuidelinesPage/GuideLinesPage";
 
 export default function UploadSyllabus() {
-  const [collegeId, setCollegeId] = useState("");
+  const { collegeName } = useParams();
+
+  const [collegeId, setCollegeId] = useState(collegeName || "");
   const [colleges, setColleges] = useState([]);
   const [courseCode, setCourseCode] = useState("");
   const [courseTitle, setCourseTitle] = useState("");

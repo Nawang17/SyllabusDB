@@ -375,7 +375,7 @@ export default function SubjectPage() {
               uploading one!
             </p>
           )}
-          <Button onClick={() => navigate("/uploadsyllabus")}>
+          <Button onClick={() => navigate(`/uploadsyllabus/${collegeId}`)}>
             Upload a Syllabus
           </Button>
         </div>
@@ -455,7 +455,7 @@ export default function SubjectPage() {
       {!loading && filteredCourses.length !== 0 && (
         <div className="upload-banner">
           <p>Have a syllabus for a {subject?.toUpperCase()} course?</p>
-          <Button onClick={() => navigate("/uploadsyllabus")}>
+          <Button onClick={() => navigate(`/uploadsyllabus/${collegeId}`)}>
             Upload a Syllabus
           </Button>
         </div>
