@@ -90,7 +90,15 @@ export default function AllCollegesPage() {
   const scrollToState = (state) => {
     const el = document.getElementById(`state-${state}`);
     if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    const headerHeight = 80; // tweak for your header size
+    const rect = el.getBoundingClientRect();
+    const offsetTop = window.scrollY + rect.top - headerHeight;
+
+    window.scrollTo({
+      top: offsetTop,
+      behavior: "smooth",
+    });
   };
 
   return (
