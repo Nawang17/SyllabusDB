@@ -2,15 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   collection,
-  collectionGroup,
   doc,
-  getDoc,
   getDocs,
   limit,
   onSnapshot,
   orderBy,
   query,
-  where,
 } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
 import "./HomePage.css";
@@ -23,28 +20,6 @@ const TOP_CACHE_TTL_MS = 60 * 1000; // 1 minute
 
 const IDX_CACHE_KEY = "collegesIndex:v1";
 const IDX_CACHE_TTL_MS = 60 * 1000; // 1 minute
-
-const RECENT_SYL_CACHE_KEY = "recentSyllabi:v1";
-const RECENT_SYL_CACHE_TTL_MS = 60 * 1000; // 1 minute
-
-// 🔹 Cache for course docs to avoid repeated reads (10 min TTL)
-const COURSE_CACHE_KEY = "courseHydrationCache:v1";
-const COURSE_CACHE_TTL_MS = 10 * 60 * 1000;
-
-function readCourseCache() {
-  try {
-    const raw = localStorage.getItem(COURSE_CACHE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === "object") return parsed;
-  } catch {}
-  return {};
-}
-function writeCourseCache(cacheObj) {
-  try {
-    localStorage.setItem(COURSE_CACHE_KEY, JSON.stringify(cacheObj));
-  } catch {}
-}
 
 function useOnScreen(ref, rootMargin = "200px") {
   const [visible, setVisible] = useState(false);
@@ -66,37 +41,6 @@ function useOnScreen(ref, rootMargin = "200px") {
   return visible;
 }
 
-function timeSince(tsMillis) {
-  const s = Math.max(1, Math.floor((Date.now() - tsMillis) / 1000));
-  if (s < 60) return `${s}s ago`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d ago`;
-}
-
-// Build a clean display string for a course
-function formatCourseTitle(courseDoc, courseId) {
-  const code =
-    courseDoc?.code ||
-    courseDoc?.courseCode ||
-    courseDoc?.course_code ||
-    courseId ||
-    "";
-  const title =
-    courseDoc?.title || courseDoc?.courseTitle || courseDoc?.name || "";
-
-  const left = String(code).trim();
-  const right = String(title).trim();
-
-  if (left && right) return `${left}: ${right}`;
-  if (left) return left;
-  if (right) return right;
-  return "Untitled Course";
-}
-
 export default function HomePage() {
   // Top list for scroller
   const [topColleges, setTopColleges] = useState([]);
@@ -114,16 +58,10 @@ export default function HomePage() {
   const [totalUploads, setTotalUploads] = useState(0);
   const [animateCount, setAnimateCount] = useState(false);
 
-  // Recently uploaded syllabi (hydrated with course info)
-  const [recentSyllabi, setRecentSyllabi] = useState([]);
-  const [loadingRecent, setLoadingRecent] = useState(false);
-
   const searchInputRef = useRef(null);
   const scrollerRef = useRef(null);
-  const recentRef = useRef(null);
 
   const scrollerIsNear = useOnScreen(scrollerRef);
-  const isRecentVisible = useOnScreen(recentRef);
 
   const navigate = useNavigate();
 
@@ -203,112 +141,6 @@ export default function HomePage() {
       console.error("Error fetching search index:", e);
     } finally {
       setLoadingIndex(false);
-    }
-  };
-
-  // ---- Fetch recently uploaded (approved) syllabi and hydrate with course docs ----
-  const fetchRecentSyllabi = async () => {
-    try {
-      // Step 1: read quick cache for the list itself (IDs + timeAgo etc.)
-      const raw = localStorage.getItem(RECENT_SYL_CACHE_KEY);
-      if (raw) {
-        try {
-          const { data, ts } = JSON.parse(raw);
-          if (Array.isArray(data)) {
-            setRecentSyllabi(data);
-            if (ts && Date.now() - ts < RECENT_SYL_CACHE_TTL_MS) return;
-          }
-        } catch {}
-      }
-
-      setLoadingRecent(true);
-
-      // Step 2: get the recent approved syllabi (no course fields here)
-      const qy = query(
-        collectionGroup(db, "syllabi"),
-        where("approved", "==", true),
-        orderBy("createdAt", "desc"),
-        limit(10)
-      );
-      const snap = await getDocs(qy);
-
-      // Build slim items with path-derived IDs
-      const baseItems = snap.docs.map((d) => {
-        const x = d.data() || {};
-        const createdAtMs =
-          x.createdAt?.toMillis?.() ??
-          (typeof x.createdAt === "number" ? x.createdAt : Date.now());
-        const parts = d.ref.path.split("/"); // colleges/{collegeId}/courses/{courseId}/syllabi/{id}
-        const collegeId = parts[1] || "";
-        const courseId = parts[3] || "";
-
-        return {
-          id: d.id,
-          collegeId,
-          courseId,
-          professor: x.professor || "Unknown Professor",
-          createdAtMs,
-          timeAgo: timeSince(createdAtMs),
-        };
-      });
-
-      // Step 3: hydrate courses (cache-aware)
-      const courseCache = readCourseCache();
-      const now = Date.now();
-
-      // Gather unique course refs that are stale/missing in cache
-      const neededKeys = new Set(
-        baseItems.map((it) => `${it.collegeId}::${it.courseId}`)
-      );
-
-      const fetchTasks = [];
-      for (const key of neededKeys) {
-        const cached = courseCache[key];
-        if (cached && now - (cached.ts || 0) < COURSE_CACHE_TTL_MS) continue;
-
-        const [collegeId, courseId] = key.split("::");
-        // Guard for weird paths
-        if (!collegeId || !courseId) continue;
-
-        const courseRef = doc(db, "colleges", collegeId, "courses", courseId);
-        fetchTasks.push(
-          getDoc(courseRef)
-            .then((snap) => {
-              const data = snap.exists() ? snap.data() : null;
-              courseCache[key] = { ts: now, data };
-            })
-            .catch(() => {
-              // Cache a null to avoid hammering in case of perms/missing
-              courseCache[key] = { ts: now, data: null };
-            })
-        );
-      }
-
-      if (fetchTasks.length) {
-        await Promise.all(fetchTasks);
-        writeCourseCache(courseCache);
-      }
-
-      // Step 4: merge hydrated course info into items
-      const hydrated = baseItems.map((it) => {
-        const key = `${it.collegeId}::${it.courseId}`;
-        const courseDoc = courseCache[key]?.data || null;
-
-        return {
-          ...it,
-          courseDisplay: formatCourseTitle(courseDoc, it.courseId),
-        };
-      });
-
-      setRecentSyllabi(hydrated);
-      localStorage.setItem(
-        RECENT_SYL_CACHE_KEY,
-        JSON.stringify({ data: hydrated, ts: Date.now() })
-      );
-    } catch (e) {
-      console.error("Error fetching recent syllabi:", e);
-    } finally {
-      setLoadingRecent(false);
     }
   };
 
@@ -425,14 +257,6 @@ export default function HomePage() {
       </>
     );
   };
-
-  // ---- Lazy-load recent syllabi when section is visible ----
-  // useEffect(() => {
-  //   if (isRecentVisible && recentSyllabi.length === 0 && !loadingRecent) {
-  //     void fetchRecentSyllabi();
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [isRecentVisible]);
 
   return (
     <div className="home-page">
@@ -567,50 +391,6 @@ export default function HomePage() {
           )}
         </div>
       </section>
-
-      {/* Recently Uploaded Syllabi (approved only, hydrated with course info) */}
-      {/* fix permission , right now only admin can get the data */}
-      {/* <section
-        ref={recentRef}
-        className="recent-syllabi-section fade-in"
-        style={{ contentVisibility: "auto", containIntrinsicSize: "540px" }}
-        aria-busy={loadingRecent ? "true" : "false"}
-      >
-        <h2 className="scroll-title-syllabi">Recently Uploaded Syllabi</h2>
-        <div className="recent-syllabi-scroll">
-          {loadingRecent && recentSyllabi.length === 0
-            ? [...Array(6)].map((_, i) => (
-                <div key={i} className="syllabus-card skeleton">
-                  <div className="skeleton-line short" />
-                  <div className="skeleton-line long" />
-                  <div className="skeleton-line shorter" />
-                </div>
-              ))
-            : recentSyllabi.map((s) => {
-                const prettyCollege = s.collegeId
-                  .replace(/-/g, " ")
-                  .replace(/\b\w/g, (c) => c.toUpperCase());
-                const subjectCode = s.courseDisplay.split(" ")[0] || "Course";
-
-                return (
-                  <div
-                    key={`${s.collegeId}-${s.courseId}-${s.id}`}
-                    className="syllabus-card plain"
-                    onClick={() =>
-                      navigate(
-                        `/college/${s.collegeId}/subject/${subjectCode}?course=${s.courseId}`
-                      )
-                    }
-                  >
-                    <div className="sy-title">{s.courseDisplay}</div>
-                    <div className="sy-subtext">{s.professor}</div>
-                    <div className="sy-subtext">{prettyCollege}</div>
-                    <div className="sy-time">{s.timeAgo}</div>
-                  </div>
-                );
-              })}
-        </div>
-      </section> */}
 
       <section
         className="why-section fade-in"
