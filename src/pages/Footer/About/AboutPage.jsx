@@ -4,6 +4,7 @@ import "./AboutPage.css";
 export default function AboutPage() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+    document.title = "About SyllabusDB";
   }, []);
 
   return (

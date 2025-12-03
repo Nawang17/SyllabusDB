@@ -40,6 +40,14 @@ export default function CollegePage() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [subjectMap, setSubjectMap] = useState({});
   const [nickname, setNickname] = useState("");
+
+  useEffect(() => {
+    document.title = `SyllabusDB | ${collegeId
+      .replace(/-/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")}`;
+  }, [collegeId]);
   useEffect(() => {
     if (collegeId && analytics) {
       logEvent(analytics, "view_college_page", {

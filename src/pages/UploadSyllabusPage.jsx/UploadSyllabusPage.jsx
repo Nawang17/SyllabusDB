@@ -20,6 +20,9 @@ import TermsOfService from "../Footer/TermsOfService/TermsOfService";
 import GuidelinesPage from "../Footer/GuidelinesPage/GuideLinesPage";
 
 export default function UploadSyllabus() {
+  useEffect(() => {
+    document.title = "SyllabusDB | Upload a Syllabus";
+  }, []);
   const { collegeName } = useParams();
 
   const [collegeId, setCollegeId] = useState(collegeName || "");

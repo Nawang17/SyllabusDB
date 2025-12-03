@@ -4,6 +4,8 @@ import "./PrivacyPolicy.css";
 
 export default function PrivacyPolicy() {
   useEffect(() => {
+    document.title = "SyllabusDB | Privacy Policy";
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 

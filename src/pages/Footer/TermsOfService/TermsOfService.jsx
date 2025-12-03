@@ -1,10 +1,11 @@
-
 import { useEffect } from "react";
 import "./TermsOfService.css";
 import { Link } from "react-router";
 
 export default function TermsOfService({ ismodal }) {
   useEffect(() => {
+    document.title = "SyllabusDB | Terms of Service";
+
     !ismodal && window.scrollTo({ top: 0, behavior: "smooth" });
   }, [ismodal]);
 
@@ -64,8 +65,8 @@ export default function TermsOfService({ ismodal }) {
       <section>
         <h2>5. Privacy</h2>
         <p>
-          See the <Link to="/privacy-policy">Privacy Policy</Link> to learn how we
-          collect and use information.
+          See the <Link to="/privacy-policy">Privacy Policy</Link> to learn how
+          we collect and use information.
         </p>
       </section>
 

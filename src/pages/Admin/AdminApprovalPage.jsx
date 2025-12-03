@@ -21,6 +21,9 @@ import { useNavigate } from "react-router";
 import { Button } from "@mantine/core";
 const allowedAdminEmail = "nawangsherpa1010@gmail.com"; //
 export default function AdminApprovalPage() {
+  useEffect(() => {
+    document.title = "SyllabusDB | Admin";
+  }, []);
   const [syllabi, setSyllabi] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scanResults, setScanResults] = useState({});

@@ -4,6 +4,7 @@ import "./GuideLinesPage.css";
 
 export default function GuidelinesPage({ ismodal }) {
   useEffect(() => {
+    document.title = "SyllabusDB Guidelines";
     !ismodal && window.scrollTo({ top: 0, behavior: "smooth" });
   }, [ismodal]);
 

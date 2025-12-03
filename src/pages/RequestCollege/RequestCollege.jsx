@@ -22,6 +22,7 @@ export default function RequestCollege() {
       .replace(/-+/g, "-");
 
   useEffect(() => {
+    document.title = "SyllabusDB | Request a College";
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 

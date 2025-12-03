@@ -13,6 +13,7 @@ export default function AllCollegesPage() {
   const containerRef = useRef(null);
 
   useEffect(() => {
+    document.title = "SyllabusDB | All Colleges";
     const fetchColleges = async () => {
       setLoading(true);
       const snapshot = await getDocs(collection(db, "colleges"));

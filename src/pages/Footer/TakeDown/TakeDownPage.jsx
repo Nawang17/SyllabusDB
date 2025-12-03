@@ -3,6 +3,8 @@ import "./TakeDownPage.css";
 
 export default function TakedownPage() {
   useEffect(() => {
+    document.title = "SyllabusDB | Takedown Policy";
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 

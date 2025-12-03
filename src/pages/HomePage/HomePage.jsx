@@ -42,6 +42,9 @@ function useOnScreen(ref, rootMargin = "200px") {
 }
 
 export default function HomePage() {
+  useEffect(() => {
+    document.title = "SyllabusDB | Browse and Share Real College Syllabi";
+  }, []);
   // Top list for scroller
   const [topColleges, setTopColleges] = useState([]);
   const [loadingTop, setLoadingTop] = useState(true);
