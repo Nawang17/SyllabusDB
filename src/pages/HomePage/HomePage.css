@@ -6,48 +6,92 @@
   flex-direction: column;
 }
 
-/* --- Search Section --- */
+/* -----------------------------
+   HERO / SEARCH SECTION
+------------------------------ */
 .search-section {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 6rem 1.5rem 3rem;
+  justify-content: center;
+  padding: 6rem 1.5rem 3.5rem;
   text-align: center;
-  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+  background: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)),
     url("https://res.cloudinary.com/dwzjfylgh/image/upload/v1748894480/background_img_pivfvb.png")
       center/cover no-repeat;
   color: white;
+  position: relative;
+  z-index: 50;
+}
+
+.hero-inner {
+  width: 100%;
+  max-width: 980px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
 }
 
 .headline h1 {
-  font-size: 2.75rem;
-  font-weight: 800;
+  font-size: 2.9rem;
+  font-weight: 850;
   margin: 0.25rem 0;
-  line-height: 1.2;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 @media (max-width: 768px) {
   .headline h1 {
-    font-size: 2rem;
+    font-size: 2.05rem;
   }
+}
+
+/* CountUp container */
+.hero-syllabi-count {
+  font-size: 1.15rem;
+  color: #fefefe;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.28);
+  padding: 8px 12px;
+  border-radius: 10px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  display: inline-block;
+}
+
+@media (max-width: 768px) {
+  .hero-syllabi-count {
+    font-size: 1rem;
+  }
+}
+
+/* Glass card around search */
+.hero-search-card {
+  width: 100%;
+  max-width: 680px;
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  /* background: rgba(255, 255, 255, 0.12); */
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
 }
 
 /* --- Search Input --- */
 .search-wrapper {
   position: relative;
   width: 100%;
-  max-width: 600px;
-  margin-top: 1.5rem;
 }
 
 .search-input {
   width: 100%;
-  padding: 20px 18px;
+  padding: 18px 46px 18px 16px;
   font-size: 1rem;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   outline: none;
+  background: rgba(255, 255, 255, 0.95);
 }
 
 .search-input:focus {
@@ -55,36 +99,134 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
+/* Search clear */
+.clear-btn {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 1.35rem;
+  cursor: pointer;
+  color: #475569;
+}
+
+.clear-btn:hover {
+  color: #111827;
+}
+
+/* Dropdown */
 .results-box {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   left: 0;
   right: 0;
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  max-height: 200px;
+  border-radius: 12px;
+  max-height: 280px;
   overflow-y: auto;
-  z-index: 20;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 30;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
 }
 
 .result-item {
-  padding: 12px 16px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
   cursor: pointer;
-  color: #1f2937;
+  color: #0f172a;
+  background: #fff;
+  border: 0;
+  border-bottom: 1px solid #f1f5f9;
+  font: inherit;
 }
 
 .result-item:hover {
-  background-color: #f3f4f6;
+  background-color: #f8fafc;
+}
+
+.result-item.highlighted {
+  background-color: #e0f2fe;
 }
 
 .no-result {
-  padding: 12px 16px;
+  padding: 14px;
   color: #6b7280;
 }
 
-/* --- College Scroll --- */
+.no-result-title {
+  margin: 0 0 10px;
+  color: #111827;
+  font-weight: 700;
+}
+
+/* match highlight from <mark> */
+.match {
+  background: rgba(59, 130, 246, 0.18);
+  color: inherit;
+  padding: 1px 3px;
+  border-radius: 6px;
+}
+
+/* Hero actions */
+.hero-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.hero-secondary,
+.hero-tertiary {
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.hero-secondary {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.hero-secondary:hover {
+  background: #1d4ed8;
+}
+
+.hero-tertiary {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.hero-tertiary:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Request college button */
+.request-college-btn {
+  margin-top: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  background-color: #003366;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.request-college-btn:hover {
+  background-color: #001f4d;
+}
+
+/* -----------------------------
+   MOST SHARED SCROLLER
+------------------------------ */
 .college-scroll-wrapper {
   margin: 2.5rem auto;
   padding: 0 1.5rem;
@@ -92,62 +234,98 @@
   max-width: 1200px;
 }
 
+.scroll-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 1rem 1rem;
+  gap: 10px;
+}
+
 .scroll-title {
   font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  margin-left: 1rem;
+  font-weight: 700;
   color: #1f2937;
+  margin: 0;
+}
+
+.scroll-cta {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #2563eb;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.scroll-cta:hover {
+  background: #f8fafc;
 }
 
 .college-scroll {
   display: flex;
   overflow-x: auto;
   gap: 1.5rem;
-  padding-bottom: 1rem;
+  padding: 0.5rem 0 1rem;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
 }
 
-/* --- College Card --- */
+.college-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.college-scroll::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.18);
+  border-radius: 999px;
+}
+
+.college-scroll::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.06);
+  border-radius: 999px;
+}
+
+/* Cards */
 .college-card {
   background-color: #ffffff;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 1rem;
   width: 250px;
   flex-shrink: 0;
   scroll-snap-align: start;
   text-align: center;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid rgba(2, 6, 23, 0.06);
 }
 
 .college-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
 }
 
 .college-img {
   width: 100%;
   height: 200px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 10px;
   margin-bottom: 0.75rem;
+  background: #f1f5f9;
 }
 
 .college-name {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1rem;
-  color: #1f2937;
+  color: #0f172a;
 }
 
 .college-count {
   font-size: 0.9rem;
   color: #6b7280;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
-/* --- Skeleton Loading (shimmer) --- */
+/* Skeleton Loading (shimmer) */
 .skeleton .skeleton-img,
 .skeleton .skeleton-line {
   background: linear-gradient(90deg, #eee, #f5f5f5, #eee);
@@ -167,7 +345,7 @@
 .skeleton-img {
   width: 100%;
   height: 200px;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .skeleton-line {
@@ -180,32 +358,43 @@
   width: 60%;
   margin: 0.5rem auto;
 }
+
 .skeleton-line.long {
   width: 80%;
   margin: 0.5rem auto;
 }
 
-/* --- Responsive --- */
-@media (max-width: 768px) {
-  .headline h1 {
-    font-size: 1.5rem;
-  }
-
-  .college-scroll-wrapper {
-    padding: 0 1rem;
-  }
-
-  .college-card {
-    width: 200px;
-    padding: 0.75rem;
-  }
-
-  .college-img {
-    height: 160px;
-  }
+/* View all card (if you still use it elsewhere) */
+.view-all-card-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  width: 250px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  border: 1px dashed rgba(2, 6, 23, 0.18);
 }
 
-/* --- Why Section --- */
+.view-all-card-link:hover {
+  background-color: #f3f4f6;
+}
+
+.view-all-link {
+  font-size: 1rem;
+  color: #2563eb;
+  white-space: nowrap;
+}
+
+.view-all-link:hover {
+  color: #1d4ed8;
+}
+
+/* -----------------------------
+   WHY SECTION
+------------------------------ */
 .why-section {
   display: flex;
   flex-wrap: wrap;
@@ -219,20 +408,21 @@
 }
 
 .why-img {
-  max-width: 300px;
+  max-width: 340px;
   width: 100%;
+  border-radius: 14px;
 }
 
 .why-content h3 {
-  font-size: 1.5rem;
-  color: #1f2937;
+  font-size: 1.6rem;
+  color: #0f172a;
   margin-bottom: 1rem;
 }
 
 .why-content p {
   font-size: 1rem;
-  color: #374151;
-  max-width: 500px;
+  color: #334155;
+  max-width: 520px;
   margin: 0 auto 1.5rem;
 }
 
@@ -242,10 +432,11 @@
   background-color: #2563eb;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 1rem;
   cursor: pointer;
 }
+
 .upload-cta-btn:hover,
 .btn:hover {
   background-color: #1d4ed8;
@@ -257,31 +448,9 @@
   }
 }
 
-/* --- View All --- */
-.view-all-card-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  width: 250px;
-  flex-shrink: 0;
-  scroll-snap-align: start;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-.view-all-card-link:hover {
-  background-color: #f3f4f6;
-}
-.view-all-link {
-  font-size: 1rem;
-  color: #2563eb;
-  white-space: nowrap;
-}
-.view-all-link:hover {
-  color: #1d4ed8;
-}
-
-/* --- Trust Section --- */
+/* -----------------------------
+   TRUST SECTION
+------------------------------ */
 .trust-section {
   display: flex;
   flex-wrap: wrap;
@@ -297,37 +466,50 @@
 }
 
 .trust-content {
-  max-width: 500px;
+  max-width: 520px;
 }
 
 .trust-content h3 {
-  font-size: 1.5rem;
-  color: #1f2937;
+  font-size: 1.6rem;
+  color: #0f172a;
   margin-bottom: 1rem;
 }
 
 .trust-content p {
   font-size: 1rem;
-  color: #374151;
+  color: #334155;
   margin-bottom: 1rem;
 }
 
-.trust-image {
-  max-width: 300px;
-  width: 100%;
-  flex-shrink: 0;
-}
-
+/* FIXED: list semantics */
 .trust-list {
   list-style: none;
   padding: 0;
   margin: 1rem 0;
   text-align: left;
   font-size: 0.95rem;
-  color: #374151;
+  color: #334155;
 }
+
 .trust-list li {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
+  padding-left: 26px;
+  position: relative;
+}
+
+.trust-list li::before {
+  content: "✔";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.trust-image {
+  max-width: 320px;
+  width: 100%;
+  flex-shrink: 0;
 }
 
 @media (max-width: 896px) {
@@ -335,58 +517,26 @@
     flex-direction: column;
     text-align: center;
   }
+
   .trust-content {
     text-align: center;
     align-items: center;
   }
+
   .trust-list {
     text-align: left;
     margin: 0 auto;
-    max-width: 300px;
+    max-width: 360px;
   }
 }
 
-/* CountUp container */
-.hero-syllabi-count {
-  font-size: 1.25rem;
-  margin-top: 1rem;
-  color: #fefefe;
-  font-weight: 500;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 6px 12px;
-  border-radius: 8px;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  display: inline-block;
-}
-
-@media (max-width: 768px) {
-  .hero-syllabi-count {
-    font-size: 1rem;
-  }
-}
-
-/* Search highlight and clear */
-.clear-btn {
-  position: absolute;
-  top: 50%;
-  right: 10px;
-  transform: translateY(-50%);
-  background: transparent;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: #555;
-}
-
-.result-item.highlighted {
-  background-color: #e0f2fe;
-}
-
-/* Animation fade-in */
+/* -----------------------------
+   ANIMATIONS
+------------------------------ */
 .fade-in {
   animation: fadeInUp 0.5s ease both;
 }
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -398,18 +548,20 @@
   }
 }
 
-/* Request college button */
-.request-college-btn {
-  margin-top: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-  background-color: #003366;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-.request-college-btn:hover {
-  background-color: #001f4d;
+/* -----------------------------
+   RESPONSIVE SCROLLER TWEAKS
+------------------------------ */
+@media (max-width: 768px) {
+  .college-scroll-wrapper {
+    padding: 0 1rem;
+  }
+
+  .college-card {
+    width: 200px;
+    padding: 0.75rem;
+  }
+
+  .college-img {
+    height: 160px;
+  }
 }

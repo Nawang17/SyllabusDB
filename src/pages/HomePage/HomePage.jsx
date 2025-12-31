@@ -16,10 +16,10 @@ import verifiedImage from "../../assets/verified-illustration.jpg";
 import CountUp from "react-countup";
 
 const TOP_CACHE_KEY = "topColleges:v1";
-const TOP_CACHE_TTL_MS = 60 * 1000; // 1 minute
+const TOP_CACHE_TTL_MS = 60 * 1000;
 
 const IDX_CACHE_KEY = "collegesIndex:v1";
-const IDX_CACHE_TTL_MS = 60 * 1000; // 1 minute
+const IDX_CACHE_TTL_MS = 60 * 1000;
 
 function useOnScreen(ref, rootMargin = "200px") {
   const [visible, setVisible] = useState(false);
@@ -44,31 +44,32 @@ function useOnScreen(ref, rootMargin = "200px") {
 export default function HomePage() {
   useEffect(() => {
     document.title = "SyllabusDB | Browse and Share Real College Syllabi";
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
-  // Top list for scroller
+
+  const navigate = useNavigate();
+
   const [topColleges, setTopColleges] = useState([]);
   const [loadingTop, setLoadingTop] = useState(true);
 
-  // Search index (full list)
-  const [searchIndex, setSearchIndex] = useState([]); // [{id,name,image_url?}]
+  const [searchIndex, setSearchIndex] = useState([]);
   const [loadingIndex, setLoadingIndex] = useState(false);
   const [indexLoadedOnce, setIndexLoadedOnce] = useState(false);
 
-  // UI states
   const [searchQuery, setSearchQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(-1);
+
   const [totalUploads, setTotalUploads] = useState(0);
   const [animateCount, setAnimateCount] = useState(false);
 
   const searchInputRef = useRef(null);
+  const dropdownRef = useRef(null);
   const scrollerRef = useRef(null);
-
   const scrollerIsNear = useOnScreen(scrollerRef);
 
-  const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // ---- Fetch Top N (fast scroller) ----
   const fetchTopColleges = async (toggleLoading = false) => {
     try {
       if (toggleLoading) setLoadingTop(true);
@@ -99,10 +100,8 @@ export default function HomePage() {
     }
   };
 
-  // ---- Fetch Search Index (ALL colleges, light fields) ----
   const fetchSearchIndex = async (force = false) => {
     try {
-      // SWR cache
       if (!force) {
         const raw = localStorage.getItem(IDX_CACHE_KEY);
         if (raw) {
@@ -111,13 +110,12 @@ export default function HomePage() {
             if (Array.isArray(data)) {
               setSearchIndex(data);
               setIndexLoadedOnce(true);
-              if (!ts || Date.now() - ts > IDX_CACHE_TTL_MS) {
+              if (!ts || Date.now() - ts > IDX_CACHE_TTL_MS)
                 void fetchSearchIndex(true);
-              }
               return;
             }
           } catch {
-            /* fall through */
+            /* ignore */
           }
         }
       }
@@ -129,11 +127,12 @@ export default function HomePage() {
           const x = d.data();
           return {
             id: d.id,
-            name: x.name || "",
+            name: (x.name || "").trim(),
             approved: x.approved !== false,
           };
         })
         .filter((c) => c.approved && c.name);
+
       setSearchIndex(all);
       setIndexLoadedOnce(true);
       localStorage.setItem(
@@ -147,11 +146,8 @@ export default function HomePage() {
     }
   };
 
-  // ---- Initial mount: SWR for top list + stats listener + CountUp gate ----
+  // SWR top list + stats listener + CountUp gate
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-
-    // Top list SWR
     const raw = localStorage.getItem(TOP_CACHE_KEY);
     if (raw) {
       try {
@@ -160,11 +156,9 @@ export default function HomePage() {
           setTopColleges(data);
           setLoadingTop(false);
         }
-        if (!ts || Date.now() - ts > TOP_CACHE_TTL_MS) {
+        if (!ts || Date.now() - ts > TOP_CACHE_TTL_MS)
           void fetchTopColleges(true);
-        } else {
-          void fetchTopColleges(false);
-        }
+        else void fetchTopColleges(false);
       } catch {
         void fetchTopColleges(true);
       }
@@ -172,14 +166,12 @@ export default function HomePage() {
       void fetchTopColleges(true);
     }
 
-    // Stats listener (live)
     const unsubStats = onSnapshot(
       doc(db, "stats", "global"),
       (snap) => setTotalUploads(snap.data()?.total_syllabi || 0),
       (err) => console.error("stats/global listener error:", err)
     );
 
-    // CountUp visibility (respect reduced motion)
     const countEl = document.querySelector(".hero-syllabi-count");
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     let io;
@@ -195,13 +187,14 @@ export default function HomePage() {
       );
       io.observe(countEl);
     }
+
     return () => {
       unsubStats();
       if (io) io.disconnect();
     };
   }, []);
 
-  // ---- Debounce search input ----
+  // Debounce
   useEffect(() => {
     const t = setTimeout(
       () => setDebounced(searchQuery.trim().toLowerCase()),
@@ -210,53 +203,80 @@ export default function HomePage() {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  // ---- Lazy-load search index on first interaction ----
   const onSearchFocus = () => {
+    setDropdownOpen(true);
     if (!indexLoadedOnce && !loadingIndex) void fetchSearchIndex(false);
   };
 
-  // Also trigger when user starts typing
   useEffect(() => {
-    if (searchQuery && !indexLoadedOnce && !loadingIndex) {
+    if (searchQuery && !indexLoadedOnce && !loadingIndex)
       void fetchSearchIndex(false);
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
-  // ---- Filter against the FULL INDEX, not the top list ----
   const filtered = useMemo(() => {
     if (!debounced) return [];
-    const q = debounced;
     return searchIndex
-      .filter((c) => c.name.toLowerCase().includes(q))
-      .slice(0, 20); // cap dropdown size for perf/UX
+      .filter((c) => c.name.toLowerCase().includes(debounced))
+      .slice(0, 12);
   }, [searchIndex, debounced]);
 
+  const goToCollege = (id) => {
+    setDropdownOpen(false);
+    setSelectedIndex(-1);
+    navigate(`/college/${id}`);
+  };
+
   const handleKeyDown = (e) => {
-    if (debounced && filtered.length > 0) {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % filtered.length);
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIndex(
-          (prev) => (prev - 1 + filtered.length) % filtered.length
-        );
-      } else if (e.key === "Enter" && selectedIndex >= 0) {
-        navigate(`/college/${filtered[selectedIndex].id}`);
-      }
+    if (!dropdownOpen) return;
+
+    if (e.key === "Escape") {
+      setDropdownOpen(false);
+      setSelectedIndex(-1);
+      return;
+    }
+
+    if (!debounced || filtered.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev + 1) % filtered.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex(
+        (prev) => (prev - 1 + filtered.length) % filtered.length
+      );
+    } else if (e.key === "Enter") {
+      // If nothing selected, go to first result
+      const idx = selectedIndex >= 0 ? selectedIndex : 0;
+      goToCollege(filtered[idx].id);
     }
   };
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    const onDown = (e) => {
+      if (!dropdownOpen) return;
+      const input = searchInputRef.current;
+      const drop = dropdownRef.current;
+      if (input && input.contains(e.target)) return;
+      if (drop && drop.contains(e.target)) return;
+      setDropdownOpen(false);
+      setSelectedIndex(-1);
+    };
+    window.addEventListener("mousedown", onDown);
+    return () => window.removeEventListener("mousedown", onDown);
+  }, [dropdownOpen]);
+
   const highlightMatch = (name) => {
     if (!debounced) return name;
-    const index = name.toLowerCase().indexOf(debounced);
-    if (index === -1) return name;
+    const idx = name.toLowerCase().indexOf(debounced);
+    if (idx === -1) return name;
     return (
       <>
-        {name.slice(0, index)}
-        <strong>{name.slice(index, index + debounced.length)}</strong>
-        {name.slice(index + debounced.length)}
+        {name.slice(0, idx)}
+        <mark className="match">{name.slice(idx, idx + debounced.length)}</mark>
+        {name.slice(idx + debounced.length)}
       </>
     );
   };
@@ -264,91 +284,134 @@ export default function HomePage() {
   return (
     <div className="home-page">
       <section className="search-section">
-        <div className="headline">
-          <h1>Know the course</h1>
-          <h1>before you enroll</h1>
-        </div>
+        <div className="hero-inner">
+          <div className="headline">
+            <h1>Know the course</h1>
+            <h1>before you enroll</h1>
+          </div>
 
-        <p className="hero-syllabi-count">
-          <strong>
-            {animateCount ? (
-              <CountUp
-                start={Math.max(
-                  0,
-                  totalUploads - Math.floor(totalUploads * 0.05)
-                )}
-                end={totalUploads}
-                duration={0.7}
-                separator=","
-              />
-            ) : (
-              totalUploads.toLocaleString()
-            )}
-          </strong>{" "}
-          syllabi available
-        </p>
-
-        <div className="search-wrapper">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search for your college..."
-            value={searchQuery}
-            onFocus={onSearchFocus}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setSelectedIndex(-1);
-            }}
-            onKeyDown={handleKeyDown}
-            ref={searchInputRef}
-            aria-label="Search for a college"
-            enterKeyHint="search"
-            autoComplete="off"
-          />
-          {searchQuery && (
-            <button className="clear-btn" onClick={() => setSearchQuery("")}>
-              ×
-            </button>
-          )}
-          {searchQuery && (
-            <div className="results-box">
-              {loadingIndex && !indexLoadedOnce ? (
-                <div className="no-result">Loading colleges…</div>
-              ) : filtered.length > 0 ? (
-                filtered.map((college, index) => (
-                  <div
-                    key={college.id}
-                    className={`result-item ${
-                      selectedIndex === index ? "highlighted" : ""
-                    }`}
-                    onClick={() => navigate(`/college/${college.id}`)}
-                  >
-                    {highlightMatch(college.name)}
-                  </div>
-                ))
+          <p className="hero-syllabi-count">
+            <strong>
+              {animateCount ? (
+                <CountUp
+                  start={Math.max(
+                    0,
+                    totalUploads - Math.floor(totalUploads * 0.05)
+                  )}
+                  end={totalUploads}
+                  duration={0.7}
+                  separator=","
+                />
               ) : (
-                <div className="no-result">
-                  <p>No colleges found.</p>
-                  <button
-                    className="request-college-btn"
-                    onClick={() => navigate("/requestcollege")}
-                  >
-                    Request a College
-                  </button>
+                totalUploads.toLocaleString()
+              )}
+            </strong>{" "}
+            syllabi available
+          </p>
+
+          <div className="hero-search-card">
+            <div className="search-wrapper">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search for your college..."
+                value={searchQuery}
+                onFocus={onSearchFocus}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSelectedIndex(-1);
+                  setDropdownOpen(true);
+                }}
+                onKeyDown={handleKeyDown}
+                ref={searchInputRef}
+                aria-label="Search for a college"
+                enterKeyHint="search"
+                autoComplete="off"
+              />
+
+              {searchQuery && (
+                <button
+                  className="clear-btn"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedIndex(-1);
+                    setDropdownOpen(true);
+                    searchInputRef.current?.focus();
+                  }}
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              )}
+
+              {dropdownOpen && searchQuery && (
+                <div className="results-box" ref={dropdownRef} role="listbox">
+                  {loadingIndex && !indexLoadedOnce ? (
+                    <div className="no-result">Loading colleges…</div>
+                  ) : filtered.length > 0 ? (
+                    filtered.map((college, index) => (
+                      <button
+                        type="button"
+                        key={college.id}
+                        className={`result-item ${
+                          selectedIndex === index ? "highlighted" : ""
+                        }`}
+                        onMouseEnter={() => setSelectedIndex(index)}
+                        onClick={() => goToCollege(college.id)}
+                        role="option"
+                        aria-selected={selectedIndex === index}
+                      >
+                        {highlightMatch(college.name)}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="no-result">
+                      <p className="no-result-title">No colleges found.</p>
+                      <button
+                        className="request-college-btn"
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          navigate("/requestcollege");
+                        }}
+                      >
+                        Request a College
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
+
+            {/* <div className="hero-actions">
+              <button
+                className="hero-secondary"
+                onClick={() => navigate("/uploadsyllabus")}
+              >
+                Upload a syllabus
+              </button>
+              <button
+                className="hero-tertiary"
+                onClick={() => navigate("/colleges")}
+              >
+                Browse all colleges
+              </button>
+            </div> */}
+          </div>
         </div>
       </section>
 
-      {/* Most Shared Syllabi (by college) */}
       <section
         ref={scrollerRef}
         className="college-scroll-wrapper"
         style={{ contentVisibility: "auto", containIntrinsicSize: "640px" }}
       >
-        <h2 className="scroll-title">Most Shared Syllabi</h2>
+        <div className="scroll-header">
+          <h2 className="scroll-title">Most Shared Syllabi</h2>
+          <button className="scroll-cta" onClick={() => navigate("/colleges")}>
+            View all
+          </button>
+        </div>
+
         <div className="college-scroll">
           {loadingTop || !scrollerIsNear
             ? [...Array(4)].map((_, i) => (
@@ -384,14 +447,6 @@ export default function HomePage() {
                   )}
                 </div>
               ))}
-          {!loadingTop && scrollerIsNear && (
-            <div
-              className="college-card view-all-card-link fade-in"
-              onClick={() => navigate("/colleges")}
-            >
-              <span className="view-all-link">View All Colleges</span>
-            </div>
-          )}
         </div>
       </section>
 
@@ -409,8 +464,7 @@ export default function HomePage() {
           <h3>Why this matters</h3>
           <p>
             SyllabusDB lets students see real class syllabi before registering.
-            When you upload one, you help others choose classes with confidence
-            and make course planning easier for future students.
+            When you upload one, you help others choose classes with confidence.
           </p>
           <button onClick={() => navigate("/uploadsyllabus")} className="btn">
             Upload a Syllabus
@@ -425,16 +479,20 @@ export default function HomePage() {
         <div className="trust-content">
           <h3>Trusted & Verified</h3>
           <p>How we keep things safe and reliable:</p>
+
+          {/* FIXED: proper list semantics */}
           <ul className="trust-list">
-            <p>✔️ Every syllabus is manually reviewed before approval</p>
-            <p>✔️ PDF uploads are scanned with antivirus tools</p>
-            <p>✔️ Most uploads are approved within 12 hours</p>
+            <li>Every syllabus is manually reviewed before approval</li>
+            <li>PDF uploads are scanned with antivirus tools</li>
+            <li>Most uploads are approved within 12 hours</li>
           </ul>
+
           <p>
             SyllabusDB is dedicated to maintaining a safe and reliable platform
             for all users.
           </p>
         </div>
+
         <img
           loading="lazy"
           src={verifiedImage}
