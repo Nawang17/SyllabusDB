@@ -178,9 +178,6 @@ export default function Header() {
             body: JSON.stringify({ message: "new user" }),
           }
         );
-        if (analytics) {
-          analytics.logEvent("sign_up", { method: "Google" });
-        }
 
         confetti({ particleCount: 220, spread: 60, origin: { y: 0.6 } });
         navigate("/");
