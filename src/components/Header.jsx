@@ -48,7 +48,6 @@ import {
   where,
   deleteField,
 } from "firebase/firestore";
-import { analytics } from "../../firebaseConfig";
 
 export default function Header() {
   const navigate = useNavigate();

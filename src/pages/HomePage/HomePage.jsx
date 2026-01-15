@@ -216,8 +216,22 @@ export default function HomePage() {
 
   const filtered = useMemo(() => {
     if (!debounced) return [];
+
+    const q = debounced;
+
+    const score = (name) => {
+      const n = name.toLowerCase();
+      if (n === q) return 100;
+      if (n.startsWith(q)) return 80;
+      if (n.includes(` ${q}`)) return 60; // word boundary-ish
+      if (n.includes(q)) return 40;
+      return 0;
+    };
+
     return searchIndex
-      .filter((c) => c.name.toLowerCase().includes(debounced))
+      .map((c) => ({ ...c, _score: score(c.name) }))
+      .filter((c) => c._score > 0)
+      .sort((a, b) => b._score - a._score || a.name.localeCompare(b.name))
       .slice(0, 12);
   }, [searchIndex, debounced]);
 
@@ -228,14 +242,25 @@ export default function HomePage() {
   };
 
   const handleKeyDown = (e) => {
-    if (!dropdownOpen) return;
-
     if (e.key === "Escape") {
       setDropdownOpen(false);
       setSelectedIndex(-1);
       return;
     }
 
+    // Allow Enter even if dropdown is closed
+    if (e.key === "Enter") {
+      if (!debounced) return;
+      if (!dropdownOpen) setDropdownOpen(true);
+
+      const idx = selectedIndex >= 0 ? selectedIndex : 0;
+      if (filtered.length > 0) {
+        goToCollege(filtered[idx].id);
+      }
+      return;
+    }
+
+    if (!dropdownOpen) return;
     if (!debounced || filtered.length === 0) return;
 
     if (e.key === "ArrowDown") {
@@ -246,10 +271,6 @@ export default function HomePage() {
       setSelectedIndex(
         (prev) => (prev - 1 + filtered.length) % filtered.length
       );
-    } else if (e.key === "Enter") {
-      // If nothing selected, go to first result
-      const idx = selectedIndex >= 0 ? selectedIndex : 0;
-      goToCollege(filtered[idx].id);
     }
   };
 
@@ -325,6 +346,15 @@ export default function HomePage() {
                 onKeyDown={handleKeyDown}
                 ref={searchInputRef}
                 aria-label="Search for a college"
+                aria-autocomplete="list"
+                aria-expanded={dropdownOpen && !!searchQuery}
+                aria-controls="college-search-listbox"
+                aria-activedescendant={
+                  selectedIndex >= 0
+                    ? `college-option-${filtered[selectedIndex]?.id}`
+                    : undefined
+                }
+                role="combobox"
                 enterKeyHint="search"
                 autoComplete="off"
               />
@@ -345,7 +375,12 @@ export default function HomePage() {
               )}
 
               {dropdownOpen && searchQuery && (
-                <div className="results-box" ref={dropdownRef} role="listbox">
+                <div
+                  className="results-box"
+                  ref={dropdownRef}
+                  role="listbox"
+                  id="college-search-listbox"
+                >
                   {loadingIndex && !indexLoadedOnce ? (
                     <div className="no-result">Loading colleges…</div>
                   ) : filtered.length > 0 ? (
@@ -463,8 +498,10 @@ export default function HomePage() {
         <div className="why-content">
           <h3>Why this matters</h3>
           <p>
-            SyllabusDB lets students see real class syllabi before registering.
-            When you upload one, you help others choose classes with confidence.
+            SyllabusDB helps students review past course syllabi before
+            registering so they can better understand grading policies, workload
+            expectations, and weekly topics. If you upload a syllabus, you help
+            other students plan more confidently.
           </p>
           <button onClick={() => navigate("/uploadsyllabus")} className="btn">
             Upload a Syllabus
@@ -477,19 +514,23 @@ export default function HomePage() {
         style={{ contentVisibility: "auto", containIntrinsicSize: "680px" }}
       >
         <div className="trust-content">
-          <h3>Trusted & Verified</h3>
-          <p>How we keep things safe and reliable:</p>
+          <h3>Reviewed Before Publishing</h3>
+          <p>How we maintain quality and safety:</p>
 
           {/* FIXED: proper list semantics */}
           <ul className="trust-list">
-            <li>Every syllabus is manually reviewed before approval</li>
-            <li>PDF uploads are scanned with antivirus tools</li>
-            <li>Most uploads are approved within 12 hours</li>
+            <li>Submissions are reviewed before they appear on the site</li>
+            <li>
+              Uploaded files may be scanned for malware and policy violations
+            </li>
+            <li>
+              Many submissions are reviewed within 24 hours, depending on volume
+            </li>
           </ul>
 
           <p>
-            SyllabusDB is dedicated to maintaining a safe and reliable platform
-            for all users.
+            We aim to keep SyllabusDB accurate, respectful, and compliant with
+            our policies.
           </p>
         </div>
 
