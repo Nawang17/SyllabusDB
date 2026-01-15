@@ -169,9 +169,19 @@ export default function Header() {
           createdAt: new Date(),
           wantsEmailNotifications: true,
         });
+        //new user noti
+        await fetch(
+          "https://syllabusdbserver-agza.onrender.com/notify-newUser",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: "new user" }),
+          }
+        );
         if (analytics) {
           analytics.logEvent("sign_up", { method: "Google" });
         }
+
         confetti({ particleCount: 220, spread: 60, origin: { y: 0.6 } });
         navigate("/");
 
@@ -184,6 +194,7 @@ export default function Header() {
           icon: <IconSparkles size={16} />,
           position: "bottom-center",
         });
+
         if (
           location.pathname !== "/settings" &&
           location.pathname !== "/myuploads"
