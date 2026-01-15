@@ -43,7 +43,7 @@ function useOnScreen(ref, rootMargin = "200px") {
 
 export default function HomePage() {
   useEffect(() => {
-    document.title = "SyllabusDB | Browse and Share Real College Syllabi";
+    document.title = "SyllabusDB | Browse Past College Syllabi";
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 

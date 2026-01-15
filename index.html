@@ -4,12 +4,70 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/src/assets/app_logo.png" />
     <link rel="apple-touch-icon" href="/src/assets/app_logo.png" />
+
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1"
     />
-    <title>SyllabusDB | Browse and Share Real College Syllabi</title>
 
+    <title>SyllabusDB | Browse Past College Syllabi</title>
+
+    <!-- SEO -->
+    <meta
+      name="description"
+      content="Browse past college course syllabi to understand workload, grading, and topics before registering. Upload syllabi you are permitted to share. All submissions are reviewed."
+    />
+    <link rel="canonical" href="https://syllabusdb.com/" />
+    <meta name="robots" content="index,follow" />
+
+    <!-- Open Graph -->
+    <meta
+      property="og:title"
+      content="SyllabusDB | Browse Past College Syllabi"
+    />
+    <meta
+      property="og:description"
+      content="Browse past course syllabi to set expectations before you register. Reviewed submissions, takedown process, and course planning made easier."
+    />
+    <meta
+      property="og:image"
+      content="https://res.cloudinary.com/dwzjfylgh/image/upload/v1748894480/background_img_pivfvb.png"
+    />
+    <meta property="og:url" content="https://syllabusdb.com/" />
+    <meta property="og:type" content="website" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="SyllabusDB | Browse Past College Syllabi"
+    />
+    <meta
+      name="twitter:description"
+      content="Browse past course syllabi to understand grading, workload, and topics before registering."
+    />
+    <meta
+      name="twitter:image"
+      content="https://res.cloudinary.com/dwzjfylgh/image/upload/v1748894480/background_img_pivfvb.png"
+    />
+
+    <!-- Structured Data (Google) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "SyllabusDB",
+        "url": "https://syllabusdb.com/",
+        "description": "Browse past college course syllabi for informational course planning.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://syllabusdb.com/search?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,18 +75,7 @@
       rel="stylesheet"
     />
 
-    <meta property="og:title" content="SyllabusDB" />
-    <meta
-      property="og:description"
-      content="SyllabusDB is a student-powered resource for sharing real course syllabi. Find out what a class is really like before you register, and help others by uploading yours."
-    />
-
-    <meta
-      property="og:image"
-      content="https://res.cloudinary.com/dwzjfylgh/image/upload/v1748894480/background_img_pivfvb.png"
-    />
-    <meta property="og:url" content="https://syllabusdb.com" />
-    <meta property="og:type" content="website" />
+    <!-- Preconnect to Firebase -->
     <link
       rel="preconnect"
       href="https://firestore.googleapis.com"
@@ -41,25 +88,23 @@
       crossorigin
     />
 
-    <!-- hunter college image  -->
     <link
       rel="preload"
       as="image"
       href="https://www.cuny.edu/wp-content/uploads/sites/4/page-assets/schools/hunter-college/htc_huntercampus_R_3520_hor-768x402.jpg"
     />
-    <!-- queens college image -->
     <link
       rel="preload"
       as="image"
       href="https://www.cuny.edu/wp-content/uploads/sites/4/page-assets/schools/queens-college/QC_campus-768x402.jpg"
     />
-    <!-- baruch college image -->
     <link
       rel="preload"
       as="image"
       href="https://www.cuny.edu/wp-content/uploads/sites/4/page-assets/home-preview/colleges/layout/entry-15-baruch_at_night-768x402.jpg"
     />
   </head>
+
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
