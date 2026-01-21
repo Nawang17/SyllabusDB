@@ -5,7 +5,7 @@
   margin: 0 auto;
   padding: 2rem 2rem 3rem 2rem;
   color: #0f172a; /* slate-900 */
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.7;
   background: transparent;
 }
@@ -22,7 +22,6 @@
   font-size: clamp(1.1rem, 1rem + 0.5vw, 1.4rem);
   font-weight: 700;
   margin: 1.8rem 0 0.7rem;
-  color: #1e3a8a; /* indigo-900 accent */
 }
 
 .about-page p {
@@ -44,7 +43,9 @@
   color: #1e88e5;
   text-decoration: none;
   border-bottom: 1px solid rgba(30, 136, 229, 0.25);
-  transition: color 0.2s ease, border-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .about-page a:hover {

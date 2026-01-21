@@ -75,6 +75,24 @@ export default function AboutPage() {
         informed academic decisions.
       </p>
 
+      <p>
+        SyllabusDB is developed as an open-source project to keep the platform
+        transparent, collaborative, and sustainable. Feedback, contributions,
+        and ideas from the community help shape where it goes next.
+      </p>
+
+      <p>
+        The source code is publicly available on{" "}
+        <a
+          href="https://github.com/Nawang17/SyllabusDB"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          GitHub
+        </a>
+        .
+      </p>
+
       <p style={{ marginTop: "1rem" }}>
         Questions or feedback? Contact us at{" "}
         <a href="mailto:katophh@gmail.com">katophh@gmail.com</a>.
