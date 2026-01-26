@@ -16,7 +16,6 @@ import {
   IconCopy,
   IconQuote,
   IconMessageCircle,
-  IconShare2,
 } from "@tabler/icons-react";
 
 import { Button, Paper, Text, Group, Collapse, ThemeIcon } from "@mantine/core";
@@ -31,9 +30,13 @@ function SyllabusRow({ s, collegeId, subject, courseId }) {
   const label = `${s.term} ${s.year} - ${s.professor}`;
   const goToViewer = () => {
     navigate(
-      `/college/${collegeId}/subject/${subject}/course/${courseId}/syllabus/${s.id}`,
+      `/college/${encodeURIComponent(collegeId)}` +
+        `/subject/${encodeURIComponent(subject)}` +
+        `/course/${encodeURIComponent(courseId)}` +
+        `/syllabus/${encodeURIComponent(s.id)}`,
     );
   };
+
   return (
     <Paper withBorder radius="md" className="syllabus-card">
       <Group justify="space-between" align="flex-start" wrap="nowrap">
@@ -68,7 +71,12 @@ function SyllabusRow({ s, collegeId, subject, courseId }) {
           )}
           <ThemeIcon
             onClick={() => {
-              const url = `${window.location.origin}/college/${collegeId}/subject/${subject}/course/${courseId}/syllabus/${s.id}`;
+              const url =
+                `${window.location.origin}` +
+                `/college/${encodeURIComponent(collegeId)}` +
+                `/subject/${encodeURIComponent(subject)}` +
+                `/course/${encodeURIComponent(courseId)}` +
+                `/syllabus/${encodeURIComponent(s.id)}`;
 
               navigator.clipboard.writeText(url).then(() => {
                 // fallback: show your notification/toast
