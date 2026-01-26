@@ -24,26 +24,31 @@ import { useDebouncedValue } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import "./SubjectPage.css";
 
-function SyllabusRow({ s, courseCode }) {
+function SyllabusRow({ s, collegeId, subject, courseId }) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const hasExp = !!s.experience_text?.trim();
   const label = `${s.term} ${s.year} - ${s.professor}`;
-
+  const goToViewer = () => {
+    navigate(
+      `/college/${collegeId}/subject/${subject}/course/${courseId}/syllabus/${s.id}`,
+    );
+  };
   return (
     <Paper withBorder radius="md" className="syllabus-card">
       <Group justify="space-between" align="flex-start" wrap="nowrap">
         <Group gap="sm" wrap="nowrap">
-          <div>
-            <a
-              href={s.pdf_url}
-              target="_blank"
-              rel="noreferrer"
-              className="syllabus-title-link"
-            >
-              <Text fw={600} className="syllabus-title">
-                {label}
-              </Text>
-            </a>
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={goToViewer}
+            onKeyDown={(e) => e.key === "Enter" && goToViewer()}
+            className="syllabus-title-link"
+            style={{ cursor: "pointer" }}
+          >
+            <Text fw={600} className="syllabus-title">
+              {label}
+            </Text>
           </div>
         </Group>
 
@@ -63,9 +68,7 @@ function SyllabusRow({ s, courseCode }) {
           )}
           <ThemeIcon
             onClick={() => {
-              const url = `${window.location.origin}${
-                window.location.pathname
-              }?course=${encodeURIComponent(courseCode)}`;
+              const url = `${window.location.origin}/college/${collegeId}/subject/${subject}/course/${courseId}/syllabus/${s.id}`;
 
               navigator.clipboard.writeText(url).then(() => {
                 // fallback: show your notification/toast
@@ -157,7 +160,7 @@ export default function SubjectPage() {
       try {
         const courseQuery = query(
           collection(db, "colleges", collegeId, "courses"),
-          where("approved", "==", true)
+          where("approved", "==", true),
         );
         const snapshot = await getDocs(courseQuery);
         const allCourses = snapshot.docs.map((doc) => ({
@@ -169,11 +172,11 @@ export default function SubjectPage() {
             course.code &&
             course.code
               .toUpperCase()
-              .startsWith((subject || "").toUpperCase() + " ")
+              .startsWith((subject || "").toUpperCase() + " "),
         );
         const total = filtered.reduce(
           (sum, c) => sum + (c.approvedSyllabiCount || 0),
-          0
+          0,
         );
         setCourses(filtered);
         setFilteredCourses(filtered);
@@ -225,8 +228,8 @@ export default function SubjectPage() {
       courses.filter(
         (c) =>
           courseCodeMatches(c.code, q) ||
-          c.title.toLowerCase().includes(q.toLowerCase())
-      )
+          c.title.toLowerCase().includes(q.toLowerCase()),
+      ),
     );
   }, [debouncedSearch, courses]);
 
@@ -279,14 +282,14 @@ export default function SubjectPage() {
               collegeId,
               "courses",
               courseId,
-              "syllabi"
+              "syllabi",
             ),
-            where("approved", "==", true)
-          )
+            where("approved", "==", true),
+          ),
         );
         const syllabi = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
         syllabi.sort(
-          (a, b) => b.year - a.year || termOrder[b.term] - termOrder[a.term]
+          (a, b) => b.year - a.year || termOrder[b.term] - termOrder[a.term],
         );
         setSyllabiMap((prev) => ({ ...prev, [courseId]: syllabi }));
       } catch (err) {
@@ -441,6 +444,9 @@ export default function SubjectPage() {
                           s={s}
                           courseCode={course.code}
                           onCopy={copyAction}
+                          collegeId={collegeId}
+                          subject={subject}
+                          courseId={course.id}
                         />
                       );
                     })

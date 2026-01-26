@@ -228,7 +228,9 @@ mark {
 --- Mantine-styled syllabus rows --- .syllabus-card {
   padding: 12px 14px;
   background: #ffffff;
-  transition: box-shadow 120ms ease, transform 120ms ease;
+  transition:
+    box-shadow 120ms ease,
+    transform 120ms ease;
 }
 .syllabus-card:hover {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
@@ -237,10 +239,12 @@ mark {
 
 .syllabus-title-link {
   text-decoration: underline;
+
+  color: #2563eb;
 }
 
 .syllabus-title-link:hover .syllabus-title {
-  color: #2563eb;
+  color: #0000ee;
 }
 
 .experience-quote {
@@ -268,7 +272,9 @@ mark {
   color: #4b5563; /* neutral gray text & icon */
   padding: 6px 8px;
   border-radius: 6px;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .syllabus-action-btn:hover {
