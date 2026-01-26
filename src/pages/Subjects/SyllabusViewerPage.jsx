@@ -73,16 +73,17 @@ export default function SyllabusViewerPage() {
         >
           Back to {subject?.toUpperCase()} courses
         </Button>
-
-        <Button
-          leftSection={<IconExternalLink size={14} />}
-          variant="subtle"
-          color="gray"
-          size="sm"
-          onClick={openPdf}
-        >
-          Open PDF in new tab
-        </Button>
+        {!isMobile && (
+          <Button
+            leftSection={<IconExternalLink size={14} />}
+            variant="subtle"
+            color="gray"
+            size="sm"
+            onClick={openPdf}
+          >
+            Open PDF in new tab
+          </Button>
+        )}
       </Group>
       <Flex pl={15} direction="column" gap={4} mb="md">
         <Text fw={600} size="sm">
@@ -114,7 +115,7 @@ export default function SyllabusViewerPage() {
             leftSection={<IconExternalLink size={16} />}
             onClick={openPdf}
           >
-            View PDF
+            Open PDF in new tab
           </Button>
         </Box>
       ) : (
