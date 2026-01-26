@@ -17,11 +17,9 @@
     "@tabler/icons-react": "^3.33.0",
     "canvas-confetti": "^1.9.3",
     "firebase": "^11.8.1",
-    "pdfjs-dist": "^5.4.530",
     "react": "^19.1.0",
     "react-countup": "^6.5.3",
     "react-dom": "^19.1.0",
-    "react-pdf": "^10.3.0",
     "react-router": "^7.6.1",
     "uuid": "^11.1.0"
   },

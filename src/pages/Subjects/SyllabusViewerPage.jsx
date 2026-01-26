@@ -1,18 +1,9 @@
 import { useParams, useNavigate } from "react-router";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
-import { Box, Button, Group, Skeleton, Text, Loader } from "@mantine/core";
+import { Box, Button, Flex, Group, Skeleton, Text } from "@mantine/core";
 import { db } from "../../../firebaseConfig";
 import { IconArrowLeft, IconExternalLink } from "@tabler/icons-react";
-
-import { Document, Page, pdfjs } from "react-pdf";
-import "react-pdf/dist/Page/AnnotationLayer.css";
-import "react-pdf/dist/Page/TextLayer.css";
-
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url,
-).toString();
 
 export default function SyllabusViewerPage() {
   const { collegeId, subject, courseId, syllabusId } = useParams();
@@ -20,15 +11,10 @@ export default function SyllabusViewerPage() {
   const [syllabus, setSyllabus] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // react-pdf state
-  const [numPages, setNumPages] = useState(null);
-  const [pdfError, setPdfError] = useState(null);
-
   const isMobile = useMemo(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia("(max-width: 768px)").matches;
   }, []);
-
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -49,6 +35,11 @@ export default function SyllabusViewerPage() {
 
     fetchSyllabus();
   }, [collegeId, courseId, syllabusId]);
+  console.log(syllabus);
+  const syllabusTitle = syllabus?.file_path.split("/")[2];
+
+  const openPdf = () =>
+    window.open(syllabus?.pdf_url, "_blank", "noopener,noreferrer");
 
   if (loading) {
     return (
@@ -72,9 +63,6 @@ export default function SyllabusViewerPage() {
 
   if (!syllabus) return <p>Syllabus not found.</p>;
 
-  const openPdf = () =>
-    window.open(syllabus.pdf_url, "_blank", "noopener,noreferrer");
-
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem" }}>
       <Group mb="md" justify="space-between" wrap="wrap">
@@ -96,67 +84,41 @@ export default function SyllabusViewerPage() {
           Open PDF in new tab
         </Button>
       </Group>
+      <Flex pl={15} direction="column" gap={4} mb="md">
+        <Text fw={600} size="sm">
+          {syllabusTitle}
+        </Text>
 
-      {/* MOBILE: render with pdf.js so it scrolls */}
+        <Text size="xs" c="dimmed">
+          {syllabus?.term} {syllabus?.year} • {syllabus?.professor}
+        </Text>
+      </Flex>
+
       {isMobile ? (
         <Box
           style={{
             border: "1px solid #e5e7eb",
             borderRadius: 8,
+            padding: "1rem",
             background: "#fff",
-            padding: "0.75rem",
           }}
         >
-          {pdfError ? (
-            <Box>
-              <Text fw={600} mb={6}>
-                Could not load PDF
-              </Text>
-              <Text size="sm" c="dimmed" mb="md">
-                Your browser blocked embedded loading. Open in a new tab
-                instead.
-              </Text>
-              <Button
-                leftSection={<IconExternalLink size={16} />}
-                onClick={openPdf}
-              >
-                View PDF
-              </Button>
-            </Box>
-          ) : (
-            <Document
-              file={syllabus.pdf_url}
-              onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-              onLoadError={(err) => setPdfError(err)}
-              loading={<Loader />}
-            >
-              <Box
-                style={{ display: "flex", flexDirection: "column", gap: 12 }}
-              >
-                {Array.from(new Array(numPages || 0), (_, i) => (
-                  <Box
-                    key={`page_${i + 1}`}
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      background: "#f9fafb",
-                      borderRadius: 8,
-                      padding: 8,
-                    }}
-                  >
-                    <Page
-                      pageNumber={i + 1}
-                      width={Math.min(720, window.innerWidth - 48)}
-                      renderAnnotationLayer={false}
-                    />
-                  </Box>
-                ))}
-              </Box>
-            </Document>
-          )}
+          <Text fw={600} mb={6}>
+            PDF viewing on mobile
+          </Text>
+          <Text size="sm" c="dimmed" mb="md">
+            Some mobile browsers don’t scroll embedded PDFs reliably. Opening in
+            a new tab works best.
+          </Text>
+          <Button
+            leftSection={<IconExternalLink size={16} />}
+            onClick={openPdf}
+          >
+            View PDF
+          </Button>
         </Box>
       ) : (
-        // DESKTOP: iframe is fine
+        // Desktop: keep iframe, but put it inside a scrollable container (helps some cases too)
         <div
           style={{
             height: "80vh",
@@ -169,8 +131,12 @@ export default function SyllabusViewerPage() {
         >
           <iframe
             src={syllabus.pdf_url}
-            title="Syllabus PDF"
-            style={{ width: "100%", height: "100%", border: 0 }}
+            title={syllabusTitle}
+            style={{
+              width: "100%",
+              height: "100%",
+              border: 0,
+            }}
           />
         </div>
       )}
