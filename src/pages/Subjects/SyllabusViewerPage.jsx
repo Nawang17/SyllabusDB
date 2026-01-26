@@ -126,7 +126,8 @@ export default function SyllabusViewerPage() {
             style={{
               width: "100%",
               height: "80vh",
-              border: 0,
+              border: "1px solid #e5e7eb",
+              borderRadius: 8,
             }}
           />
         </div>
