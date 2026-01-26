@@ -81,7 +81,7 @@ export default function SyllabusViewerPage() {
             size="sm"
             onClick={openPdf}
           >
-            Open PDF in new tab
+            Open PDF in a new tab
           </Button>
         )}
       </Group>
@@ -96,28 +96,40 @@ export default function SyllabusViewerPage() {
       </Flex>
 
       {isMobile ? (
-        <Box
-          style={{
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
-            padding: "1rem",
-            background: "#fff",
-          }}
-        >
-          <Text fw={600} mb={6}>
-            PDF viewing on mobile
-          </Text>
-          <Text size="sm" c="dimmed" mb="md">
-            Some mobile browsers don’t scroll embedded PDFs reliably. Opening in
-            a new tab works best.
-          </Text>
-          <Button
-            leftSection={<IconExternalLink size={16} />}
-            onClick={openPdf}
+        <div>
+          <Box
+            mb={15}
+            style={{
+              border: "1px solid #e5e7eb",
+              borderRadius: 8,
+              padding: "1rem",
+              background: "#fff",
+            }}
           >
-            Open PDF in new tab
-          </Button>
-        </Box>
+            <Text fw={600} mb={6}>
+              PDF viewing on mobile
+            </Text>
+            <Text size="sm" c="dimmed" mb="md">
+              Some mobile browsers don’t scroll embedded PDFs reliably. Opening
+              in a new tab works best.
+            </Text>
+            <Button
+              leftSection={<IconExternalLink size={16} />}
+              onClick={openPdf}
+            >
+              Open PDF in a new tab
+            </Button>
+          </Box>
+          <iframe
+            src={syllabus.pdf_url}
+            title={syllabusTitle}
+            style={{
+              width: "100%",
+              height: "80vh",
+              border: 0,
+            }}
+          />
+        </div>
       ) : (
         // Desktop: keep iframe, but put it inside a scrollable container (helps some cases too)
         <div
