@@ -103,7 +103,7 @@ export default function UploadSyllabus() {
       if (!collegeId) return;
       const courseQuery = query(
         collection(db, "colleges", collegeId, "courses"),
-        where("approved", "==", true)
+        where("approved", "==", true),
       );
 
       const courseSnap = await getDocs(courseQuery);
@@ -124,7 +124,7 @@ export default function UploadSyllabus() {
       return;
     }
     const filtered = courseOptions.filter((c) =>
-      c.code.toLowerCase().startsWith(courseCode.toLowerCase())
+      c.code.toLowerCase().startsWith(courseCode.toLowerCase()),
     );
     setCourseSuggestions(filtered);
 
@@ -139,7 +139,23 @@ export default function UploadSyllabus() {
     setUploadError("");
     setShowReviewModal(true); // Open confirmation modal
   };
+  function normalizeCourseCode(input) {
+    if (!input) return "";
 
+    let cleaned = input.trim().toUpperCase();
+
+    // Remove ALL spaces first (normalize structure)
+    cleaned = cleaned.replace(/\s+/g, "");
+
+    // Match: SUBJECT + NUMBER + optional letter suffix
+    const match = cleaned.match(/^([A-Z]+)([0-9]+[A-Z]?)$/);
+
+    if (!match) return cleaned; // or optionally reject
+
+    const [, subject, number] = match;
+
+    return `${subject} ${number}`;
+  }
   const handleSubmitUpload = async () => {
     setUploadError("");
     setIsSubmitting(true);
@@ -180,7 +196,7 @@ export default function UploadSyllabus() {
         return;
       }
 
-      const cleanedCourseCode = courseCode.trim();
+      const cleanedCourseCode = normalizeCourseCode(courseCode);
       const cleanedCourseTitle = courseTitle.trim();
       const cleanedProfessor = professor.trim();
 
@@ -202,7 +218,7 @@ export default function UploadSyllabus() {
         "colleges",
         collegeId,
         "courses",
-        cleanedCourseCode
+        cleanedCourseCode,
       );
       const courseSnap = await getDoc(courseRef);
 
@@ -222,18 +238,18 @@ export default function UploadSyllabus() {
           collegeId,
           "courses",
           cleanedCourseCode,
-          "syllabi"
+          "syllabi",
         ),
         where("term", "==", term),
         where("year", "==", year),
         where("professor", "==", cleanedProfessor),
-        where("approved", "==", true) // Only check for approved syllabi
+        where("approved", "==", true), // Only check for approved syllabi
       );
 
       const existingSnapshot = await getDocs(existingQuery);
       if (!existingSnapshot.empty) {
         setUploadError(
-          "⚠️ A syllabus for this course, term, and year already exists."
+          "⚠️ A syllabus for this course, term, and year already exists.",
         );
         setIsSubmitting(false);
         return;
@@ -245,7 +261,7 @@ export default function UploadSyllabus() {
         collegeId,
         "courses",
         cleanedCourseCode,
-        "syllabi"
+        "syllabi",
       );
 
       await setDoc(doc(sylabbiRef), {
@@ -336,6 +352,9 @@ export default function UploadSyllabus() {
               onChange={(e) =>
                 setCourseCode(e.target.value.toUpperCase().trimStart())
               }
+              onBlur={() => {
+                setCourseCode(normalizeCourseCode(courseCode));
+              }}
               required
               autoComplete="off"
               placeholder="e.g. Math 150"
