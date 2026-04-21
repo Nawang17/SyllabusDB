@@ -13,6 +13,7 @@ import {
 import { IconChevronRight, IconMapPin } from "@tabler/icons-react";
 import { Button, Flex, Image, Skeleton } from "@mantine/core";
 import errorImage from "../../assets/5203299.jpg"; // Error image for not found
+import collegeIllustration from "../../assets/college_illustration.jpg";
 import { logEvent } from "firebase/analytics";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { Alert } from "@mantine/core";
@@ -92,7 +93,7 @@ export default function CollegePage() {
         setTotalSyllabiCount(data.approvedSyllabiTotal || 0);
         const courseQuery = query(
           collection(db, "colleges", collegeId, "courses"),
-          where("approved", "==", true)
+          where("approved", "==", true),
         );
         const courseSnapshot = await getDocs(courseQuery);
         const courseList = courseSnapshot.docs.map((doc) => ({
@@ -179,23 +180,20 @@ export default function CollegePage() {
               </Alert>
             </div>
           )}
-          {collegeImage ? (
-            <div className="college-hero">
-              <Image
-                src={collegeImage}
-                className="college-hero-img"
-                alt={collegeName}
-              />
-              <div className="college-hero-overlay">
-                <div className="college-hero-title">{collegeName}</div>
-                <div className="college-hero-location">
-                  <IconMapPin size={16} /> {collegeLocation}
-                </div>
+
+          <div className="college-hero">
+            <Image
+              src={collegeImage ? collegeImage : collegeIllustration}
+              className="college-hero-img"
+              alt={collegeName}
+            />
+            <div className="college-hero-overlay">
+              <div className="college-hero-title">{collegeName}</div>
+              <div className="college-hero-location">
+                <IconMapPin size={16} /> {collegeLocation}
               </div>
             </div>
-          ) : (
-            <Skeleton height={"200px"} mb="1rem" radius="md" />
-          )}
+          </div>
 
           <div className="college-header">
             <div className="breadcrumb-nav">
@@ -273,7 +271,7 @@ export default function CollegePage() {
                               0,
                               subject
                                 .toLowerCase()
-                                .indexOf(search.toLowerCase())
+                                .indexOf(search.toLowerCase()),
                             )}
                             <strong>
                               {subject.slice(
@@ -282,13 +280,14 @@ export default function CollegePage() {
                                   .indexOf(search.toLowerCase()),
                                 subject
                                   .toLowerCase()
-                                  .indexOf(search.toLowerCase()) + search.length
+                                  .indexOf(search.toLowerCase()) +
+                                  search.length,
                               )}
                             </strong>
                             {subject.slice(
                               subject
                                 .toLowerCase()
-                                .indexOf(search.toLowerCase()) + search.length
+                                .indexOf(search.toLowerCase()) + search.length,
                             )}
                           </>
                         ) : (
