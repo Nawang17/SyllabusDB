@@ -33,7 +33,7 @@ function useOnScreen(ref, rootMargin = "200px") {
           io.disconnect();
         }
       },
-      { rootMargin }
+      { rootMargin },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -76,7 +76,7 @@ export default function HomePage() {
       const qy = query(
         collection(db, "colleges"),
         orderBy("approvedSyllabiTotal", "desc"),
-        limit(5)
+        limit(10),
       );
       const snapshot = await getDocs(qy);
       const data = snapshot.docs.map((d) => {
@@ -91,7 +91,7 @@ export default function HomePage() {
       setTopColleges(data);
       localStorage.setItem(
         TOP_CACHE_KEY,
-        JSON.stringify({ data, ts: Date.now() })
+        JSON.stringify({ data, ts: Date.now() }),
       );
     } catch (err) {
       console.error("Error fetching top colleges:", err);
@@ -137,7 +137,7 @@ export default function HomePage() {
       setIndexLoadedOnce(true);
       localStorage.setItem(
         IDX_CACHE_KEY,
-        JSON.stringify({ data: all, ts: Date.now() })
+        JSON.stringify({ data: all, ts: Date.now() }),
       );
     } catch (e) {
       console.error("Error fetching search index:", e);
@@ -169,7 +169,7 @@ export default function HomePage() {
     const unsubStats = onSnapshot(
       doc(db, "stats", "global"),
       (snap) => setTotalUploads(snap.data()?.total_syllabi || 0),
-      (err) => console.error("stats/global listener error:", err)
+      (err) => console.error("stats/global listener error:", err),
     );
 
     const countEl = document.querySelector(".hero-syllabi-count");
@@ -183,7 +183,7 @@ export default function HomePage() {
             io.disconnect();
           }
         },
-        { rootMargin: "120px" }
+        { rootMargin: "120px" },
       );
       io.observe(countEl);
     }
@@ -198,7 +198,7 @@ export default function HomePage() {
   useEffect(() => {
     const t = setTimeout(
       () => setDebounced(searchQuery.trim().toLowerCase()),
-      120
+      120,
     );
     return () => clearTimeout(t);
   }, [searchQuery]);
@@ -269,7 +269,7 @@ export default function HomePage() {
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setSelectedIndex(
-        (prev) => (prev - 1 + filtered.length) % filtered.length
+        (prev) => (prev - 1 + filtered.length) % filtered.length,
       );
     }
   };
@@ -306,9 +306,14 @@ export default function HomePage() {
     <div className="home-page">
       <section className="search-section">
         <div className="hero-inner">
+          <p className="hero-eyebrow">Real syllabi uploaded by students</p>
+
           <div className="headline">
-            <h1>Know the course</h1>
-            <h1>before you enroll</h1>
+            <h1>See what a class is really like before you take it</h1>
+            <p className="hero-subtext">
+              View grading, workload, and weekly topics from real college
+              syllabi.
+            </p>
           </div>
 
           <p className="hero-syllabi-count">
@@ -317,7 +322,7 @@ export default function HomePage() {
                 <CountUp
                   start={Math.max(
                     0,
-                    totalUploads - Math.floor(totalUploads * 0.05)
+                    totalUploads - Math.floor(totalUploads * 0.05),
                   )}
                   end={totalUploads}
                   duration={0.7}
@@ -327,7 +332,8 @@ export default function HomePage() {
                 totalUploads.toLocaleString()
               )}
             </strong>{" "}
-            syllabi available
+            syllabi available from <strong>{searchIndex.length - 1}+</strong>{" "}
+            colleges
           </p>
 
           <div className="hero-search-card">
@@ -335,7 +341,7 @@ export default function HomePage() {
               <input
                 type="text"
                 className="search-input"
-                placeholder="Search for your college..."
+                placeholder="Search for your college"
                 value={searchQuery}
                 onFocus={onSearchFocus}
                 onChange={(e) => {
@@ -416,21 +422,6 @@ export default function HomePage() {
                 </div>
               )}
             </div>
-
-            {/* <div className="hero-actions">
-              <button
-                className="hero-secondary"
-                onClick={() => navigate("/uploadsyllabus")}
-              >
-                Upload a syllabus
-              </button>
-              <button
-                className="hero-tertiary"
-                onClick={() => navigate("/colleges")}
-              >
-                Browse all colleges
-              </button>
-            </div> */}
           </div>
         </div>
       </section>
@@ -441,7 +432,7 @@ export default function HomePage() {
         style={{ contentVisibility: "auto", containIntrinsicSize: "640px" }}
       >
         <div className="scroll-header">
-          <h2 className="scroll-title">Most Shared Syllabi</h2>
+          <h2 className="scroll-title">Top Colleges</h2>
           <button className="scroll-cta" onClick={() => navigate("/colleges")}>
             View all
           </button>
