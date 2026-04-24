@@ -22,6 +22,8 @@
   /* background:
     radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 34%),
     linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); */
+  background: url("/src/assets/hero-bg.png") no-repeat center top;
+  background-size: cover;
 }
 
 .hero-inner {
@@ -322,7 +324,7 @@
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
-  /* border: 1px solid rgba(2, 6, 23, 0.06); */
+  border: 1px solid rgba(2, 6, 23, 0.06);
 }
 
 .college-card:hover {
@@ -589,5 +591,74 @@
 
   .college-img {
     height: 160px;
+  }
+}
+/* wafwa */
+/* default = desktop */
+.top-colleges-mobile {
+  display: none;
+}
+
+/* MOBILE ONLY */
+@media (max-width: 768px) {
+  .college-scroll {
+    display: none;
+  }
+
+  .top-colleges-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .college-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.7rem;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    cursor: pointer;
+  }
+
+  .college-row:hover {
+    background: #f8fafc;
+  }
+
+  .rank {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #2563eb;
+    width: 20px;
+    text-align: center;
+  }
+
+  .college-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .college-info .college-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .college-info .college-count {
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  .college-thumb {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
   }
 }

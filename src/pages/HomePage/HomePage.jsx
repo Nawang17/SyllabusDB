@@ -474,6 +474,28 @@ export default function HomePage() {
                 </div>
               ))}
         </div>
+        <div className="top-colleges-mobile">
+          {topColleges.slice(0, 3).map((college, i) => (
+            <div
+              key={college.id}
+              className="college-row"
+              onClick={() => navigate(`/college/${college.id}`)}
+            >
+              <div className="rank">{i + 1}</div>
+
+              <div className="college-info">
+                <div className="college-name">{college.name}</div>
+                <div className="college-count">{college.uploads} syllabi</div>
+              </div>
+
+              <img
+                src={college.image_url}
+                alt={college.name}
+                className="college-thumb"
+              />
+            </div>
+          ))}
+        </div>
       </section>
 
       <section
