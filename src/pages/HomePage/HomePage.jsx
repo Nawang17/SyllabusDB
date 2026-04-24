@@ -426,11 +426,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section
-        ref={scrollerRef}
-        className="college-scroll-wrapper"
-        style={{ contentVisibility: "auto", containIntrinsicSize: "640px" }}
-      >
+      <section className="college-scroll-wrapper">
         <div className="scroll-header">
           <h2 className="scroll-title">Top Colleges</h2>
           <button className="scroll-cta" onClick={() => navigate("/colleges")}>
@@ -438,63 +434,48 @@ export default function HomePage() {
           </button>
         </div>
 
-        <div className="college-scroll">
+        <div className="top-colleges-list">
           {loadingTop || !scrollerIsNear
-            ? [...Array(4)].map((_, i) => (
-                <div key={i} className="college-card skeleton">
-                  <div className="skeleton-img" />
-                  <div className="skeleton-line short" />
-                  <div className="skeleton-line long" />
+            ? [...Array(3)].map((_, i) => (
+                <div key={i} className="top-college-row skeleton">
+                  <div className="rank-skeleton skeleton-line" />
+                  <div className="college-info">
+                    <div className="skeleton-line long" />
+                    <div className="skeleton-line short" />
+                  </div>
+                  <div className="thumb-skeleton skeleton-img" />
                 </div>
               ))
-            : topColleges.map((college, i) => (
-                <div
+            : topColleges.slice(0, 3).map((college, i) => (
+                <button
+                  type="button"
                   key={college.id}
-                  className="college-card fade-in"
+                  className="top-college-row fade-in"
                   onClick={() => navigate(`/college/${college.id}`)}
                 >
+                  <div className="college-rank">{i + 1}</div>
+
+                  <div className="top-college-info">
+                    <div className="top-college-name">{college.name}</div>
+                    {college.uploads > 0 && (
+                      <div className="top-college-count">
+                        {college.uploads} syllabi
+                      </div>
+                    )}
+                  </div>
+
                   <img
                     loading="lazy"
                     src={college.image_url}
-                    alt={college.name}
-                    className="college-img"
+                    alt=""
+                    className="top-college-thumb"
                     onError={(e) => {
                       e.currentTarget.src =
-                        "https://via.placeholder.com/300x200?text=Image+Unavailable";
+                        "https://via.placeholder.com/120x120?text=College";
                     }}
                   />
-                  <div className="college-name">
-                    {i + 1}. {college.name}
-                  </div>
-                  {college.uploads > 0 && (
-                    <div className="college-count">
-                      {college.uploads} syllabi
-                    </div>
-                  )}
-                </div>
+                </button>
               ))}
-        </div>
-        <div className="top-colleges-mobile">
-          {topColleges.slice(0, 3).map((college, i) => (
-            <div
-              key={college.id}
-              className="college-row"
-              onClick={() => navigate(`/college/${college.id}`)}
-            >
-              <div className="rank">{i + 1}</div>
-
-              <div className="college-info">
-                <div className="college-name">{college.name}</div>
-                <div className="college-count">{college.uploads} syllabi</div>
-              </div>
-
-              <img
-                src={college.image_url}
-                alt={college.name}
-                className="college-thumb"
-              />
-            </div>
-          ))}
         </div>
       </section>
 
