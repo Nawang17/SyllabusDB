@@ -21,26 +21,6 @@ const TOP_CACHE_TTL_MS = 60 * 1000;
 const IDX_CACHE_KEY = "collegesIndex:v1";
 const IDX_CACHE_TTL_MS = 60 * 1000;
 
-function useOnScreen(ref, rootMargin = "200px") {
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setVisible(true);
-          io.disconnect();
-        }
-      },
-      { rootMargin },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [ref, rootMargin]);
-  return visible;
-}
-
 export default function HomePage() {
   useEffect(() => {
     document.title = "SyllabusDB | Browse Past College Syllabi";
@@ -65,9 +45,6 @@ export default function HomePage() {
 
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
-  const scrollerRef = useRef(null);
-  const scrollerIsNear = useOnScreen(scrollerRef);
-
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const fetchTopColleges = async (toggleLoading = false) => {
@@ -435,7 +412,7 @@ export default function HomePage() {
         </div>
 
         <div className="top-colleges-list">
-          {loadingTop || !scrollerIsNear
+          {loadingTop
             ? [...Array(3)].map((_, i) => (
                 <div key={i} className="top-college-row skeleton">
                   <div className="rank-skeleton skeleton-line" />
