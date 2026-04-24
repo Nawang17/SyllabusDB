@@ -306,7 +306,7 @@ export default function HomePage() {
     <div className="home-page">
       <section className="search-section">
         <div className="hero-inner">
-          <p className="hero-eyebrow">Real syllabi uploaded by students</p>
+          {/* <p className="hero-eyebrow">Real syllabi uploaded by students</p> */}
 
           <div className="headline">
             <h1>See what a class is really like before you take it</h1>
@@ -331,9 +331,9 @@ export default function HomePage() {
               ) : (
                 totalUploads.toLocaleString()
               )}
+              +
             </strong>{" "}
-            syllabi available from <strong>{searchIndex.length - 1}+</strong>{" "}
-            colleges
+            syllabi available
           </p>
 
           <div className="hero-search-card">

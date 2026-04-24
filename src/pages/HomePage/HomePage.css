@@ -17,9 +17,11 @@
   color: #0f172a;
   position: relative;
   z-index: 50;
-  background:
+  border-bottom: 1px solid #eee;
+
+  /* background:
     radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 34%),
-    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); */
 }
 
 .hero-inner {
@@ -320,7 +322,7 @@
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
-  border: 1px solid rgba(2, 6, 23, 0.06);
+  /* border: 1px solid rgba(2, 6, 23, 0.06); */
 }
 
 .college-card:hover {
