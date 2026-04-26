@@ -1,3 +1,28 @@
+html,
+body {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+.home-page {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+.search-section::before {
+  pointer-events: none;
+}
+
+.college-scroll-wrapper {
+  touch-action: pan-y;
+}
+
+@media (max-width: 768px) {
+  .search-section::before {
+    backdrop-filter: none;
+  }
+}
+
 .home-page {
   font-family: Arial, sans-serif;
   background-color: #ffffff;
