@@ -99,7 +99,7 @@ export default function AdminApprovalPage() {
   };
   const deleteCollege = async (id) => {
     const reason = window.prompt(
-      "Enter a reason for disapproval (this will be emailed):"
+      "Enter a reason for disapproval (this will be emailed):",
     );
     if (!reason) return;
 
@@ -138,8 +138,8 @@ export default function AdminApprovalPage() {
     try {
       const res = await fetch(
         `https://syllabusdbserver-agza.onrender.com/scan?url=${encodeURIComponent(
-          pdf_url
-        )}`
+          pdf_url,
+        )}`,
       );
       const data = await res.json();
       setScanResults((prev) => ({ ...prev, [id]: data }));
@@ -194,7 +194,7 @@ export default function AdminApprovalPage() {
 
     const q = query(
       collectionGroup(db, "syllabi"),
-      where("approved", "==", false)
+      where("approved", "==", false),
     );
     const snapshot = await getDocs(q);
 
@@ -212,7 +212,7 @@ export default function AdminApprovalPage() {
 
         const collegeSnap = await getDoc(doc(db, "colleges", collegeId));
         const courseSnap = await getDoc(
-          doc(db, "colleges", collegeId, "courses", courseId)
+          doc(db, "colleges", collegeId, "courses", courseId),
         );
 
         const collegeName = collegeSnap.exists()
@@ -274,7 +274,7 @@ export default function AdminApprovalPage() {
         total_syllabi: increment(1),
         updatedAt: serverTimestamp(),
       },
-      { merge: true }
+      { merge: true },
     );
     setSyllabi((prev) => prev.filter((s) => s.ref.id !== ref.id));
     if (analytics) {
@@ -300,13 +300,13 @@ export default function AdminApprovalPage() {
 
   const disapproveSyllabus = async (syllabus) => {
     const reason = window.prompt(
-      "Enter a reason for disapproval (this will be emailed):"
+      "Enter a reason for disapproval (this will be emailed):",
     );
     if (!reason) return;
 
     if (
       !window.confirm(
-        "Are you sure you want to disapprove and delete this syllabus?"
+        "Are you sure you want to disapprove and delete this syllabus?",
       )
     )
       return;
@@ -321,8 +321,8 @@ export default function AdminApprovalPage() {
           "courses",
           syllabus.courseId,
           "syllabi",
-          syllabus.id
-        )
+          syllabus.id,
+        ),
       );
       // after deleting the syllabus
       const syllabiRef = collection(
@@ -331,13 +331,13 @@ export default function AdminApprovalPage() {
         syllabus.collegeId,
         "courses",
         syllabus.courseId,
-        "syllabi"
+        "syllabi",
       );
       const remaining = await getDocs(syllabiRef);
 
       if (remaining.empty) {
         await deleteDoc(
-          doc(db, "colleges", syllabus.collegeId, "courses", syllabus.courseId)
+          doc(db, "colleges", syllabus.collegeId, "courses", syllabus.courseId),
         );
       }
       const email = await shouldNotifyUser(syllabus.owner);
@@ -364,15 +364,7 @@ export default function AdminApprovalPage() {
 
   return (
     <div className="admin-approval-page">
-      <Button
-        onClick={() => {
-          auth.signOut();
-          navigate("/login");
-        }}
-      >
-        Logout
-      </Button>
-      <h2>Pending Syllabi for Approval</h2>
+      <h2>Admin </h2>
       {loading ? (
         <p>Loading...</p>
       ) : syllabi.length === 0 ? (
@@ -451,7 +443,7 @@ export default function AdminApprovalPage() {
                                       s.ref,
                                       s.collegeId,
                                       s.courseId,
-                                      s.owner
+                                      s.owner,
                                     )
                                   }
                                 >

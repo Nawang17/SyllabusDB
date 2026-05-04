@@ -42,7 +42,7 @@ export default function AllCollegesPage() {
         .sort((a, b) => a.localeCompare(b))
         .forEach((state) => {
           sorted[state] = grouped[state].sort((a, b) =>
-            a.name.localeCompare(b.name)
+            a.name.localeCompare(b.name),
           );
         });
 
@@ -63,7 +63,7 @@ export default function AllCollegesPage() {
     Object.keys(collegesByState).forEach((state) => {
       const stateMatch = state.toLowerCase().includes(needle);
       const colleges = collegesByState[state].filter((c) =>
-        c.name.toLowerCase().includes(needle)
+        c.name.toLowerCase().includes(needle),
       );
 
       // If state name matches, include all colleges in that state
@@ -76,7 +76,7 @@ export default function AllCollegesPage() {
 
   const stateKeys = useMemo(
     () => Object.keys(filteredByState),
-    [filteredByState]
+    [filteredByState],
   );
 
   return (
@@ -108,16 +108,6 @@ export default function AllCollegesPage() {
 
       {loading ? (
         <p style={{ padding: 12 }}>Loading colleges…</p>
-      ) : stateKeys.length === 0 ? (
-        <div className="acp-empty">
-          <p>No results.</p>
-          <button
-            className="request-college-btn"
-            onClick={() => navigate("/requestcollege")}
-          >
-            Request a College
-          </button>
-        </div>
       ) : (
         <div className="acp-simple-list">
           {stateKeys.map((state) => (
