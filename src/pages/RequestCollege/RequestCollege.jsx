@@ -101,7 +101,6 @@ export default function RequestCollege() {
         {!submitted ? (
           <>
             <div className="request-header">
-              <p className="request-eyebrow">College Request</p>
               <h1>Request a College</h1>
               <p>
                 Can’t find your college? Send a request and we’ll review it

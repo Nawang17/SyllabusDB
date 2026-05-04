@@ -301,7 +301,8 @@ export default function UploadSyllabus() {
 
   return (
     <div className="upload-page">
-      <h2>Upload a Syllabus</h2>
+      <p className="title">Upload a Syllabus</p>
+      <p className="subtext">Share a syllabus to help your fellow students.</p>
       {showUploadWarning && (
         <div className="upload-warning">
           <span className="warning-text">
@@ -529,10 +530,8 @@ export default function UploadSyllabus() {
               once approved.
             </p>
             <div className="modal-buttons">
-              <Button color="cyan" fullWidth onClick={() => navigate("/")}>
-                Go to Home
-              </Button>
               <Button
+                color="green"
                 fullWidth
                 onClick={() => {
                   setShowModal(false);
@@ -540,6 +539,14 @@ export default function UploadSyllabus() {
                 }}
               >
                 Upload Another
+              </Button>
+              <Button
+                color="gray"
+                variant="subtle"
+                fullWidth
+                onClick={() => navigate("/")}
+              >
+                Go to Home
               </Button>
             </div>
           </div>
@@ -549,7 +556,7 @@ export default function UploadSyllabus() {
       {showReviewModal && (
         <div className="upload-modal">
           <div className="modal-content">
-            <h3>📄 Confirm Your Submission</h3>
+            <h3> Confirm Your Submission</h3>
 
             <ul className="confirm-list">
               <li>
