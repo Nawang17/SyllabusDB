@@ -141,7 +141,69 @@ export default function SubjectPage() {
   const [totalSyllabiCount, setTotalSyllabiCount] = useState(0);
   const [collegeNickname, setCollegeNickname] = useState("");
   const [debouncedSearch] = useDebouncedValue(search, 250);
+  const [resolvedCollegeId, setResolvedCollegeId] = useState(null);
+  const [_resolvedCollegeData, setResolvedCollegeData] = useState(null);
+  const resolveCollegeId = async (param) => {
+    // 1. Try direct document ID first
+    const directSnap = await getDoc(doc(db, "colleges", param));
 
+    if (directSnap.exists()) {
+      return {
+        id: directSnap.id,
+        ...directSnap.data(),
+      };
+    }
+
+    // 2. Try slug
+    const slugSnap = await getDocs(
+      query(collection(db, "colleges"), where("slug", "==", param)),
+    );
+
+    if (!slugSnap.empty) {
+      const d = slugSnap.docs[0];
+      return {
+        id: d.id,
+        ...d.data(),
+      };
+    }
+
+    // 3. Try aliases
+    const aliasSnap = await getDocs(
+      query(
+        collection(db, "colleges"),
+        where("aliases", "array-contains", param),
+      ),
+    );
+
+    if (!aliasSnap.empty) {
+      const d = aliasSnap.docs[0];
+      return {
+        id: d.id,
+        ...d.data(),
+      };
+    }
+
+    return null;
+  };
+  useEffect(() => {
+    const run = async () => {
+      if (!collegeId) return;
+
+      const college = await resolveCollegeId(collegeId);
+
+      if (!college) {
+        setResolvedCollegeId(null);
+        setResolvedCollegeData(null);
+        setLoading(false);
+        return;
+      }
+
+      setResolvedCollegeId(college.id);
+      setResolvedCollegeData(college);
+    };
+
+    run();
+  }, [collegeId]);
   const URLquery = new URLSearchParams(useLocation().search);
   const searchAppliedRef = useRef(false);
   const navigate = useNavigate();
@@ -167,7 +229,7 @@ export default function SubjectPage() {
       setLoading(true);
       try {
         const courseQuery = query(
-          collection(db, "colleges", collegeId, "courses"),
+          collection(db, "colleges", resolvedCollegeId, "courses"),
           where("approved", "==", true),
         );
         const snapshot = await getDocs(courseQuery);
@@ -195,20 +257,20 @@ export default function SubjectPage() {
         setLoading(false);
       }
     };
-    if (collegeId) fetchCourses();
-  }, [collegeId, subject]);
+    if (resolvedCollegeId) fetchCourses();
+  }, [resolvedCollegeId, subject]);
 
   useEffect(() => {
     const fetchCollegeNickname = async () => {
       try {
-        const snap = await getDoc(doc(db, "colleges", collegeId));
+        const snap = await getDoc(doc(db, "colleges", resolvedCollegeId));
         if (snap.exists()) setCollegeNickname(snap.data().nickname || "");
       } catch (err) {
         console.error("Failed to fetch college nickname:", err);
       }
     };
-    if (collegeId) fetchCollegeNickname();
-  }, [collegeId]);
+    if (resolvedCollegeId) fetchCollegeNickname();
+  }, [resolvedCollegeId]);
 
   // helpers
   const tokenizeCode = (str = "") => {
@@ -287,7 +349,7 @@ export default function SubjectPage() {
             collection(
               db,
               "colleges",
-              collegeId,
+              resolvedCollegeId,
               "courses",
               courseId,
               "syllabi",
@@ -322,7 +384,7 @@ export default function SubjectPage() {
 
   const formatCollegeName = (str = "") =>
     str
-      .split("-")
+      ?.split("-")
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ");
 
@@ -335,9 +397,9 @@ export default function SubjectPage() {
           </div>
           <div
             style={{ fontSize: "0.9rem", fontWeight: 500, cursor: "pointer" }}
-            onClick={() => navigate(`/college/${collegeId}`)}
+            onClick={() => navigate(`/college/${resolvedCollegeId}`)}
           >
-            {formatCollegeName(collegeId)}
+            {formatCollegeName(resolvedCollegeId)}
           </div>
         </div>
       </div>
@@ -347,8 +409,8 @@ export default function SubjectPage() {
           Home
         </Link>
         <IconChevronRight size={16} />
-        <Link to={`/college/${collegeId}`} className="breadcrumb-link">
-          {collegeNickname || formatCollegeName(collegeId)}
+        <Link to={`/college/${resolvedCollegeId}`} className="breadcrumb-link">
+          {collegeNickname || formatCollegeName(resolvedCollegeId)}
         </Link>
         <IconChevronRight size={16} />
         <div className="breadcrumb-current">{subject?.toUpperCase()}</div>
@@ -386,7 +448,9 @@ export default function SubjectPage() {
               uploading one!
             </p>
           )}
-          <Button onClick={() => navigate(`/uploadsyllabus/${collegeId}`)}>
+          <Button
+            onClick={() => navigate(`/uploadsyllabus/${resolvedCollegeId}`)}
+          >
             Upload a Syllabus
           </Button>
         </div>
@@ -452,7 +516,7 @@ export default function SubjectPage() {
                           s={s}
                           courseCode={course.code}
                           onCopy={copyAction}
-                          collegeId={collegeId}
+                          collegeId={resolvedCollegeId}
                           subject={subject}
                           courseId={course.id}
                         />
