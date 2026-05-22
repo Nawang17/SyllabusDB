@@ -214,40 +214,56 @@
 }
 .college-hero {
   position: relative;
-  height: 200px;
-  border-radius: 8px;
+  width: 100%;
+  aspect-ratio: 16 / 5;
+  min-height: 220px;
+  max-height: 320px;
+  border-radius: 18px;
   overflow: hidden;
   margin-bottom: 1.5rem;
+  background: #f1f5f9;
 }
 
 .college-hero-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: brightness(65%); /* Darken the image slightly */
+  object-position: center;
+  filter: brightness(72%);
+  transition: transform 0.3s ease;
 }
-
+.college-hero:hover .college-hero-img {
+  transform: scale(1.02);
+}
 .college-hero-overlay {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  padding: 1rem;
-  width: 100%;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.5rem;
   color: white;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.58) 0%,
+    rgba(0, 0, 0, 0.18) 45%,
+    rgba(0, 0, 0, 0.02) 100%
+  );
 }
-
 .college-hero-title {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
 }
 
 .college-hero-location {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
+  margin-top: 0.6rem;
   font-size: 1rem;
-  margin-top: 4px;
+  opacity: 0.92;
 }
 .total-syllabi-banner {
   font-size: 1.5rem;
@@ -346,6 +362,81 @@
   text-decoration: underline;
   color: #111827;
 }
+.extension-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.25rem;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+
+  background: #f8fafc;
+}
+
+.extension-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.extension-badge {
+  flex-shrink: 0;
+
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+
+  background: #dbeafe;
+  color: #1d4ed8;
+
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.extension-text {
+  font-size: 0.94rem;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.extension-text a {
+  color: blue;
+  font-weight: 600;
+}
+
+.extension-text a:hover {
+  text-decoration: underline;
+}
+
+.extension-close {
+  flex-shrink: 0;
+
+  border: none;
+  background: transparent;
+
+  font-size: 1.1rem;
+  color: #94a3b8;
+
+  cursor: pointer;
+}
+
+.extension-close:hover {
+  color: #0f172a;
+}
+
+@media (max-width: 640px) {
+  .extension-banner {
+    align-items: flex-start;
+  }
+
+  .extension-text {
+    font-size: 0.9rem;
+  }
+}
 /* Animation fade-in */
 .fade-in {
   animation: fadeInUp 0.4s ease both;
@@ -358,5 +449,24 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+@media (max-width: 768px) {
+  .college-hero {
+    aspect-ratio: 16 / 8;
+    min-height: 190px;
+    border-radius: 14px;
+  }
+
+  .college-hero-overlay {
+    padding: 1rem;
+  }
+
+  .college-hero-title {
+    font-size: 1.6rem;
+  }
+
+  .college-hero-location {
+    font-size: 0.92rem;
   }
 }

@@ -146,41 +146,32 @@ export default function CollegePage() {
         </Flex>
       ) : (
         <div className="college-page">
-          {showExtensionAlert && (
-            <div
-              style={{
-                marginBottom: "1.5rem",
-              }}
-            >
-              <Alert
-                variant="light"
-                color="blue"
-                title="Using CUNY Schedule Builder?"
-                icon={<IconInfoCircle />}
-                withCloseButton
-                onClose={handleCloseExtensionAlert}
-              >
-                <span>
-                  You can now see syllabus links directly in Schedule Builder
-                  with our{" "}
+          {showExtensionAlert && collegeLocation.includes("New York") && (
+            <div className="extension-banner">
+              <div className="extension-banner-left">
+                <span className="extension-badge">New</span>
+
+                <span className="extension-text">
+                  View syllabus links directly in CUNY Schedule Builder with the{" "}
                   <a
                     href="https://chromewebstore.google.com/detail/syllabusdb-for-schedule-b/kggnbpofeleldhpmamlmjidieheobhni"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{
-                      fontWeight: 500,
-                      textDecoration: "underline",
-                      color: "#1d4ed8",
-                    }}
                   >
                     Chrome Extension
                   </a>
-                  .
                 </span>
-              </Alert>
+              </div>
+
+              <button
+                className="extension-close"
+                onClick={handleCloseExtensionAlert}
+                aria-label="Dismiss"
+              >
+                ×
+              </button>
             </div>
           )}
-
           <div className="college-hero">
             <Image
               src={collegeImage ? collegeImage : collegeIllustration}
@@ -194,7 +185,6 @@ export default function CollegePage() {
               </div>
             </div>
           </div>
-
           <div className="college-header">
             <div className="breadcrumb-nav">
               <Link to={`/`} className="breadcrumb-link">
@@ -211,7 +201,6 @@ export default function CollegePage() {
               </Button>
             )}
           </div>
-
           {!loading && courses.length > 0 && (
             <>
               <div className="total-syllabi-banner">
@@ -307,7 +296,6 @@ export default function CollegePage() {
               )}
             </div>
           )}
-
           {loading && (
             <div className="loading-spinner">
               <div className="spinner"></div>
