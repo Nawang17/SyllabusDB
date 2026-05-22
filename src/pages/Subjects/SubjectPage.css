@@ -221,11 +221,9 @@ mark {
     font-size: 0.8rem;
     gap: 0rem;
   }
-  .breadcrumb-home {
-    display: none;
-  }
 }
---- Mantine-styled syllabus rows --- .syllabus-card {
+/* --- Mantine-styled syllabus rows ---  */
+.syllabus-card {
   padding: 12px 14px;
   background: #ffffff;
   transition:
