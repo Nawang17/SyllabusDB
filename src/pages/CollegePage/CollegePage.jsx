@@ -18,14 +18,6 @@ import { logEvent } from "firebase/analytics";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { Alert } from "@mantine/core";
 export default function CollegePage() {
-  const [showExtensionAlert, setShowExtensionAlert] = useState(() => {
-    return localStorage.getItem("dismissedExtensionAlert") !== "true";
-  });
-
-  const handleCloseExtensionAlert = () => {
-    setShowExtensionAlert(false);
-    localStorage.setItem("dismissedExtensionAlert", "true");
-  };
   const [loading, setLoading] = useState(true);
 
   const { collegeId } = useParams();
@@ -146,32 +138,6 @@ export default function CollegePage() {
         </Flex>
       ) : (
         <div className="college-page">
-          {showExtensionAlert && collegeLocation.includes("New York") && (
-            <div className="extension-banner">
-              <div className="extension-banner-left">
-                <span className="extension-badge">New</span>
-
-                <span className="extension-text">
-                  View syllabus links directly in CUNY Schedule Builder with the{" "}
-                  <a
-                    href="https://chromewebstore.google.com/detail/syllabusdb-for-schedule-b/kggnbpofeleldhpmamlmjidieheobhni"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Chrome Extension
-                  </a>
-                </span>
-              </div>
-
-              <button
-                className="extension-close"
-                onClick={handleCloseExtensionAlert}
-                aria-label="Dismiss"
-              >
-                ×
-              </button>
-            </div>
-          )}
           <div className="college-hero">
             <Image
               src={collegeImage ? collegeImage : collegeIllustration}

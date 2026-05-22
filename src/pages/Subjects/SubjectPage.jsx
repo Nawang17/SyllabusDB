@@ -16,15 +16,25 @@ import {
   IconCopy,
   IconQuote,
   IconMessageCircle,
+  IconInfoCircle,
 } from "@tabler/icons-react";
 
-import { Button, Paper, Text, Group, Collapse, ThemeIcon } from "@mantine/core";
+import {
+  Button,
+  Paper,
+  Text,
+  Group,
+  Collapse,
+  ThemeIcon,
+  Alert,
+} from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import "./SubjectPage.css";
 
 function SyllabusRow({ s, collegeId, subject, courseId }) {
   const navigate = useNavigate();
+
   const [open, setOpen] = useState(false);
   const hasExp = !!s.experience_text?.trim();
   const label = `${s.term} ${s.year} - ${s.professor}`;
@@ -143,10 +153,17 @@ export default function SubjectPage() {
   const [debouncedSearch] = useDebouncedValue(search, 250);
   const [resolvedCollegeId, setResolvedCollegeId] = useState(null);
   const [_resolvedCollegeData, setResolvedCollegeData] = useState(null);
+  const [showExtensionAlert, setShowExtensionAlert] = useState(() => {
+    return localStorage.getItem("dismissedExtensionAlert") !== "true";
+  });
+  const handleCloseExtensionAlert = () => {
+    setShowExtensionAlert(false);
+    localStorage.setItem("dismissedExtensionAlert", "true");
+  };
   const resolveCollegeId = async (param) => {
     // 1. Try direct document ID first
     const directSnap = await getDoc(doc(db, "colleges", param));
-
+    console.log("Direct snap:", directSnap);
     if (directSnap.exists()) {
       return {
         id: directSnap.id,
@@ -390,6 +407,40 @@ export default function SubjectPage() {
 
   return (
     <div className="college-page">
+      {showExtensionAlert && (
+        <div
+          style={{
+            marginBottom: "1.5rem",
+          }}
+        >
+          <Alert
+            variant="light"
+            color="blue"
+            title="Using CUNY Schedule Builder?"
+            icon={<IconInfoCircle />}
+            withCloseButton
+            onClose={handleCloseExtensionAlert}
+          >
+            <span>
+              You can now see syllabus links directly in Schedule Builder with
+              our{" "}
+              <a
+                href="https://chromewebstore.google.com/detail/syllabusdb-for-schedule-b/kggnbpofeleldhpmamlmjidieheobhni"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontWeight: 500,
+                  textDecoration: "underline",
+                  color: "#1d4ed8",
+                }}
+              >
+                Chrome Extension
+              </a>
+              .
+            </span>
+          </Alert>
+        </div>
+      )}
       <div className="college-header">
         <div>
           <div className="college-title">
