@@ -388,7 +388,6 @@ export default function UploadSyllabus() {
               <span>1</span>
               <div>
                 <h2>Class details</h2>
-                <p>Tell students what this syllabus belongs to.</p>
               </div>
             </div>
 
@@ -505,7 +504,7 @@ export default function UploadSyllabus() {
               <span>2</span>
               <div>
                 <h2>Upload PDF</h2>
-                <p>One clean syllabus PDF. Max 5 MB.</p>
+                <p>One syllabus PDF. Max 5 MB.</p>
               </div>
             </div>
 

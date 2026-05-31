@@ -6,20 +6,18 @@ import {
   Badge,
   Box,
   Button,
-  Card,
-  Divider,
-  Flex,
+  Collapse,
   Group,
   Paper,
+  Rating,
   Skeleton,
-  Stack,
   Text,
   Title,
 } from "@mantine/core";
 import {
-  IconArrowLeft,
+  IconChevronDown,
+  IconChevronUp,
   IconExternalLink,
-  IconFileText,
   IconInfoCircle,
   IconStarFilled,
 } from "@tabler/icons-react";
@@ -49,12 +47,21 @@ function useIsMobile() {
   return isMobile;
 }
 
+const ratingLabels = {
+  1: "Rough class",
+  2: "Pretty tough",
+  3: "Manageable",
+  4: "Good class",
+  5: "Would recommend",
+};
+
 export default function SyllabusViewerPage() {
   const { collegeId, subject, courseId, syllabusId } = useParams();
   const navigate = useNavigate();
 
   const [syllabus, setSyllabus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const isMobile = useIsMobile();
 
@@ -93,7 +100,10 @@ export default function SyllabusViewerPage() {
   const syllabusTitle =
     syllabus?.title || syllabus?.file_path?.split("/")?.pop() || "Syllabus PDF";
 
-  const hasReview = Boolean(syllabus?.experience_text);
+  const ratingValue = Number(syllabus?.rating || 0);
+  const hasRating = ratingValue > 0;
+  const hasReview = Boolean(syllabus?.experience_text?.trim());
+  const hasStudentIntel = hasRating || hasReview;
 
   const openPdf = () => {
     if (!syllabus?.pdf_url) return;
@@ -102,10 +112,9 @@ export default function SyllabusViewerPage() {
 
   if (loading) {
     return (
-      <Box maw={1300} mx="auto" p={{ base: "md", sm: "xl" }}>
-        <Skeleton height={36} width={260} mb="lg" />
-        <Skeleton height={90} radius="lg" mb="md" />
-        <Skeleton height="78vh" radius="lg" />
+      <Box maw={1250} mx="auto" p={{ base: "sm", sm: "xl" }}>
+        <Skeleton height={42} width={260} mb="md" />
+        <Skeleton height={isMobile ? "82vh" : "80vh"} radius="lg" />
       </Box>
     );
   }
@@ -121,113 +130,188 @@ export default function SyllabusViewerPage() {
   }
 
   return (
-    <Box maw={1210} mx="auto" p={{ base: "md", sm: "xl" }}>
-      <Group justify="space-between" mb="md" gap="sm">
-        <Button
-          variant="light"
-          onClick={() => navigate(`/college/${collegeId}/subject/${subject}`)}
-        >
-          View all {subject?.toUpperCase()} courses
-        </Button>
+    <Box
+      maw={1230}
+      mx="auto"
+      p={{ base: "xs", sm: "xl" }}
+      style={{
+        minHeight: "100vh",
+      }}
+    >
+      <Paper
+        withBorder={!isMobile}
+        radius={isMobile ? 0 : "lg"}
+        p={{ base: "sm", sm: "md" }}
+        mb={{ base: "xs", sm: "md" }}
+      >
+        <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
+          <Box style={{ minWidth: 0 }}>
+            <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
+              <Text
+                component="button"
+                type="button"
+                onClick={() =>
+                  navigate(`/college/${collegeId}/subject/${subject}`)
+                }
+                style={{
+                  border: 0,
+                  background: "transparent",
+                  padding: 0,
+                  color: "#2563eb",
+                  fontWeight: 800,
+                  fontSize: isMobile ? 14 : 16,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {subject?.toUpperCase()}
+              </Text>
 
-        {syllabus?.pdf_url && (
-          <Button
-            leftSection={<IconExternalLink size={16} />}
-            variant={isMobile ? "filled" : "light"}
-            color="blue"
-            onClick={openPdf}
-          >
-            Open PDF
-          </Button>
-        )}
-      </Group>
+              <Text c="dimmed" fw={700}>
+                &gt;
+              </Text>
 
-      <Paper withBorder radius="lg" p={{ base: "md", sm: "lg" }} mb="md">
-        <Group justify="space-between" align="flex-start" gap="md">
-          <Box>
-            <Group gap="xs" mb={6}>
-              <Title order={3}> {courseId}</Title>
+              <Text
+                size={isMobile ? "sm" : "md"}
+                order={isMobile ? 5 : 3}
+                lineClamp={1}
+              >
+                {courseId}
+              </Text>
+
+              {hasRating && (
+                <Badge
+                  color="yellow"
+                  variant="light"
+                  leftSection={<IconStarFilled size={12} />}
+                  style={{ flexShrink: 0 }}
+                >
+                  {ratingValue}/5
+                </Badge>
+              )}
             </Group>
 
-            <Text size="sm" c="dimmed">
-              {collegeName}
-              {syllabus?.term ? ` • ${syllabus.term}` : ""}
-              {syllabus?.year ? ` ${syllabus.year}` : ""}
-              {syllabus?.professor ? ` • Professor ${syllabus.professor}` : ""}
-            </Text>
+            {!isMobile && (
+              <Text size="sm" c="dimmed" lineClamp={1}>
+                {collegeName}
+                {syllabus?.term ? ` • ${syllabus.term}` : ""}
+                {syllabus?.year ? ` ${syllabus.year}` : ""}
+                {syllabus?.professor ? ` • ${syllabus.professor}` : ""}
+              </Text>
+            )}
           </Box>
 
-          {syllabus?.rating && (
-            <Badge
-              size="lg"
-              color="yellow"
-              leftSection={<IconStarFilled size={13} />}
+          {syllabus?.pdf_url && (
+            <Button
+              leftSection={<IconExternalLink size={15} />}
+              variant={isMobile ? "filled" : "light"}
+              size={isMobile ? "xs" : "sm"}
+              onClick={openPdf}
+              style={{ flexShrink: 0 }}
             >
-              {syllabus.rating}/5
-            </Badge>
+              PDF
+            </Button>
           )}
         </Group>
       </Paper>
 
-      {hasReview && (
-        <Card withBorder radius="lg" p="lg" mb="md">
-          <Group justify="space-between" mb="xs">
-            <Title order={4}>Review</Title>
-            {syllabus?.reviewedBy && (
-              <Text size="xs" c="dimmed">
-                Reviewed by {syllabus.reviewedBy}
-              </Text>
-            )}
+      {isMobile && (
+        <Box mb="xs" px="xs">
+          <Text size="xs" c="dimmed" lineClamp={1}>
+            {collegeName}
+            {syllabus?.term ? ` • ${syllabus.term}` : ""}
+            {syllabus?.year ? ` ${syllabus.year}` : ""}
+            {syllabus?.professor ? ` • ${syllabus.professor}` : ""}
+          </Text>
+        </Box>
+      )}
+
+      {hasStudentIntel && (
+        <Paper
+          withBorder
+          radius="md"
+          p={isMobile ? "xs" : "md"}
+          mb={isMobile ? "xs" : "md"}
+          style={{
+            background: "#fffef7",
+            borderColor: "#fde68a",
+          }}
+        >
+          <Group justify="space-between" wrap="nowrap">
+            <Group gap="xs" style={{ minWidth: 0 }}>
+              <IconStarFilled size={16} color="#d97706" />
+
+              <Box style={{ minWidth: 0 }}>
+                <Text fw={700} size={isMobile ? "sm" : "md"} lineClamp={1}>
+                  Student Review
+                </Text>
+
+                {hasRating && (
+                  <Text size="xs" c="dimmed" lineClamp={1}>
+                    {ratingValue}/5 · {ratingLabels[ratingValue]}
+                  </Text>
+                )}
+              </Box>
+            </Group>
+
+            <Button
+              variant="subtle"
+              size="xs"
+              color="yellow"
+              rightSection={
+                reviewOpen ? (
+                  <IconChevronUp size={14} />
+                ) : (
+                  <IconChevronDown size={14} />
+                )
+              }
+              onClick={() => setReviewOpen((prev) => !prev)}
+            >
+              {reviewOpen ? "Hide" : "Show"}
+            </Button>
           </Group>
 
-          <Divider mb="sm" />
+          <Collapse in={reviewOpen}>
+            <Box mt="sm">
+              {hasRating && (
+                <Group gap="xs" mb={hasReview ? "sm" : 0}>
+                  <Rating value={ratingValue} readOnly size="sm" />
+                  <Text size="sm" fw={700}>
+                    {ratingLabels[ratingValue]}
+                  </Text>
+                </Group>
+              )}
 
-          <Text size="sm" style={{ whiteSpace: "pre-line", lineHeight: 1.7 }}>
-            {syllabus.experience_text}
-          </Text>
-        </Card>
+              {hasReview && (
+                <Text
+                  size="sm"
+                  c="dark"
+                  style={{
+                    whiteSpace: "pre-line",
+                    lineHeight: 1.65,
+                  }}
+                >
+                  {syllabus.experience_text}
+                </Text>
+              )}
+            </Box>
+          </Collapse>
+        </Paper>
       )}
 
       {!syllabus?.pdf_url ? (
         <Alert icon={<IconInfoCircle size={18} />} color="orange" radius="md">
           This syllabus does not have a PDF URL.
         </Alert>
-      ) : isMobile ? (
-        <Stack gap="md">
-          <Alert icon={<IconInfoCircle size={18} />} color="blue" radius="md">
-            Embedded PDFs are unreliable on mobile. Use the Open PDF button for
-            the best viewing experience.
-          </Alert>
-
-          <Box
-            style={{
-              height: "75vh",
-              border: "1px solid #e5e7eb",
-              borderRadius: 12,
-              overflow: "hidden",
-              background: "#fff",
-            }}
-          >
-            <iframe
-              src={syllabus.pdf_url}
-              title={syllabusTitle}
-              style={{
-                width: "100%",
-                height: "100%",
-                border: 0,
-              }}
-            />
-          </Box>
-        </Stack>
       ) : (
         <Box
           style={{
-            height: "82vh",
-            border: "1px solid #e5e7eb",
-            borderRadius: 12,
+            height: isMobile ? "calc(100vh - 140px)" : "82vh",
+            border: isMobile ? "none" : "1px solid #e5e7eb",
+            borderRadius: isMobile ? 0 : 14,
             overflow: "hidden",
             background: "#fff",
-            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+            boxShadow: isMobile ? "none" : "0 8px 24px rgba(15, 23, 42, 0.06)",
           }}
         >
           <iframe
@@ -237,6 +321,7 @@ export default function SyllabusViewerPage() {
               width: "100%",
               height: "100%",
               border: 0,
+              display: "block",
             }}
           />
         </Box>
