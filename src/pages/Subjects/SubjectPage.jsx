@@ -16,6 +16,7 @@ import {
   IconCopy,
   IconQuote,
   IconMessageCircle,
+  IconStarFilled,
 } from "@tabler/icons-react";
 
 import { Button, Paper, Text, Group, Collapse, ThemeIcon } from "@mantine/core";
@@ -36,7 +37,16 @@ function SyllabusRow({ s, collegeId, subject, courseId }) {
         `/syllabus/${encodeURIComponent(s.id)}`,
     );
   };
+  const ratingValue = Number(s.rating || 0);
+  const hasRating = ratingValue > 0;
 
+  const ratingLabel = {
+    1: "Rough",
+    2: "Tough",
+    3: "Okay",
+    4: "Good",
+    5: "Recommend",
+  };
   return (
     <Paper withBorder radius="md" className="syllabus-card">
       <Group justify="space-between" align="flex-start" wrap="nowrap">
@@ -49,9 +59,28 @@ function SyllabusRow({ s, collegeId, subject, courseId }) {
             className="syllabus-title-link"
             style={{ cursor: "pointer" }}
           >
-            <Text fw={600} className="syllabus-title">
-              {label}
-            </Text>
+            <div>
+              <Text fw={600} className="syllabus-title">
+                {label}
+              </Text>
+
+              {hasRating && (
+                <Group gap={6} mt={4}>
+                  <ThemeIcon
+                    size="sm"
+                    radius="xl"
+                    color="yellow"
+                    variant="light"
+                  >
+                    <IconStarFilled size={13} />
+                  </ThemeIcon>
+
+                  <Text size="xs" fw={700} c="dimmed">
+                    {ratingValue}/5 · {ratingLabel[ratingValue]}
+                  </Text>
+                </Group>
+              )}
+            </div>
           </div>
         </Group>
 
@@ -143,6 +172,7 @@ export default function SubjectPage() {
   const [debouncedSearch] = useDebouncedValue(search, 250);
   const [resolvedCollegeId, setResolvedCollegeId] = useState(null);
   const [_resolvedCollegeData, setResolvedCollegeData] = useState(null);
+
   const resolveCollegeId = async (param) => {
     // 1. Try direct document ID first
     const directSnap = await getDoc(doc(db, "colleges", param));
