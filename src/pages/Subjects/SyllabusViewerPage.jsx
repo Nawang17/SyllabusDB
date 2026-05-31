@@ -1,9 +1,29 @@
 import { useParams, useNavigate } from "react-router";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
-import { Box, Button, Flex, Group, Skeleton, Text } from "@mantine/core";
+import {
+  Alert,
+  Badge,
+  Box,
+  Button,
+  Card,
+  Divider,
+  Flex,
+  Group,
+  Paper,
+  Skeleton,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
+import {
+  IconArrowLeft,
+  IconExternalLink,
+  IconFileText,
+  IconInfoCircle,
+  IconStarFilled,
+} from "@tabler/icons-react";
 import { db } from "../../../firebaseConfig";
-import { IconArrowLeft, IconExternalLink } from "@tabler/icons-react";
 
 function formatCollegeName(collegeId) {
   if (!collegeId) return "";
@@ -13,21 +33,35 @@ function formatCollegeName(collegeId) {
     .join(" ");
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 768px)");
+    const update = () => setIsMobile(query.matches);
+
+    update();
+    query.addEventListener("change", update);
+
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  return isMobile;
+}
+
 export default function SyllabusViewerPage() {
   const { collegeId, subject, courseId, syllabusId } = useParams();
   const navigate = useNavigate();
+
   const [syllabus, setSyllabus] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const isMobile = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(max-width: 768px)").matches;
-  }, []);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    const fetchSyllabus = async () => {
+    async function fetchSyllabus() {
       try {
         const ref = doc(
           db,
@@ -38,139 +72,162 @@ export default function SyllabusViewerPage() {
           "syllabi",
           syllabusId,
         );
+
         const snap = await getDoc(ref);
+
         if (snap.exists()) {
-          setSyllabus(snap.data());
+          setSyllabus({ id: snap.id, ...snap.data() });
         }
       } catch (error) {
         console.error("Error fetching syllabus:", error);
       } finally {
         setLoading(false);
       }
-    };
+    }
 
     fetchSyllabus();
   }, [collegeId, courseId, syllabusId]);
 
+  const collegeName = useMemo(() => formatCollegeName(collegeId), [collegeId]);
+
   const syllabusTitle =
-    syllabus?.file_path?.split("/")?.[2] || syllabus?.title || "Syllabus PDF";
+    syllabus?.title || syllabus?.file_path?.split("/")?.pop() || "Syllabus PDF";
 
-  const collegeName = formatCollegeName(collegeId);
+  const hasReview = Boolean(syllabus?.experience_text);
 
-  const openPdf = () =>
-    window.open(syllabus?.pdf_url, "_blank", "noopener,noreferrer");
+  const openPdf = () => {
+    if (!syllabus?.pdf_url) return;
+    window.open(syllabus.pdf_url, "_blank", "noopener,noreferrer");
+  };
 
   if (loading) {
     return (
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem" }}>
-        <Group mb="md">
-          <Skeleton height={36} width={220} radius="md" />
-          <Skeleton height={30} width={170} radius="md" />
-        </Group>
-        <Box mb="md">
-          <Skeleton height={20} width="60%" mb={8} />
-          <Skeleton height={14} width="50%" />
-        </Box>
-        <Skeleton
-          height="80vh"
-          radius="md"
-          style={{ border: "1px solid #e5e7eb" }}
-        />
-      </div>
+      <Box maw={1300} mx="auto" p={{ base: "md", sm: "xl" }}>
+        <Skeleton height={36} width={260} mb="lg" />
+        <Skeleton height={90} radius="lg" mb="md" />
+        <Skeleton height="78vh" radius="lg" />
+      </Box>
     );
   }
 
   if (!syllabus) {
     return (
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem" }}>
-        <Text>Syllabus not found.</Text>
-      </div>
+      <Box maw={900} mx="auto" p="xl">
+        <Alert icon={<IconInfoCircle size={18} />} color="red" radius="md">
+          Syllabus not found.
+        </Alert>
+      </Box>
     );
   }
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem" }}>
-      <Group mb="md" justify="space-between" wrap="wrap">
+    <Box maw={1210} mx="auto" p={{ base: "md", sm: "xl" }}>
+      <Group justify="space-between" mb="md" gap="sm">
         <Button
-          leftSection={<IconArrowLeft size={16} />}
-          variant="subtle"
+          variant="light"
           onClick={() => navigate(`/college/${collegeId}/subject/${subject}`)}
         >
           View all {subject?.toUpperCase()} courses
         </Button>
 
-        {!isMobile && (
+        {syllabus?.pdf_url && (
           <Button
-            leftSection={<IconExternalLink size={14} />}
-            variant="subtle"
-            color="gray"
-            size="sm"
+            leftSection={<IconExternalLink size={16} />}
+            variant={isMobile ? "filled" : "light"}
+            color="blue"
             onClick={openPdf}
           >
-            Open PDF in a new tab
+            Open PDF
           </Button>
         )}
       </Group>
 
-      <Flex pl={15} direction="column" gap={4} mb="md">
-        <Text fw={600} size="sm">
-          {syllabusTitle}
-        </Text>
+      <Paper withBorder radius="lg" p={{ base: "md", sm: "lg" }} mb="md">
+        <Group justify="space-between" align="flex-start" gap="md">
+          <Box>
+            <Group gap="xs" mb={6}>
+              <Title order={3}> {courseId}</Title>
+            </Group>
 
-        <Text size="xs" c="dimmed">
-          {collegeName}
-          {syllabus?.term ? ` • ${syllabus.term}` : ""}
-          {syllabus?.year ? ` ${syllabus.year}` : ""}
-          {syllabus?.professor ? ` • ${syllabus.professor}` : ""}
-        </Text>
-      </Flex>
+            <Text size="sm" c="dimmed">
+              {collegeName}
+              {syllabus?.term ? ` • ${syllabus.term}` : ""}
+              {syllabus?.year ? ` ${syllabus.year}` : ""}
+              {syllabus?.professor ? ` • Professor ${syllabus.professor}` : ""}
+            </Text>
+          </Box>
 
-      {isMobile ? (
-        <div>
+          {syllabus?.rating && (
+            <Badge
+              size="lg"
+              color="yellow"
+              leftSection={<IconStarFilled size={13} />}
+            >
+              {syllabus.rating}/5
+            </Badge>
+          )}
+        </Group>
+      </Paper>
+
+      {hasReview && (
+        <Card withBorder radius="lg" p="lg" mb="md">
+          <Group justify="space-between" mb="xs">
+            <Title order={4}>Review</Title>
+            {syllabus?.reviewedBy && (
+              <Text size="xs" c="dimmed">
+                Reviewed by {syllabus.reviewedBy}
+              </Text>
+            )}
+          </Group>
+
+          <Divider mb="sm" />
+
+          <Text size="sm" style={{ whiteSpace: "pre-line", lineHeight: 1.7 }}>
+            {syllabus.experience_text}
+          </Text>
+        </Card>
+      )}
+
+      {!syllabus?.pdf_url ? (
+        <Alert icon={<IconInfoCircle size={18} />} color="orange" radius="md">
+          This syllabus does not have a PDF URL.
+        </Alert>
+      ) : isMobile ? (
+        <Stack gap="md">
+          <Alert icon={<IconInfoCircle size={18} />} color="blue" radius="md">
+            Embedded PDFs are unreliable on mobile. Use the Open PDF button for
+            the best viewing experience.
+          </Alert>
+
           <Box
-            mb={15}
             style={{
+              height: "75vh",
               border: "1px solid #e5e7eb",
-              borderRadius: 8,
-              padding: "1rem",
+              borderRadius: 12,
+              overflow: "hidden",
               background: "#fff",
             }}
           >
-            <Text fw={600} mb={6}>
-              PDF viewing on mobile
-            </Text>
-            <Text size="sm" c="dimmed" mb="md">
-              Mobile browsers do not scroll embedded PDFs reliably. Opening in a
-              new tab usually works better.
-            </Text>
-            <Button
-              leftSection={<IconExternalLink size={16} />}
-              onClick={openPdf}
-            >
-              Open PDF in a new tab
-            </Button>
+            <iframe
+              src={syllabus.pdf_url}
+              title={syllabusTitle}
+              style={{
+                width: "100%",
+                height: "100%",
+                border: 0,
+              }}
+            />
           </Box>
-
-          <iframe
-            src={syllabus.pdf_url}
-            title={syllabusTitle}
-            style={{
-              width: "100%",
-              height: "80vh",
-              border: "1px solid #e5e7eb",
-              borderRadius: 8,
-            }}
-          />
-        </div>
+        </Stack>
       ) : (
-        <div
+        <Box
           style={{
-            height: "80vh",
-            overflow: "auto",
-            WebkitOverflowScrolling: "touch",
+            height: "82vh",
             border: "1px solid #e5e7eb",
-            borderRadius: 8,
+            borderRadius: 12,
+            overflow: "hidden",
             background: "#fff",
+            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
           }}
         >
           <iframe
@@ -182,8 +239,8 @@ export default function SyllabusViewerPage() {
               border: 0,
             }}
           />
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }
