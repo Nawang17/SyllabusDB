@@ -26,12 +26,19 @@ import {
   Modal,
   Paper,
   Divider,
+  Rating,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { db } from "../../../../firebaseConfig";
 import { useNavigate } from "react-router";
-import { IconX, IconPencil, IconCheck, IconTrash } from "@tabler/icons-react";
+import {
+  IconX,
+  IconPencil,
+  IconCheck,
+  IconTrash,
+  IconStarFilled,
+} from "@tabler/icons-react";
 
 function toTitleCaseCollege(slug) {
   if (!slug) return "Unknown College";
@@ -50,8 +57,16 @@ function fmtDate(d) {
   }
 }
 
+const ratingLabels = {
+  0: "No rating",
+  1: "Rough class",
+  2: "Pretty tough",
+  3: "Manageable",
+  4: "Good class",
+  5: "Would recommend",
+};
+
 export default function MyUploadsPage() {
-  // Auth gate
   const [authResolved, setAuthResolved] = useState(false);
   const [authUser, setAuthUser] = useState(null);
 
@@ -68,26 +83,25 @@ export default function MyUploadsPage() {
   const navigate = useNavigate();
   const auth = getAuth();
 
-  // Modal state for Add/Edit/Delete Experience
   const [expModalOpened, { open: openExpModal, close: closeExpModal }] =
     useDisclosure(false);
   const [expDraft, setExpDraft] = useState("");
+  const [ratingDraft, setRatingDraft] = useState(0);
   const [expSaving, setExpSaving] = useState(false);
   const [activeRow, setActiveRow] = useState(null);
 
   const EXP_MAX = 500;
   const EXP_MIN = 8;
 
-  // 1) Resolve auth once (handles deep links / refresh)
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setAuthUser(u && !u.isAnonymous ? u : null);
       setAuthResolved(true);
     });
+
     return unsub;
   }, [auth]);
 
-  // 2) After auth resolves, fetch uploads if signed in
   useEffect(() => {
     if (!authResolved) return;
 
@@ -100,10 +114,12 @@ export default function MyUploadsPage() {
     const fetchUploadsWithCourseInfo = async () => {
       try {
         setLoading(true);
+
         const q = fbQuery(
           collectionGroup(db, "syllabi"),
-          where("owner", "==", authUser.uid)
+          where("owner", "==", authUser.uid),
         );
+
         const snapshot = await getDocs(q);
 
         const enriched = await Promise.all(
@@ -113,17 +129,25 @@ export default function MyUploadsPage() {
             const collegeId = pathSegments[1];
             const courseId = decodeURIComponent(pathSegments[3]);
 
-            let courseData = { title: "Unknown Course", code: courseId };
+            let courseData = {
+              title: "Unknown Course",
+              code: courseId,
+            };
+
             try {
               const courseRef = doc(
                 db,
                 "colleges",
                 collegeId,
                 "courses",
-                courseId
+                courseId,
               );
+
               const courseSnap = await getDoc(courseRef);
-              if (courseSnap.exists()) courseData = courseSnap.data();
+
+              if (courseSnap.exists()) {
+                courseData = courseSnap.data();
+              }
             } catch (e) {
               console.warn("Failed to fetch course for", courseId, e);
             }
@@ -132,14 +156,19 @@ export default function MyUploadsPage() {
               id: docSnap.id,
               ref: docSnap.ref,
               syllabus,
-              course: { ...courseData, collegeId, code: courseId },
+              course: {
+                ...courseData,
+                collegeId,
+                code: courseId,
+              },
             };
-          })
+          }),
         );
 
         enriched.sort(
-          (a, b) => dt(b.syllabus.createdAt) - dt(a.syllabus.createdAt)
+          (a, b) => dt(b.syllabus.createdAt) - dt(a.syllabus.createdAt),
         );
+
         setRows(enriched);
       } catch (err) {
         console.error("Error fetching syllabi:", err);
@@ -151,25 +180,26 @@ export default function MyUploadsPage() {
     fetchUploadsWithCourseInfo();
   }, [authResolved, authUser]);
 
-  useMemo(() => null, [rows]);
-
-  // debounce search
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
+
   useEffect(() => {
     const t = setTimeout(
       () => setDebouncedQuery(searchQuery.trim().toLowerCase()),
-      200
+      200,
     );
+
     return () => clearTimeout(t);
   }, [searchQuery]);
 
   const filtered = useMemo(() => {
     let out = rows.filter(({ syllabus, course }) => {
       const q = debouncedQuery;
+
       if (q) {
         const hay = `${course?.title ?? ""} ${course?.code ?? ""} ${
           syllabus?.professor ?? ""
         }`.toLowerCase();
+
         if (!hay.includes(q)) return false;
       }
 
@@ -202,8 +232,8 @@ export default function MyUploadsPage() {
           `${a.course?.code ?? ""} ${a.course?.title ?? ""}`
             .toLowerCase()
             .localeCompare(
-              `${b.course?.code ?? ""} ${b.course?.title ?? ""}`.toLowerCase()
-            )
+              `${b.course?.code ?? ""} ${b.course?.title ?? ""}`.toLowerCase(),
+            ),
         );
     }
 
@@ -227,14 +257,23 @@ export default function MyUploadsPage() {
     setSortBy("newest");
   };
 
+  const resetReviewModal = () => {
+    closeExpModal();
+    setActiveRow(null);
+    setExpDraft("");
+    setRatingDraft(0);
+  };
+
   const openExperienceModal = (row) => {
     setActiveRow(row);
     setExpDraft(row?.syllabus?.experience_text ?? "");
+    setRatingDraft(Number(row?.syllabus?.rating || 0));
     openExpModal();
   };
 
   const saveExperience = async () => {
     if (!activeRow) return;
+
     const trimmed = expDraft.trim();
 
     if (trimmed.length && trimmed.length < EXP_MIN) {
@@ -245,6 +284,7 @@ export default function MyUploadsPage() {
       });
       return;
     }
+
     if (trimmed.length > EXP_MAX) {
       notifications.show({
         color: "orange",
@@ -256,8 +296,10 @@ export default function MyUploadsPage() {
 
     try {
       setExpSaving(true);
+
       await updateDoc(activeRow.ref, {
         experience_text: trimmed || null,
+        rating: ratingDraft || null,
         experience_updatedAt: serverTimestamp(),
       });
 
@@ -269,29 +311,33 @@ export default function MyUploadsPage() {
                 syllabus: {
                   ...r.syllabus,
                   experience_text: trimmed || null,
-                  experience_updatedAt: { toDate: () => new Date() },
+                  rating: ratingDraft || null,
+                  experience_updatedAt: {
+                    toDate: () => new Date(),
+                  },
                 },
               }
-            : r
-        )
+            : r,
+        ),
       );
 
       notifications.show({
         icon: <IconCheck size={16} />,
-        title: trimmed ? "Experience saved" : "Experience removed",
-        message: trimmed
-          ? "Your course experience was saved."
-          : "Experience was cleared.",
+        title: "Review saved",
+        message:
+          trimmed || ratingDraft
+            ? "Your rating and experience were saved."
+            : "Your review was cleared.",
       });
-      closeExpModal();
-      setActiveRow(null);
-      setExpDraft("");
+
+      resetReviewModal();
     } catch (e) {
       console.error(e);
+
       notifications.show({
         color: "red",
         title: "Failed to save",
-        message: "Could not update experience. Please try again.",
+        message: "Could not update your review. Please try again.",
       });
     } finally {
       setExpSaving(false);
@@ -300,12 +346,16 @@ export default function MyUploadsPage() {
 
   const deleteExperience = async () => {
     if (!activeRow) return;
+
     try {
       setExpSaving(true);
+
       await updateDoc(activeRow.ref, {
         experience_text: null,
+        rating: null,
         experience_updatedAt: serverTimestamp(),
       });
+
       setRows((prev) =>
         prev.map((r) =>
           r.id === activeRow.id
@@ -314,39 +364,43 @@ export default function MyUploadsPage() {
                 syllabus: {
                   ...r.syllabus,
                   experience_text: null,
-                  experience_updatedAt: { toDate: () => new Date() },
+                  rating: null,
+                  experience_updatedAt: {
+                    toDate: () => new Date(),
+                  },
                 },
               }
-            : r
-        )
+            : r,
+        ),
       );
+
       notifications.show({
         icon: <IconTrash size={16} />,
-        title: "Experience removed",
-        message: "Your course experience was deleted.",
+        title: "Review removed",
+        message: "Your rating and experience were deleted.",
       });
-      closeExpModal();
-      setActiveRow(null);
-      setExpDraft("");
+
+      resetReviewModal();
     } catch (e) {
       console.error(e);
+
       notifications.show({
         color: "red",
         title: "Failed to delete",
-        message: "Could not delete experience. Please try again.",
+        message: "Could not delete your review. Please try again.",
       });
     } finally {
       setExpSaving(false);
     }
   };
 
-  // Loading skeletons while fetching / resolving
   if (!authResolved || loading) {
     return (
       <Container size="1200px" py="xl" px="2rem">
         <Title order={2} mb="xs">
           My Uploaded Syllabi
         </Title>
+
         <Stack>
           {[...Array(4)].map((_, i) => (
             <Card key={i} withBorder radius="md">
@@ -361,7 +415,6 @@ export default function MyUploadsPage() {
     );
   }
 
-  // Signed-out UI (no redirect)
   if (!authUser) {
     return (
       <Container size="1200px" py="xl" px="2rem">
@@ -369,9 +422,11 @@ export default function MyUploadsPage() {
           <Title order={3} mb="sm">
             You’re not signed in
           </Title>
+
           <Text mb="md" c="dimmed">
             Please sign in to view your uploads.
           </Text>
+
           <Button onClick={() => navigate("/")} variant="light">
             Go to Home Page
           </Button>
@@ -380,12 +435,12 @@ export default function MyUploadsPage() {
     );
   }
 
-  // Signed-in UI
   return (
     <Container size="1200px" py="xl" px="2rem">
       <Group justify="space-between" align="end" mb="xs">
         <div>
           <Title order={2}>My Uploaded Syllabi</Title>
+
           <Text size="sm" c="dimmed">
             Showing {filtered.length} of {rows.length} upload
             {rows.length !== 1 ? "s" : ""}
@@ -401,6 +456,7 @@ export default function MyUploadsPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.currentTarget.value)}
           />
+
           <Group justify="space-between" wrap="wrap">
             <Chip.Group
               multiple={false}
@@ -420,9 +476,11 @@ export default function MyUploadsPage() {
           <Text fw={600} mb={4}>
             No results
           </Text>
+
           <Text size="sm" c="dimmed" mb="md">
             Try adjusting your search or filters.
           </Text>
+
           <Button
             variant="subtle"
             leftSection={<IconX size={16} />}
@@ -436,9 +494,13 @@ export default function MyUploadsPage() {
           {filtered.map((row) => {
             const { id, syllabus, course } = row;
             const approved = Boolean(syllabus?.approved);
+            const ratingValue = Number(syllabus?.rating || 0);
+            const hasRating = ratingValue > 0;
+
             const createdAt = syllabus?.createdAt?.toDate?.()
               ? syllabus.createdAt.toDate()
               : null;
+
             const updatedAt = syllabus?.experience_updatedAt?.toDate?.()
               ? syllabus.experience_updatedAt.toDate()
               : null;
@@ -450,11 +512,13 @@ export default function MyUploadsPage() {
                     <Text fw={600} size="md">
                       {course?.code} {course?.title ? `- ${course.title}` : ""}
                     </Text>
+
                     <Text size="sm" c="dimmed">
                       {syllabus?.term || "Unknown Term"} {syllabus?.year ?? ""}{" "}
                       • {toTitleCaseCollege(course?.collegeId)}
                     </Text>
                   </div>
+
                   <Badge color={approved ? "green" : "yellow"} variant="light">
                     {approved ? "Approved" : "Pending"}
                   </Badge>
@@ -464,12 +528,27 @@ export default function MyUploadsPage() {
                   <Text size="sm">
                     Professor: {syllabus?.professor || "N/A"}
                   </Text>
+
                   {createdAt && (
                     <Text size="sm" c="dimmed">
                       Uploaded: {fmtDate(createdAt)}
                     </Text>
                   )}
                 </Group>
+
+                {hasRating && (
+                  <Group gap={6} mb="xs">
+                    <IconStarFilled size={16} color="#d97706" />
+
+                    <Text size="sm" fw={700}>
+                      {ratingValue}/5
+                    </Text>
+
+                    <Text size="sm" c="dimmed">
+                      {ratingLabels[ratingValue]}
+                    </Text>
+                  </Group>
+                )}
 
                 <Divider my="xs" />
 
@@ -481,10 +560,11 @@ export default function MyUploadsPage() {
                     leftSection={<IconPencil size={16} />}
                     onClick={() => openExperienceModal(row)}
                   >
-                    {syllabus?.experience_text
-                      ? "Edit experience"
-                      : "Add experience"}
+                    {syllabus?.experience_text || syllabus?.rating
+                      ? "Edit review"
+                      : "Add review"}
                   </Button>
+
                   {syllabus?.pdf_url && (
                     <Button
                       component="a"
@@ -499,41 +579,45 @@ export default function MyUploadsPage() {
                   )}
                 </Group>
 
-                <Group justify="space-between" mt={10}>
-                  <div style={{ flex: 1 }}>
-                    {syllabus?.experience_text && (
-                      <Paper withBorder p="sm" radius="md">
-                        <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>
-                          {syllabus.experience_text}
-                        </Text>
-                        <Text size="xs" c="dimmed" mt="xs">
-                          {updatedAt
-                            ? `Last updated: ${fmtDate(updatedAt)}`
-                            : ""}
-                        </Text>
-                      </Paper>
-                    )}
-                  </div>
-                </Group>
+                {syllabus?.experience_text && (
+                  <Paper withBorder p="sm" radius="md" mt="sm">
+                    <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>
+                      {syllabus.experience_text}
+                    </Text>
+
+                    <Text size="xs" c="dimmed" mt="xs">
+                      {updatedAt ? `Last updated: ${fmtDate(updatedAt)}` : ""}
+                    </Text>
+                  </Paper>
+                )}
               </Card>
             );
           })}
         </Stack>
       )}
 
-      {/* Edit/Delete Experience Modal */}
       <Modal
         opened={expModalOpened}
-        onClose={() => {
-          closeExpModal();
-          setActiveRow(null);
-          setExpDraft("");
-        }}
-        title="Edit experience"
+        onClose={resetReviewModal}
+        title="Edit review"
         centered
         radius="md"
       >
         <Stack>
+          <div>
+            <Text size="sm" fw={700} mb={6}>
+              Rating
+            </Text>
+
+            <Group gap="sm">
+              <Rating value={ratingDraft} onChange={setRatingDraft} size="lg" />
+
+              <Text size="sm" c="dimmed">
+                {ratingLabels[ratingDraft]}
+              </Text>
+            </Group>
+          </div>
+
           <Textarea
             autosize
             minRows={4}
@@ -549,11 +633,7 @@ export default function MyUploadsPage() {
             <Button
               variant="default"
               leftSection={<IconX size={16} />}
-              onClick={() => {
-                closeExpModal();
-                setActiveRow(null);
-                setExpDraft("");
-              }}
+              onClick={resetReviewModal}
             >
               Cancel
             </Button>
@@ -577,7 +657,7 @@ export default function MyUploadsPage() {
                 disabled={
                   expDraft.trim() ===
                     (activeRow?.syllabus?.experience_text ?? "").trim() &&
-                  !!activeRow?.syllabus?.experience_text
+                  ratingDraft === Number(activeRow?.syllabus?.rating || 0)
                 }
               >
                 Save

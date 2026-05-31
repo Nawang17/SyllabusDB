@@ -66,7 +66,7 @@ export default function SyllabusViewerPage() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
 
     async function fetchSyllabus() {
       try {
@@ -298,7 +298,16 @@ export default function SyllabusViewerPage() {
           </Collapse>
         </Paper>
       )}
-
+      {isMobile && (
+        <Alert
+          icon={<IconInfoCircle size={18} />}
+          my={10}
+          color="blue"
+          radius="md"
+        >
+          Use the Open PDF button for the best viewing experience.
+        </Alert>
+      )}
       {!syllabus?.pdf_url ? (
         <Alert icon={<IconInfoCircle size={18} />} color="orange" radius="md">
           This syllabus does not have a PDF URL.
