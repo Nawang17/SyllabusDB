@@ -28,6 +28,16 @@ import GuidelinesPage from "../Footer/GuidelinesPage/GuideLinesPage";
 import { IconFile } from "@tabler/icons-react";
 
 export default function UploadSyllabus() {
+  const auth = getAuth();
+  const [isSignedIn, setIsSignedIn] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setIsSignedIn(!!user && !user.isAnonymous);
+    });
+
+    return unsubscribe;
+  }, []);
   const { collegeName } = useParams();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -56,7 +66,7 @@ export default function UploadSyllabus() {
   const [showUploadWarning, setShowUploadWarning] = useState(() => {
     return localStorage.getItem("hideUploadWarning") !== "true";
   });
-
+  const isMobile = window.innerWidth <= 768;
   const [TOSopened, { close: closeTOS, open: openTOS }] = useDisclosure(false);
   const [GuidelinesOpened, { close: closeG, open: openG }] =
     useDisclosure(false);
@@ -213,8 +223,6 @@ export default function UploadSyllabus() {
     setIsSubmitting(true);
 
     try {
-      const auth = getAuth();
-
       let user = auth.currentUser;
 
       if (!user) {
@@ -360,7 +368,7 @@ export default function UploadSyllabus() {
         <h1>Upload a Syllabus</h1>
       </section>
 
-      {showUploadWarning && (
+      {/* {showUploadWarning && (
         <div className="upload-warning">
           <span className="warning-text">
             📌 Before uploading, please check that the same course, term, year,
@@ -379,8 +387,23 @@ export default function UploadSyllabus() {
             ✕
           </button>
         </div>
-      )}
+      )} */}
+      {!isSignedIn && (
+        <div className="signin-reminder">
+          <p>
+            👋 Looks like you're not signed in. Sign in to track uploads, edit
+            reviews, and receive email updates.
+          </p>
 
+          <Button
+            variant="light"
+            size={"xs"}
+            onClick={() => navigate("/signin")}
+          >
+            Sign In
+          </Button>
+        </div>
+      )}
       <div className="upload-layout">
         <form className="upload-form" onSubmit={handleSubmit}>
           <div className="form-section">
