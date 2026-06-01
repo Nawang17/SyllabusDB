@@ -1,231 +1,110 @@
-// src/components/Header.jsx
 import {
   Box,
   Button,
   Group,
-  Modal,
   Menu,
   Burger,
   Text,
   Avatar,
   Drawer,
   Divider,
-  Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useLocation, useNavigate } from "react-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  getAuth,
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup,
-} from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   IconPhoto,
   IconUpload,
   IconSettings,
   IconLogout,
   IconHome,
-  IconLock,
-  IconSparkles,
   IconChevronDown,
   IconUser,
+  IconLock,
 } from "@tabler/icons-react";
-import confetti from "canvas-confetti";
 import classes from "./styles/Header.module.css";
 import { notifications } from "@mantine/notifications";
-
-import {
-  collectionGroup,
-  doc,
-  getDoc,
-  getDocs,
-  getFirestore,
-  query,
-  setDoc,
-  writeBatch,
-  where,
-  deleteField,
-} from "firebase/firestore";
+import { doc, getDoc, getFirestore } from "firebase/firestore";
 
 export default function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const auth = getAuth();
+
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [signInError, setSignInError] = useState("");
-  const [showNewUserModal, setShowNewUserModal] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const location = useLocation();
+
   const isHome = location.pathname === "/";
-  const [isSignInOpen, { open: openSignIn, close: closeSignIn }] =
+
+  const [isMobileOpen, { close: closeMobile, toggle: toggleMobile }] =
     useDisclosure(false);
-  const [
-    isMobileOpen,
-    { open: openMobile, close: closeMobile, toggle: toggleMobile },
-  ] = useDisclosure(false);
 
-  const auth = getAuth();
-
-  // Elevation on scroll
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 6);
+
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
+
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-  // Auth state watcher + user doc fetch
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      if (u) {
-        setUser(u);
-        setIsAnonymous(u.isAnonymous);
-        setIsAdmin(u.email === "nawangsherpa1010@gmail.com");
-
-        if (!u.isAnonymous) {
-          const db = getFirestore();
-          const userRef = doc(db, "users", u.uid);
-          const snap = await getDoc(userRef);
-          if (snap.exists()) setUserData(snap.data());
-        } else {
-          setUserData(null);
-        }
-      } else {
+      if (!u) {
         setUser(null);
+        setUserData(null);
         setIsAnonymous(false);
         setIsAdmin(false);
+        return;
+      }
+
+      setUser(u);
+      setIsAnonymous(u.isAnonymous);
+      setIsAdmin(u.email === "nawangsherpa1010@gmail.com");
+
+      if (u.isAnonymous) {
+        setUserData(null);
+        return;
+      }
+
+      try {
+        const db = getFirestore();
+        const userRef = doc(db, "users", u.uid);
+        const snap = await getDoc(userRef);
+
+        setUserData(snap.exists() ? snap.data() : null);
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
         setUserData(null);
       }
     });
+
     return () => unsubscribe();
-  }, []);
+  }, [auth]);
+
   const initials = useMemo(() => {
     if (!userData?.full_name) return "U";
+
     const parts = userData.full_name.trim().split(/\s+/);
     const first = parts[0]?.[0] || "";
     const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+
     return (first + last).toUpperCase();
   }, [userData?.full_name]);
 
-  const handleGoogleLink = async () => {
-    const db = getFirestore();
-    const provider = new GoogleAuthProvider();
-
-    let docPathsToClaim = [];
-    const anonUser = auth.currentUser?.isAnonymous ? auth.currentUser : null;
-    const anonUID = anonUser?.uid;
-
-    if (anonUID) {
-      try {
-        const snapshot = await getDocs(
-          query(collectionGroup(db, "syllabi"), where("owner", "==", anonUID))
-        );
-        const batch = writeBatch(db);
-        snapshot.forEach((docSnap) => {
-          const ref = doc(db, docSnap.ref.path);
-          batch.update(ref, { owner: deleteField() });
-          docPathsToClaim.push(ref.path);
-        });
-        await batch.commit();
-        sessionStorage.setItem(
-          "pendingSyllabusClaims",
-          JSON.stringify(docPathsToClaim)
-        );
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const signedUser = result.user;
-      setUser(signedUser);
-      setIsAnonymous(false);
-
-      const claimedPaths = JSON.parse(
-        sessionStorage.getItem("pendingSyllabusClaims") || "[]"
-      );
-      if (claimedPaths.length > 0) {
-        const batch = writeBatch(db);
-        claimedPaths.forEach((path) => {
-          const ref = doc(db, path);
-          batch.update(ref, { owner: signedUser.uid });
-        });
-        await batch.commit();
-        sessionStorage.removeItem("pendingSyllabusClaims");
-      }
-
-      // Ensure user doc
-      const userRef = doc(db, "users", signedUser.uid);
-      const userSnap = await getDoc(userRef);
-      if (!userSnap.exists()) {
-        await setDoc(userRef, {
-          email: signedUser.email,
-          full_name: signedUser.displayName || "",
-          profile_image: signedUser.photoURL || "",
-          createdAt: new Date(),
-          wantsEmailNotifications: true,
-        });
-        //new user noti
-        await fetch(
-          "https://syllabusdbserver-agza.onrender.com/notify-newUser",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: "new user" }),
-          }
-        );
-
-        confetti({ particleCount: 220, spread: 60, origin: { y: 0.6 } });
-        navigate("/");
-
-        setShowNewUserModal(true);
-      } else {
-        notifications.show({
-          title: "Signed in",
-          message: "Welcome back to SyllabusDB!",
-          color: "green",
-          icon: <IconSparkles size={16} />,
-          position: "bottom-center",
-        });
-
-        if (
-          location.pathname !== "/settings" &&
-          location.pathname !== "/myuploads"
-        ) {
-          navigate("/");
-        }
-      }
-
-      setSignInError("");
-      closeSignIn();
-      closeMobile();
-    } catch (error) {
-      console.error("Google sign-in failed:", error);
-      setSignInError("Something went wrong. Please try again.");
-
-      // Rollback
-      if (anonUID && docPathsToClaim.length > 0) {
-        try {
-          const batch = writeBatch(db);
-          docPathsToClaim.forEach((path) => {
-            const ref = doc(db, path);
-            batch.update(ref, { owner: anonUID });
-          });
-          await batch.commit();
-          sessionStorage.removeItem("pendingSyllabusClaims");
-        } catch (rollbackError) {
-          console.error(rollbackError);
-        }
-      }
-    }
+  const goToSignIn = () => {
+    navigate("/signin");
   };
 
   const handleSignOut = async () => {
-    await getAuth().signOut();
+    await auth.signOut();
+
     navigate("/");
+
     notifications.show({
       title: "Signed out",
       message: "You have been signed out successfully.",
@@ -238,23 +117,22 @@ export default function Header() {
   return (
     <Box className={`${classes.header} ${scrolled ? classes.scrolled : ""}`}>
       <div className={classes.headerInner}>
-        {/* Logo */}
         <button
           className={classes.logo}
           onClick={() => {
             navigate("/");
+
             if (location.pathname === "/") {
               window.scrollTo({ top: 0, behavior: "smooth" });
             }
           }}
           aria-label="SyllabusDB Home"
         >
-          <Text c={"black"} fw={800} size="xl" className={classes.wordmark}>
+          <Text c="black" fw={800} size="xl" className={classes.wordmark}>
             Syllabus<span className={classes.brand}>DB</span>
           </Text>
         </button>
 
-        {/* Right side actions */}
         <Group className={classes.rightSide} gap="sm">
           <Burger
             hiddenFrom="sm"
@@ -263,6 +141,7 @@ export default function Header() {
             onClick={toggleMobile}
             aria-label="Open menu"
           />
+
           <Button
             variant="light"
             color="blue"
@@ -284,7 +163,6 @@ export default function Header() {
             </Button>
           )}
 
-          {/* Desktop account menu */}
           {user && !isAnonymous ? (
             <Menu shadow="md" width={240} position="bottom-end" withinPortal>
               <Menu.Target>
@@ -308,7 +186,7 @@ export default function Header() {
                   rightSection={<IconChevronDown size={14} />}
                   visibleFrom="sm"
                 >
-                  {userData?.full_name || "Account"}
+                  {userData?.full_name || user.email || "Account"}
                 </Button>
               </Menu.Target>
 
@@ -321,30 +199,36 @@ export default function Header() {
                     Home
                   </Menu.Item>
                 )}
+
                 <Menu.Item
                   leftSection={<IconUpload size={16} />}
                   onClick={() => navigate("/uploadsyllabus")}
                 >
                   Upload Syllabus
                 </Menu.Item>
+
                 <Menu.Item
                   leftSection={<IconPhoto size={16} />}
                   onClick={() => navigate("/myuploads")}
                 >
                   My Uploads
                 </Menu.Item>
+
                 <Menu.Item
                   leftSection={<IconSettings size={16} />}
                   onClick={() => navigate("/settings")}
                 >
                   Settings
                 </Menu.Item>
+
                 {isAdmin && (
                   <Menu.Item onClick={() => navigate("/admin")}>
                     Admin
                   </Menu.Item>
                 )}
+
                 <Menu.Divider />
+
                 <Menu.Item
                   color="red"
                   leftSection={<IconLogout size={16} />}
@@ -355,21 +239,18 @@ export default function Header() {
               </Menu.Dropdown>
             </Menu>
           ) : (
-            <>
-              <Button
-                onClick={openSignIn}
-                variant="outline"
-                size="sm"
-                visibleFrom="sm"
-              >
-                Sign In
-              </Button>
-            </>
+            <Button
+              onClick={goToSignIn}
+              variant="outline"
+              size="sm"
+              visibleFrom="sm"
+            >
+              Sign In
+            </Button>
           )}
         </Group>
       </div>
 
-      {/* Mobile drawer */}
       <Drawer
         opened={isMobileOpen}
         onClose={closeMobile}
@@ -387,6 +268,7 @@ export default function Header() {
                   {initials}
                 </Avatar>
               )}
+
               <div>
                 <Text fw={600}>{userData?.full_name || "Account"}</Text>
                 <Text size="xs" c="dimmed">
@@ -405,6 +287,7 @@ export default function Header() {
         </Group>
 
         <Divider my="sm" />
+
         {!isHome && (
           <Button
             fullWidth
@@ -432,6 +315,7 @@ export default function Header() {
         >
           Upload Syllabus
         </Button>
+
         {user && !isAnonymous && (
           <>
             <Button
@@ -446,6 +330,7 @@ export default function Header() {
             >
               My Uploads
             </Button>
+
             <Button
               fullWidth
               variant="light"
@@ -460,6 +345,7 @@ export default function Header() {
             </Button>
           </>
         )}
+
         {isAdmin && (
           <Button
             fullWidth
@@ -493,7 +379,7 @@ export default function Header() {
             fullWidth
             leftSection={<IconLock size={16} />}
             onClick={() => {
-              openSignIn();
+              goToSignIn();
               closeMobile();
             }}
           >
@@ -501,85 +387,6 @@ export default function Header() {
           </Button>
         )}
       </Drawer>
-
-      {/* Sign-in modal */}
-      <Modal
-        opened={isSignInOpen}
-        onClose={() => {
-          closeSignIn();
-          setSignInError("");
-        }}
-        title="Welcome to SyllabusDB"
-        radius="md"
-        size="md"
-      >
-        <Text size="sm" mb="sm">
-          Sign in with Google to easily manage your uploads and get
-          notifications about their status.
-        </Text>
-
-        {signInError && <Box className={classes.errorBox}>{signInError}</Box>}
-
-        <Button
-          fullWidth
-          variant="outline"
-          radius="md"
-          size="md"
-          onClick={handleGoogleLink}
-          leftSection={
-            <img
-              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-              alt="Google Logo"
-              style={{ width: 18, height: 18 }}
-            />
-          }
-        >
-          Sign in with Google
-        </Button>
-      </Modal>
-
-      {/* New user modal */}
-      {showNewUserModal && (
-        <Modal
-          opened
-          onClose={() => setShowNewUserModal(false)}
-          radius="md"
-          padding="lg"
-          withCloseButton={false}
-          classNames={{ content: classes.popoutModal }}
-        >
-          <div className={classes.welcomeBox}>
-            <Title order={3} mb="xs">
-              🎓 Welcome to SyllabusDB
-            </Title>
-            <Text size="md" mb="md">
-              Thanks for joining! Here you can browse and upload syllabi to help
-              other students make better course choices. Start exploring or add
-              your first syllabus.
-            </Text>
-
-            <Group justify="center" mt="md">
-              <Button
-                variant="filled"
-                color="blue"
-                onClick={() => {
-                  setShowNewUserModal(false);
-                  navigate("/uploadsyllabus");
-                }}
-              >
-                Upload a Syllabus
-              </Button>
-              <Button
-                variant="outline"
-                color="gray"
-                onClick={() => setShowNewUserModal(false)}
-              >
-                Start Browsing
-              </Button>
-            </Group>
-          </div>
-        </Modal>
-      )}
     </Box>
   );
 }

@@ -22,6 +22,7 @@ import PrivacyPolicy from "./pages/Footer/PrivacyPolicy/PrivacyPolicy.jsx";
 import SettingsPage from "./pages/Account/MyUploads/Settings/Settings.jsx";
 import ExtensionPrivacyPolicy from "./pages/syllabusdb-extension/ExtensionPrivacyPolicy.jsx";
 import SyllabusViewerPage from "./pages/Subjects/SyllabusViewerPage.jsx";
+import SignIn from "./pages/sign-in.jsx";
 
 function App() {
   return (
@@ -57,7 +58,7 @@ function App() {
             path="/college/:collegeId/subject/:subject/course/:courseId/syllabus/:syllabusId"
             element={<SyllabusViewerPage />}
           />
-
+          <Route path="/signin" element={<SignIn />} />
           {/* SyllabusDB Extension Privacy Policy */}
           <Route
             path="/extension-privacy-policy"
