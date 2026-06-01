@@ -35,7 +35,7 @@ export default function SignIn() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
+      if (!!user && !user.isAnonymous) {
         navigate("/");
       }
     });
