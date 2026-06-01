@@ -15,6 +15,8 @@ import {
   Title,
 } from "@mantine/core";
 import {
+  IconCaretRight,
+  IconCaretRightFilled,
   IconChevronDown,
   IconChevronUp,
   IconExternalLink,
@@ -138,6 +140,16 @@ export default function SyllabusViewerPage() {
         minHeight: "100vh",
       }}
     >
+      {isMobile && (
+        <Alert
+          icon={<IconInfoCircle size={18} />}
+          my={10}
+          color="blue"
+          radius="md"
+        >
+          Use the Open PDF button for the best viewing experience.
+        </Alert>
+      )}
       <Paper
         withBorder={!isMobile}
         radius={isMobile ? 0 : "lg"}
@@ -167,10 +179,11 @@ export default function SyllabusViewerPage() {
                 {subject?.toUpperCase()}
               </Text>
 
-              <Text c="dimmed" fw={700}>
-                &gt;
-              </Text>
-
+              <IconCaretRightFilled
+                size={16}
+                color="#6b7280"
+                style={{ flexShrink: 0 }}
+              />
               <Text
                 size={isMobile ? "sm" : "md"}
                 order={isMobile ? 5 : 3}
@@ -178,17 +191,6 @@ export default function SyllabusViewerPage() {
               >
                 {courseId}
               </Text>
-
-              {hasRating && (
-                <Badge
-                  color="yellow"
-                  variant="light"
-                  leftSection={<IconStarFilled size={12} />}
-                  style={{ flexShrink: 0 }}
-                >
-                  {ratingValue}/5
-                </Badge>
-              )}
             </Group>
 
             {!isMobile && (
@@ -298,16 +300,7 @@ export default function SyllabusViewerPage() {
           </Collapse>
         </Paper>
       )}
-      {isMobile && (
-        <Alert
-          icon={<IconInfoCircle size={18} />}
-          my={10}
-          color="blue"
-          radius="md"
-        >
-          Use the Open PDF button for the best viewing experience.
-        </Alert>
-      )}
+
       {!syllabus?.pdf_url ? (
         <Alert icon={<IconInfoCircle size={18} />} color="orange" radius="md">
           This syllabus does not have a PDF URL.

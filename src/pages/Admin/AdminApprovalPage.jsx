@@ -235,6 +235,7 @@ export default function AdminApprovalPage() {
           createdAt: createdAt?.toDate?.() || null,
           owner,
           experience_text: data.experience_text || "",
+          rating: data.rating || null,
         });
       }
     }
@@ -418,6 +419,12 @@ export default function AdminApprovalPage() {
                                   <>
                                     <strong>Experience:</strong>{" "}
                                     {s.experience_text}
+                                  </>
+                                )}
+                                <br />
+                                {s.rating && (
+                                  <>
+                                    <strong>Rating:</strong> {s.rating}/5
                                   </>
                                 )}
                               </div>
