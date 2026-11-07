@@ -24,6 +24,7 @@ import { useNavigate } from "react-router";
 import { Button, Modal, TextInput, Select, Alert } from "@mantine/core";
 import { normalizeCourseCode } from "../../utils/courseCode.js";
 import { COURSE_TERMS, validateSyllabusEdit, applyPendingSyllabusEdit, cleanupEmptySourceCourse } from "../../utils/adminSyllabusEdit.js";
+import { generateCollegeId, validateCollegeEdit, applyPendingCollegeEdit } from "../../utils/adminCollegeEdit.js";
 const allowedAdminEmail = "nawangsherpa1010@gmail.com"; //
 export default function AdminApprovalPage() {
   useEffect(() => {
@@ -38,6 +39,68 @@ export default function AdminApprovalPage() {
   const [notice, setNotice] = useState("");
   const [pageError, setPageError] = useState("");
   const [busyItems, setBusyItems] = useState({});
+  const [editingCollege, setEditingCollege] = useState(null);
+  const [collegeDraft, setCollegeDraft] = useState({ name: "", city: "", state: "" });
+  const [savingCollege, setSavingCollege] = useState(false);
+  const [collegeEditError, setCollegeEditError] = useState("");
+
+  const openCollegeEditor = (college) => {
+    setCollegeEditError("");
+    setCollegeDraft({ name: college.name || "", city: college.city || "", state: college.state || "" });
+    setEditingCollege(college);
+  };
+
+  const saveCollegeEdit = async (event) => {
+    event.preventDefault();
+    setCollegeEditError("");
+    setSavingCollege(true);
+    try {
+      const details = validateCollegeEdit(collegeDraft);
+      const collegeRef = doc(db, "colleges", editingCollege.id);
+      const collegeId = generateCollegeId(details.name);
+      const destination = doc(db, "colleges", collegeId);
+      const documents = [];
+      if (collegeRef.path !== destination.path) {
+        const existingCourses = await getDocsFromServer(query(collection(destination, "courses"), limit(1)));
+        if (!existingCourses.empty) {
+          throw new Error("The destination already contains course records. No changes were saved.");
+        }
+        // Query the server so cached or pending-only lists cannot omit records.
+        const courses = await getDocsFromServer(collection(collegeRef, "courses"));
+        for (const course of courses.docs) {
+          const newCourse = doc(destination, "courses", course.id);
+          documents.push({ source: course.ref, destination: newCourse });
+          const syllabi = await getDocsFromServer(collection(course.ref, "syllabi"));
+          for (const syllabus of syllabi.docs) {
+            documents.push({ source: syllabus.ref, destination: doc(newCourse, "syllabi", syllabus.id) });
+          }
+          if (documents.length > 200) {
+            throw new Error("This college has too many records to rename here. Use a server-side migration; no changes were saved.");
+          }
+        }
+      }
+      await runTransaction(db, (transaction) => applyPendingCollegeEdit(transaction, collegeRef, details, {
+        destination, documents,
+      }));
+      setCollegeRequests((previous) => previous.map((college) =>
+        college.id === editingCollege.id ? { ...college, ...details, id: collegeId } : college,
+      ));
+      setSyllabi((previous) => previous.map((syllabus) =>
+        syllabus.collegeId === editingCollege.id ? {
+          ...syllabus,
+          collegeId,
+          collegeName: details.name,
+          ref: doc(destination, "courses", syllabus.courseId, "syllabi", syllabus.id),
+        } : syllabus,
+      ));
+      setEditingCollege(null);
+      setNotice("College details saved. The request is ready for review.");
+    } catch (error) {
+      setCollegeEditError(error.message || "Could not save college details. Please try again.");
+    } finally {
+      setSavingCollege(false);
+    }
+  };
 
   const performAction = async (key, action) => {
     setBusyItems((previous) => ({ ...previous, [key]: true }));
@@ -597,14 +660,20 @@ export default function AdminApprovalPage() {
                 {college.message && <p>📩 "{college.message}"</p>}
                 <div className="syllabus-actions">
                   <Button
-                    onClick={() => {
-                      approveCollege(college.id);
-                    }}
+                    variant="light"
+                    disabled={busyItems[`college:${college.id}`]}
+                    onClick={() => openCollegeEditor(college)}
+                  >
+                    Edit details
+                  </Button>
+                  <Button
+                    disabled={busyItems[`college:${college.id}`]}
+                    onClick={() => performAction(`college:${college.id}`, () => approveCollege(college.id))}
                     color="green"
                   >
                     Approve
                   </Button>
-                  <Button color="red" onClick={() => deleteCollege(college.id)}>
+                  <Button color="red" disabled={busyItems[`college:${college.id}`]} onClick={() => performAction(`college:${college.id}`, () => deleteCollege(college.id))}>
                     Disapprove
                   </Button>
                 </div>
@@ -613,6 +682,50 @@ export default function AdminApprovalPage() {
           )}
         </div>
       )}
+      <Modal
+        opened={!!editingCollege}
+        onClose={() => !savingCollege && setEditingCollege(null)}
+        title="Edit college details"
+        centered
+        size="lg"
+        closeOnClickOutside={!savingCollege}
+        closeOnEscape={!savingCollege}
+        withCloseButton={!savingCollege}
+      >
+        <form onSubmit={saveCollegeEdit} className="admin-edit-form">
+          <p>The document ID follows the college name. A name change moves its courses and syllabi to the new ID and removes the old records. Owners and PDF files stay unchanged.</p>
+          <p>Avoid simultaneous uploads or edits for this college while renaming. Renames support up to 200 course and syllabus documents.</p>
+          <p>Document ID: <strong style={{ overflowWrap: "anywhere" }}>{generateCollegeId(collegeDraft.name) || "Enter a college name"}</strong></p>
+          {collegeEditError && <Alert color="red" role="alert">{collegeEditError}</Alert>}
+          <fieldset disabled={savingCollege}>
+            <TextInput
+              label="College name"
+              required
+              value={collegeDraft.name}
+              onChange={(event) => setCollegeDraft({ ...collegeDraft, name: event.target.value })}
+              mb="md"
+            />
+            <div className="admin-edit-grid">
+              <TextInput
+                label="City"
+                required
+                value={collegeDraft.city}
+                onChange={(event) => setCollegeDraft({ ...collegeDraft, city: event.target.value })}
+              />
+              <TextInput
+                label="State"
+                required
+                value={collegeDraft.state}
+                onChange={(event) => setCollegeDraft({ ...collegeDraft, state: event.target.value })}
+              />
+            </div>
+          </fieldset>
+          <div className="admin-edit-actions">
+            <Button variant="default" disabled={savingCollege} onClick={() => setEditingCollege(null)}>Cancel</Button>
+            <Button type="submit" loading={savingCollege}>Save changes</Button>
+          </div>
+        </form>
+      </Modal>
       <Modal opened={!!editing} onClose={() => !saving && setEditing(null)} title="Edit upload details" centered size="lg" closeOnClickOutside={!saving} closeOnEscape={!saving} withCloseButton={!saving}>
         <form onSubmit={saveEdit} className="admin-edit-form">
           <p>Changes are saved before approval. Course names apply to all uploads in the destination course. Changing the code moves only this pending upload; its PDF stays intact.</p>

@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth, signInAnonymously } from "firebase/auth";
 import { db } from "../../../firebaseConfig";
 import "./RequestCollege.css";
+import { generateCollegeId } from "../../utils/adminCollegeEdit.js";
 
 export default function RequestCollege() {
   const [collegeName, setCollegeName] = useState("");
@@ -14,14 +15,6 @@ export default function RequestCollege() {
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
-
-  const generateDocId = (name) =>
-    name
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
 
   useEffect(() => {
     document.title = "SyllabusDB | Request a College";
@@ -52,7 +45,7 @@ export default function RequestCollege() {
         user = result.user;
       }
 
-      const id = generateDocId(cleanCollegeName);
+      const id = generateCollegeId(cleanCollegeName);
       const collegeRef = doc(db, "colleges", id);
       const existingDoc = await getDoc(collegeRef);
 
