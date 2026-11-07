@@ -1,3 +1,8 @@
+import {
+  courseCodeMatches,
+  extractSubject,
+  normalizeCourseCode,
+} from "../../utils/courseCode.js";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router";
 import { db } from "../../../firebaseConfig";
@@ -270,9 +275,7 @@ export default function SubjectPage() {
         const filtered = allCourses.filter(
           (course) =>
             course.code &&
-            course.code
-              .toUpperCase()
-              .startsWith((subject || "").toUpperCase() + " "),
+            extractSubject(course.code) === (subject || "").toUpperCase(),
         );
         const total = filtered.reduce(
           (sum, c) => sum + (c.approvedSyllabiCount || 0),
@@ -301,26 +304,6 @@ export default function SubjectPage() {
     };
     if (resolvedCollegeId) fetchCollegeNickname();
   }, [resolvedCollegeId]);
-
-  // helpers
-  const tokenizeCode = (str = "") => {
-    const m = str
-      .trim()
-      .toUpperCase()
-      .match(/^([A-Z&]+)\s*-?\s*(\d+)/);
-    return { dept: m?.[1] || "", num: m?.[2] || "" };
-  };
-
-  const courseCodeMatches = (courseCode, s) => {
-    if (!s) return true;
-    const c = tokenizeCode(courseCode);
-    const t = tokenizeCode(s);
-
-    if (t.dept && c.dept && c.dept !== t.dept) return false;
-    if (t.num && c.num)
-      return c.num.startsWith(t.num) || t.num.startsWith(c.num);
-    return courseCode.toLowerCase().includes(s.toLowerCase());
-  };
 
   useEffect(() => {
     const q = debouncedSearch.trim();
@@ -488,7 +471,7 @@ export default function SubjectPage() {
               >
                 <div>
                   <div className="course-code">
-                    {highlightText(course.code)}
+                    {highlightText(normalizeCourseCode(course.code))}
                   </div>
                   <div className="course-title">
                     {highlightText(course.title)}

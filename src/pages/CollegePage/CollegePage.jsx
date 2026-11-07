@@ -1,3 +1,4 @@
+import { extractSubject } from "../../utils/courseCode.js";
 import { useEffect, useState } from "react";
 import "./CollegePage.css";
 import { Link, useNavigate, useParams } from "react-router";
@@ -97,7 +98,7 @@ export default function CollegePage() {
         const grouped = {};
 
         for (const course of courseList) {
-          const subjectCode = course.code.split(" ")[0].toUpperCase(); // get e.g., 'CSCI'
+          const subjectCode = extractSubject(course.code);
           const count = course.approvedSyllabiCount || 0;
 
           if (!grouped[subjectCode]) {

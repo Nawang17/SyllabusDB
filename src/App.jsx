@@ -28,6 +28,20 @@ function App() {
   return (
     <BrowserRouter>
       <MantineProvider>
+        {import.meta.env.DEV && (
+          <div
+            style={{
+              background: "#dc2626",
+              color: "white",
+              textAlign: "center",
+              padding: "6px",
+              fontWeight: "bold",
+              fontSize: "14px",
+            }}
+          >
+            ⚠️ DEVELOPMENT ENVIRONMENT — NOT PRODUCTION
+          </div>
+        )}
         <Notifications />
         <Header />
         <Routes>

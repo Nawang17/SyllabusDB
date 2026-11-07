@@ -1,3 +1,4 @@
+import { normalizeCourseCode } from "../../utils/courseCode.js";
 import { useParams, useNavigate } from "react-router";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
@@ -189,7 +190,7 @@ export default function SyllabusViewerPage() {
                 order={isMobile ? 5 : 3}
                 lineClamp={1}
               >
-                {courseId}
+                {normalizeCourseCode(courseId)}
               </Text>
             </Group>
 

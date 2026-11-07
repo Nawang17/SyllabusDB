@@ -1,3 +1,4 @@
+import { normalizeCourseCode } from "../../../utils/courseCode.js";
 import { useEffect, useMemo, useState } from "react";
 import {
   collectionGroup,
@@ -200,7 +201,10 @@ export default function MyUploadsPage() {
           syllabus?.professor ?? ""
         }`.toLowerCase();
 
-        if (!hay.includes(q)) return false;
+        if (
+          !hay.includes(q) &&
+          !normalizeCourseCode(course?.code).includes(normalizeCourseCode(q))
+        ) return false;
       }
 
       if (termFilter && String(syllabus?.term) !== termFilter) return false;
@@ -510,7 +514,7 @@ export default function MyUploadsPage() {
                 <Group justify="space-between" mb="xs" align="start">
                   <div>
                     <Text fw={600} size="md">
-                      {course?.code} {course?.title ? `- ${course.title}` : ""}
+                      {normalizeCourseCode(course?.code)} {course?.title ? `- ${course.title}` : ""}
                     </Text>
 
                     <Text size="sm" c="dimmed">

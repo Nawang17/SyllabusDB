@@ -13,12 +13,17 @@ import {
   increment,
   setDoc,
   serverTimestamp,
+  runTransaction,
+  getDocsFromServer,
+  limit,
 } from "firebase/firestore";
 import { ref as storageRef, deleteObject } from "firebase/storage";
 import "./AdminApprovalPage.css";
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router";
-import { Button } from "@mantine/core";
+import { Button, Modal, TextInput, Select, Alert } from "@mantine/core";
+import { normalizeCourseCode } from "../../utils/courseCode.js";
+import { COURSE_TERMS, validateSyllabusEdit, applyPendingSyllabusEdit, cleanupEmptySourceCourse } from "../../utils/adminSyllabusEdit.js";
 const allowedAdminEmail = "nawangsherpa1010@gmail.com"; //
 export default function AdminApprovalPage() {
   useEffect(() => {
@@ -26,6 +31,75 @@ export default function AdminApprovalPage() {
   }, []);
   const [syllabi, setSyllabi] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null);
+  const [draft, setDraft] = useState({ courseCode: "", courseTitle: "", year: "", term: "" });
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [pageError, setPageError] = useState("");
+  const [busyItems, setBusyItems] = useState({});
+
+  const performAction = async (key, action) => {
+    setBusyItems((previous) => ({ ...previous, [key]: true }));
+    setPageError("");
+    try {
+      await action();
+    } catch (error) {
+      setPageError(error.message || "The action failed. Please try again.");
+    } finally {
+      setBusyItems((previous) => ({ ...previous, [key]: false }));
+    }
+  };
+
+  const openEditor = (syllabus) => {
+    setEditError("");
+    setEditing(syllabus);
+    setDraft({ courseCode: normalizeCourseCode(syllabus.courseId), courseTitle: syllabus.courseTitle, year: String(syllabus.year ?? ""), term: syllabus.term || "" });
+  };
+
+  const saveEdit = async (event) => {
+    event.preventDefault();
+    setEditError("");
+    setSaving(true);
+    try {
+      const edit = validateSyllabusEdit(draft);
+      const course = doc(db, "colleges", editing.collegeId, "courses", edit.courseCode);
+      const destination = doc(course, "syllabi", editing.id);
+      await runTransaction(db, (transaction) => applyPendingSyllabusEdit(transaction, {
+        source: editing.ref, destination, course,
+      }, edit));
+      setSyllabi((previous) => previous.map((item) => {
+        if (item.ref.path === editing.ref.path) {
+          return { ...item, ref: destination, courseId: edit.courseCode, courseTitle: edit.courseTitle, year: edit.year, term: edit.term };
+        }
+        if (item.collegeId === editing.collegeId && item.courseId === edit.courseCode) {
+          return { ...item, courseTitle: edit.courseTitle };
+        }
+        return item;
+      }));
+      setEditing(null);
+      setNotice("Upload details saved. Review the updated information before approving.");
+      try {
+        await cleanupEmptySourceCourse(editing.ref, destination, {
+          hasSyllabi: async (sourceCourse) => {
+            const remaining = await getDocsFromServer(query(
+              collection(sourceCourse, "syllabi"), limit(1),
+            ));
+            return !remaining.empty;
+          },
+          deleteCourse: (sourceCourse) => deleteDoc(sourceCourse),
+        });
+      } catch {
+        // The edit already committed; cleanup failure must not suggest retrying
+        // the move, or obscure that the details were successfully saved.
+        setPageError("Upload details were saved, but the old course could not be checked or cleaned up. It has been left in place.");
+      }
+    } catch (error) {
+      setEditError(error.message || "Could not save changes. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
   const [scanResults, setScanResults] = useState({});
   const [scanningIds, setScanningIds] = useState({});
   const [openColleges, setOpenColleges] = useState({});
@@ -127,7 +201,8 @@ export default function AdminApprovalPage() {
 
   const navigate = useNavigate();
   const scanPDF = async (syllabus) => {
-    const { pdf_url, id } = syllabus;
+    const { pdf_url } = syllabus;
+    const id = syllabus.ref.path;
 
     setScanningIds((prev) => ({ ...prev, [id]: true }));
     try {
@@ -154,8 +229,9 @@ export default function AdminApprovalPage() {
       if (!currUser || currUser.email !== allowedAdminEmail) {
         navigate("/login");
       } else {
-        fetchUnapprovedSyllabi(); // ✅ now fetch after confirming admin user
-        fetchUnapprovedColleges(); // fetch college requests
+        Promise.all([fetchUnapprovedSyllabi(), fetchUnapprovedColleges()])
+          .catch((error) => setPageError(error.message || "Could not load pending requests."))
+          .finally(() => setLoading(false));
       }
     });
 
@@ -272,7 +348,7 @@ export default function AdminApprovalPage() {
       },
       { merge: true },
     );
-    setSyllabi((prev) => prev.filter((s) => s.ref.id !== ref.id));
+    setSyllabi((prev) => prev.filter((s) => s.ref.path !== ref.path));
 
     const email = await shouldNotifyUser(owner);
     if (email) {
@@ -356,7 +432,13 @@ export default function AdminApprovalPage() {
 
   return (
     <div className="admin-approval-page">
-      <h2>Admin </h2>
+      <header className="admin-page-header">
+        <div><p className="admin-eyebrow">SYLLABUSDB ADMIN</p><h2>Review uploads</h2>
+        <p>Check syllabus details, make corrections, and approve submissions.</p></div>
+        <span className="admin-pending-count">{syllabi.length} pending uploads</span>
+      </header>
+      {notice && <Alert color="green" withCloseButton onClose={() => setNotice("")} role="status">{notice}</Alert>}
+      {pageError && <Alert color="red" role="alert">{pageError}</Alert>}
       {loading ? (
         <p>Loading...</p>
       ) : syllabi.length === 0 ? (
@@ -370,6 +452,7 @@ export default function AdminApprovalPage() {
               <div key={college} className="college-group">
                 <button
                   onClick={() => toggleCollege(college)}
+                  aria-expanded={!!openColleges[college]}
                   className="dropdown-btn"
                 >
                   {openColleges[college] ? "▼" : "►"} 🏫 {college} (
@@ -383,6 +466,7 @@ export default function AdminApprovalPage() {
                       <div key={key} className="owner-group">
                         <button
                           onClick={() => toggleOwner(college, owner)}
+                          aria-expanded={!!openOwners[key]}
                           className="dropdown-btn inner"
                         >
                           {openOwners[key] ? "▼" : "►"} 👤 {owner.slice(0, 23)}
@@ -391,7 +475,7 @@ export default function AdminApprovalPage() {
 
                         {openOwners[key] &&
                           items.map((s) => (
-                            <div className="syllabus-card" key={s.id}>
+                            <div className="syllabus-card" key={s.ref.path}>
                               <div className="syllabus-info">
                                 {s.createdAt && (
                                   <div>
@@ -403,7 +487,7 @@ export default function AdminApprovalPage() {
                                 </strong>{" "}
                                 – {s.professor}
                                 <br />
-                                📚 <strong>{s.courseId}</strong>:{" "}
+                                📚 <strong>{normalizeCourseCode(s.courseId)}</strong>:{" "}
                                 {s.courseTitle}
                                 <br />
                                 {s.experience_text && (
@@ -420,6 +504,7 @@ export default function AdminApprovalPage() {
                                 )}
                               </div>
                               <div className="syllabus-actions">
+                                <button className="admin-edit-button" disabled={busyItems[s.ref.path]} onClick={() => openEditor(s)}>Edit details</button>
                                 <a
                                   href={s.pdf_url}
                                   target="_blank"
@@ -428,48 +513,51 @@ export default function AdminApprovalPage() {
                                   View PDF
                                 </a>
                                 <button
+                                  className="admin-scan-button"
                                   onClick={() => scanPDF(s)}
-                                  disabled={scanningIds[s.id]}
+                                  disabled={scanningIds[s.ref.path] || busyItems[s.ref.path]}
                                 >
-                                  {scanningIds[s.id]
+                                  {scanningIds[s.ref.path]
                                     ? "🔍 Scanning..."
                                     : "🔍 Scan PDF"}
                                 </button>
                                 <button
+                                  className="admin-approve-button"
+                                  disabled={busyItems[s.ref.path]}
                                   onClick={() =>
-                                    approveSyllabus(
+                                    performAction(s.ref.path, () => approveSyllabus(
                                       s.ref,
                                       s.collegeId,
                                       s.courseId,
                                       s.owner,
-                                    )
+                                    ))
                                   }
                                 >
                                   ✅ Approve
                                 </button>
-                                <button onClick={() => disapproveSyllabus(s)}>
+                                <button className="admin-reject-button" disabled={busyItems[s.ref.path]} onClick={() => performAction(s.ref.path, () => disapproveSyllabus(s))}>
                                   ❌ Disapprove
                                 </button>
                               </div>
 
-                              {scanResults[s.id] && (
+                              {scanResults[s.ref.path] && (
                                 <div className="scan-result">
-                                  {scanResults[s.id].error ? (
+                                  {scanResults[s.ref.path].error ? (
                                     <span className="error">
-                                      {scanResults[s.id].error}
+                                      {scanResults[s.ref.path].error}
                                     </span>
                                   ) : (
                                     <>
                                       🛡️ <strong>Malicious:</strong>{" "}
-                                      {scanResults[s.id].malicious},{" "}
+                                      {scanResults[s.ref.path].malicious},{" "}
                                       <strong>Suspicious:</strong>{" "}
-                                      {scanResults[s.id].suspicious}{" "}
+                                      {scanResults[s.ref.path].suspicious}{" "}
                                       <strong>harmless:</strong>{" "}
-                                      {scanResults[s.id].harmless},{" "}
+                                      {scanResults[s.ref.path].harmless},{" "}
                                       <strong>timeout:</strong>{" "}
-                                      {scanResults[s.id].timeout},{" "}
+                                      {scanResults[s.ref.path].timeout},{" "}
                                       <strong>undetected:</strong>{" "}
-                                      {scanResults[s.id].undetected}
+                                      {scanResults[s.ref.path].undetected}
                                     </>
                                   )}
                                 </div>
@@ -487,6 +575,7 @@ export default function AdminApprovalPage() {
       <div className="college-request-section">
         <button
           onClick={() => setShowCollegeRequests((prev) => !prev)}
+          aria-expanded={showCollegeRequests}
           className="dropdown-btn"
         >
           {showCollegeRequests ? "▼" : "►"} 📚 College Requests (
@@ -524,6 +613,21 @@ export default function AdminApprovalPage() {
           )}
         </div>
       )}
+      <Modal opened={!!editing} onClose={() => !saving && setEditing(null)} title="Edit upload details" centered size="lg" closeOnClickOutside={!saving} closeOnEscape={!saving} withCloseButton={!saving}>
+        <form onSubmit={saveEdit} className="admin-edit-form">
+          <p>Changes are saved before approval. Course names apply to all uploads in the destination course. Changing the code moves only this pending upload; its PDF stays intact.</p>
+          {editError && <Alert color="red" role="alert">{editError}</Alert>}
+          <fieldset disabled={saving}>
+            <div className="admin-edit-grid">
+              <TextInput label="Course code" required value={draft.courseCode} onChange={(e) => setDraft({ ...draft, courseCode: e.target.value })} onBlur={() => setDraft((value) => ({ ...value, courseCode: normalizeCourseCode(value.courseCode) }))} />
+              <TextInput label="Course name" required value={draft.courseTitle} onChange={(e) => setDraft({ ...draft, courseTitle: e.target.value })} />
+              <TextInput label="Year" required inputMode="numeric" maxLength={4} value={draft.year} onChange={(e) => setDraft({ ...draft, year: e.target.value })} />
+              <Select label="Term" required data={COURSE_TERMS} value={draft.term} onChange={(term) => setDraft({ ...draft, term })} allowDeselect={false} disabled={saving} />
+            </div>
+          </fieldset>
+          <div className="admin-edit-actions"><Button variant="default" disabled={saving} onClick={() => setEditing(null)}>Cancel</Button><Button type="submit" loading={saving}>Save changes</Button></div>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { normalizeCourseCode } from "../../utils/courseCode.js";
 import { useState, useEffect, useRef } from "react";
 import { db, storage } from "../../../firebaseConfig";
 import {
@@ -126,12 +127,14 @@ export default function UploadSyllabus() {
     }
 
     const filtered = courseOptions.filter((c) =>
-      c.code.toLowerCase().startsWith(courseCode.toLowerCase()),
+      normalizeCourseCode(c.code).startsWith(normalizeCourseCode(courseCode)),
     );
 
     setCourseSuggestions(filtered);
 
-    const exactMatch = courseOptions.find((c) => c.code === courseCode);
+    const exactMatch = courseOptions.find(
+      (c) => normalizeCourseCode(c.code) === normalizeCourseCode(courseCode),
+    );
     if (exactMatch) {
       setCourseTitle(exactMatch.title);
     }
@@ -143,20 +146,6 @@ export default function UploadSyllabus() {
     if (m >= 2 && m <= 5) return "Spring";
     if (m >= 6 && m <= 8) return "Summer";
     return "Fall";
-  }
-
-  function normalizeCourseCode(input) {
-    if (!input) return "";
-
-    let cleaned = input.trim().toUpperCase();
-    cleaned = cleaned.replace(/\s+/g, "");
-
-    const match = cleaned.match(/^([A-Z]+)([0-9]+[A-Z]?)$/);
-
-    if (!match) return cleaned;
-
-    const [, subject, number] = match;
-    return `${subject} ${number}`;
   }
 
   const selectedCollegeName =
@@ -474,7 +463,9 @@ export default function UploadSyllabus() {
                 value={courseTitle}
                 onChange={(e) => setCourseTitle(e.target.value.trimStart())}
                 required
-                disabled={!!courseOptions.find((c) => c.code === courseCode)}
+                disabled={!!courseOptions.find(
+                  (c) => normalizeCourseCode(c.code) === normalizeCourseCode(courseCode),
+                )}
                 placeholder="e.g. Introduction to Computer Science"
               />
             </label>
