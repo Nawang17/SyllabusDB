@@ -1,0 +1,59 @@
+.settings-page {
+  width: 100%;
+  max-width: var(--page-max-width, 1200px);
+  margin: 2rem auto 4rem;
+  padding: 0 var(--page-gutter, 1rem);
+  color: #0f172a;
+}
+.settings-page .settings-header { margin-bottom: 1.75rem; }
+.settings-page h1 { font-size: clamp(1.8rem, 4vw, 2.5rem); line-height: 1.2; letter-spacing: -.04em; }
+.settings-page .settings-header p { margin-top: .6rem; color: #64748b; font-size: .95rem; line-height: 1.6; }
+.settings-page .settings-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.settings-page .settings-main { display: grid; gap: 1.25rem; min-width: 0; }
+.settings-page .settings-card { padding: 1.5rem; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; min-width: 0; }
+.settings-page .settings-section-title { display: flex; align-items: center; gap: .65rem; margin-bottom: 1.25rem; }
+.settings-page .settings-section-title > svg { flex-shrink: 0; color: #64748b; }
+.settings-page h2 { font-size: 1.05rem; font-weight: 650; letter-spacing: -.02em; }
+.settings-page .settings-toggle .mantine-Switch-body { align-items: flex-start; }
+.settings-page .settings-toggle .mantine-Switch-track { cursor: pointer; margin-top: .15rem; }
+.settings-page .settings-toggle .mantine-Switch-label { padding-top: 0; font-weight: 600; font-size: .95rem; }
+.settings-page .settings-toggle .mantine-Switch-description { font-size: .85rem; line-height: 1.7; margin-top: .4rem; }
+.settings-page .settings-note { margin-top: 1rem; color: #64748b; font-size: .8rem; line-height: 1.75; overflow-wrap: anywhere; }
+.settings-page .settings-note strong { font-weight: 500; }
+.settings-page .settings-note a { color: #1976d2; text-underline-offset: 3px; }
+.settings-page .settings-description { color: #64748b; font-size: .9rem; line-height: 1.75; }
+.settings-page .settings-save-status { display: flex; align-items: center; gap: .35rem; min-height: 24px; margin-top: 1rem; font-size: .8rem; color: #64748b; }
+.settings-page .settings-save-status svg { color: #15803d; }
+.settings-page .settings-links { display: grid; margin-top: .75rem; }
+.settings-page .settings-links a { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 44px; padding: .5rem 0; font-size: .85rem; color: #1976d2; text-decoration: none; }
+.settings-page .settings-links a:hover { text-decoration: underline; }
+.settings-page .settings-links svg { flex-shrink: 0; }
+.settings-page .settings-profile { display: flex; align-items: center; gap: .85rem; }
+.settings-page .settings-profile > div:last-child { min-width: 0; }
+.settings-page .settings-name { font-size: .95rem; font-weight: 600; overflow-wrap: anywhere; }
+.settings-page .settings-email { margin-top: .25rem; color: #64748b; font-size: .85rem; overflow-wrap: anywhere; }
+.settings-page .settings-details { display: grid; gap: .85rem; margin-top: 1.5rem; padding: 1.25rem 0; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+.settings-page .settings-details > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .35rem 1rem; font-size: .85rem; line-height: 1.6; }
+.settings-page .settings-details dt { color: #64748b; }
+.settings-page .settings-details dd { margin: 0; color: #334155; }
+.settings-page .settings-primary, .settings-page .settings-secondary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: .65rem 1rem; border: 1px solid transparent; border-radius: 8px; font: inherit; font-size: .85rem; font-weight: 600; text-decoration: none; cursor: pointer; }
+.settings-page .settings-primary { background: #1e88e5; color: #fff; }
+.settings-page .settings-primary:hover { background: #1976d2; }
+.settings-page .settings-secondary { border-color: #cbd5e1; background: #fff; color: #475569; }
+.settings-page .settings-secondary:hover { background: #f8fafc; }
+.settings-page .settings-secondary:disabled { opacity: .6; cursor: wait; }
+.settings-page .settings-signout { margin-top: 1rem; width: 100%; }
+.settings-page .settings-loading { display: grid; gap: 1rem; }
+.settings-page .settings-error { color: #b91c1c; font-size: .9rem; line-height: 1.7; }
+.settings-page .settings-error button { margin-top: .75rem; }
+.settings-page .settings-feedback-error { margin-top: 1rem; padding: .85rem 1rem; border: 1px solid #fecaca; border-radius: 8px; color: #b91c1c; background: #fef2f2; font-size: .9rem; line-height: 1.6; }
+.settings-page .settings-empty { display: grid; justify-items: center; gap: 1rem; padding: 3rem 1.25rem; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; text-align: center; }
+.settings-page .settings-empty > svg { color: #94a3b8; }
+.settings-page .settings-empty h2 { font-size: 1.25rem; }
+.settings-page .settings-empty p { max-width: 460px; color: #64748b; font-size: .9rem; line-height: 1.7; }
+.settings-page a:focus-visible, .settings-page button:focus-visible { outline: 3px solid #1e88e5; outline-offset: 3px; }
+@media (max-width: 760px) {
+  .settings-page { margin-top: 1.5rem; }
+  .settings-page .settings-grid { grid-template-columns: minmax(0, 1fr); }
+  .settings-page .settings-card { padding: 1.25rem; }
+}
