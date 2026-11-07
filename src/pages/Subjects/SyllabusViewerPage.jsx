@@ -116,7 +116,7 @@ export default function SyllabusViewerPage() {
             <div className="svp-actions">
               <HelpfulButton key={`${collegeId}/${courseId}/${syllabusId}`} collegeId={collegeId} courseId={courseId} syllabusId={syllabusId} />
               <button type="button" className="svp-secondary" onClick={copyLink}><IconCopy size={17} aria-hidden="true" />Copy link</button>
-              {syllabus.pdf_url && <a className="svp-primary" href={syllabus.pdf_url} target="_blank" rel="noopener noreferrer"><IconExternalLink size={17} aria-hidden="true" />Open PDF</a>}
+             
             </div>
           </header>
 
@@ -133,7 +133,7 @@ export default function SyllabusViewerPage() {
           ) : (
             <section className="svp-document" aria-label="Syllabus document">
               <div className="svp-document-toolbar"><span><IconFileDescription size={18} aria-hidden="true" />Syllabus PDF</span><a href={syllabus.pdf_url} target="_blank" rel="noopener noreferrer">Open in new tab<IconExternalLink size={15} aria-hidden="true" /></a></div>
-              <div className="svp-mobile-note">For easier reading on your phone, use <a href={syllabus.pdf_url} target="_blank" rel="noopener noreferrer">Open PDF</a>.</div>
+              <div className="svp-mobile-note">For easier reading on your phone, open pdf in a new tab.</div>
               {previewError ? <div className="svp-empty" role="alert"><h2>Preview unavailable</h2><p>Open the PDF in a new tab to read it.</p><a className="svp-primary" href={syllabus.pdf_url} target="_blank" rel="noopener noreferrer">Open PDF<IconExternalLink size={17} aria-hidden="true" /></a></div> : <div className="svp-preview" aria-busy={!previewLoaded}>
                 {!previewLoaded && <p className="svp-preview-loading" role="status">Loading PDF preview...</p>}
                 <iframe src={syllabus.pdf_url} title={`${courseCode}: ${title}`} onLoad={() => setPreviewLoaded(true)} onError={() => { setPreviewLoaded(true); setPreviewError(true); }} />
