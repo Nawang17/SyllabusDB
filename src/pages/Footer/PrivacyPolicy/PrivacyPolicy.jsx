@@ -1,128 +1,15 @@
-import { useEffect } from "react";
-import "./PrivacyPolicy.css";
+import { Link } from "react-router";
+import InfoPage from "../InfoPage";
 
 export default function PrivacyPolicy() {
-  useEffect(() => {
-    document.title = "SyllabusDB | Privacy Policy";
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
-
-  return (
-    <div className="privacy-page">
-      <h1>Privacy Policy</h1>
-      <p>
-        <strong>Last Updated:</strong> January 15, 2026
-      </p>
-
-      <h2>1. Overview</h2>
-      <p>
-        This Privacy Policy explains what information SyllabusDB collects, how
-        it is used, and the choices available to you. By using SyllabusDB, you
-        agree to the collection and use of information as described in this
-        policy.
-      </p>
-
-      <h2>2. Information We Collect</h2>
-      <ul>
-        <li>
-          <strong>Usage and analytics data:</strong> We collect basic usage data
-          such as page views, referral sources, and general device and browser
-          information. This data may be collected through cookies or similar
-          technologies and may include IP address and approximate location.
-        </li>
-        <li>
-          <strong>Uploaded content:</strong> We collect and store files and
-          metadata you submit (for example: course name, school, and upload
-          date). Uploaded syllabi are intended to be publicly accessible once
-          approved.
-        </li>
-        <li>
-          <strong>Account information (optional):</strong> If you sign in with
-          Google, we collect and store basic account details such as your email
-          address and profile information provided by Google. This is used to
-          manage submissions and support features you choose to enable (such as
-          email notifications).
-        </li>
-      </ul>
-
-      <h2>3. How We Use Information</h2>
-      <ul>
-        <li>Operate, maintain, and improve SyllabusDB</li>
-        <li>Review and moderate uploads for policy compliance</li>
-        <li>Communicate upload status or platform messages when you opt in</li>
-        <li>Monitor for security issues, abuse, and fraud</li>
-      </ul>
-
-      <h2>4. Sharing and Disclosure</h2>
-      <p>
-        We do not sell or rent your personal information. We may share
-        information in the following limited circumstances:
-      </p>
-      <ul>
-        <li>
-          <strong>Service providers:</strong> We use third-party services to
-          host and operate the platform (for example, Firebase) and to measure
-          site performance (for example, Google Analytics). These providers
-          process information under their own policies.
-        </li>
-        <li>
-          <strong>Legal and safety reasons:</strong> We may disclose information
-          if required to comply with law, enforce our policies, or protect the
-          rights, safety, and security of users or the platform.
-        </li>
-      </ul>
-
-      <h2>5. Cookies and Analytics</h2>
-      <p>
-        SyllabusDB may use cookies or similar technologies to support analytics
-        and platform functionality. You can control cookies through your browser
-        settings. Note that disabling cookies may affect certain features.
-      </p>
-
-      <h2>6. Data Storage and Security</h2>
-      <p>
-        SyllabusDB stores data using Firebase. We apply reasonable safeguards to
-        protect information; however, no method of storage or transmission is
-        fully secure, and we cannot guarantee absolute security.
-      </p>
-
-      <h2>7. Data Retention</h2>
-      <p>
-        We retain information for as long as necessary to operate the platform,
-        comply with legal obligations, resolve disputes, and enforce our
-        policies. You may request deletion of your account information or
-        uploads as described below.
-      </p>
-
-      <h2>8. Your Choices</h2>
-      <ul>
-        <li>
-          Request removal of your uploads or deletion of your account
-          information by contacting us
-        </li>
-        <li>Manage email notification preferences in Settings at any time</li>
-        <li>Control cookies through your browser settings</li>
-      </ul>
-
-      <h2>9. Children’s Privacy</h2>
-      <p>
-        SyllabusDB is intended for use by college and university students. We do
-        not knowingly collect personal information from children under the age
-        of 13. If we become aware that such information has been collected, we
-        will delete it.
-      </p>
-
-      <h2>10. Changes to This Policy</h2>
-      <p>
-        We may update this Privacy Policy from time to time. Changes will be
-        posted on this page with an updated “Last Updated” date.
-      </p>
-
-      <h2>11. Contact</h2>
-      <p>
-        For privacy-related questions or requests, contact{" "}
-        <a href="mailto:katophh@gmail.com">katophh@gmail.com</a>.
-      </p>
-    </div>
-  );
+  return <InfoPage title="Privacy policy" intro="This page explains what information SyllabusDB handles, what becomes public, and how to contact us about your data." updated>
+    <section><h2>1. Information the site handles</h2><ul><li><strong>Account information.</strong> Google sign-in provides account details such as your email, display name, profile image, and account identifier. We store profile details and notification preferences to support your account and submissions.</li><li><strong>Anonymous submissions.</strong> If you submit without Google sign-in, Firebase creates an anonymous account identifier that can be associated with your upload or college request. Submitting without signing in does not mean no data is stored.</li><li><strong>Files and contributions.</strong> We store PDFs, file names, course details, professor names, terms, years, submission dates, college requests, and any optional rating or written review you provide.</li><li><strong>Usage information.</strong> The site uses Google Analytics to measure visits and interactions, including college page views. Analytics may process browser and device information, page activity, identifiers, and approximate location under Google's policies.</li><li><strong>Messages.</strong> If you contact us, we receive your email address and any information you include.</li></ul></section>
+    <section className="info-note"><h2>2. What becomes public</h2><p>Approved syllabi, course details, ratings, and written experiences are displayed publicly. Do not include student records, private contact details, passwords, or other sensitive information in your files or reviews.</p><p>Your account email is not displayed as part of the public syllabus view. Files are stored with download links; anyone with a working file link may be able to access the PDF. Removal from a listing cannot recall copies that others already downloaded or shared.</p></section>
+    <section><h2>3. Why we use information</h2><ul><li>Authenticate users, associate submissions with accounts, and show users their uploads.</li><li>Store documents and organize colleges, courses, and syllabi.</li><li>Review contributions, respond to reports, and address misuse.</li><li>Send submission-related notifications according to account preferences.</li><li>Understand site usage and improve the service.</li><li>Respond to support, privacy, and removal requests.</li></ul></section>
+    <section><h2>4. Providers and sharing</h2><p>We use Google Firebase for authentication, database storage, and PDF storage, and Google Analytics for usage measurement. A notification backend hosted on Render receives submission details to support notifications and review. These providers may process data on servers outside your region.</p><p>See <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener noreferrer">Firebase's privacy information</a> and <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google's Privacy Policy</a> for their practices.</p><p>We do not sell or rent your personal information. We may disclose information when needed to comply with legal requirements, investigate abuse, or protect the service and other people. Public contributions are accessible as described above.</p></section>
+    <section><h2>5. Cookies and browser storage</h2><p>Authentication, analytics, and caching use cookies or other browser storage. The site caches college listings locally, and Firebase can store database data in your browser to support faster loading and offline access.</p><p>You can clear site data or restrict storage in your browser. This may sign you out, clear cached data, or disrupt features. Clearing an anonymous session can prevent you from accessing the same anonymous account again; it does not delete submissions stored on our servers.</p><p>You can also review Google's <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer">Analytics opt-out browser add-on</a>.</p></section>
+    <section><h2>6. Retention and security</h2><p>Uploaded content is retained to provide the library unless removed through moderation or a removal request. Account, submission, and support records may be retained as needed to operate the service, address misuse and disputes, or meet legal obligations. Provider logs and backups may follow separate retention schedules.</p><p>No storage or transmission system is completely secure. Avoid submitting sensitive information, and contact us if you believe a document exposes private data.</p></section>
+    <section><h2>7. Your choices and requests</h2><ul><li>Browse without signing in or submitting content.</li><li>Manage submission email preferences in <Link to="/settings">Settings</Link> when signed in.</li><li>Request access to, correction of, or deletion of your personal information by emailing <a href="mailto:katophh@gmail.com">katophh@gmail.com</a>.</li><li>Use the <Link to="/takedown">removal request process</Link> for a PDF or review that should not be public.</li></ul><p>Include the relevant account email or page links, but do not send passwords or unnecessary identity documents. We may need to verify your connection to the account or content before acting. Available privacy rights depend on where you live; we will consider requests under applicable law.</p></section>
+    <section><h2>8. Children, updates, and contact</h2><p>SyllabusDB is intended for college students and is not directed to children under 13. If you believe a child under 13 has submitted personal information, email us so we can investigate and remove it as appropriate.</p><p>This policy covers the SyllabusDB website. The browser extension has a separate <Link to="/extension-privacy-policy">privacy policy</Link>. Updates to this page will include a revised date. For questions, contact <a href="mailto:katophh@gmail.com">katophh@gmail.com</a>.</p></section>
+  </InfoPage>;
 }

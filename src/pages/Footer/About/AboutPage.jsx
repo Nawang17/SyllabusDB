@@ -1,102 +1,11 @@
-import { useEffect } from "react";
-import "./AboutPage.css";
+import { Link } from "react-router";
+import InfoPage from "../InfoPage";
 
 export default function AboutPage() {
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    document.title = "About SyllabusDB";
-  }, []);
-
-  return (
-    <div className="about-page">
-      <h1>About SyllabusDB</h1>
-
-      <p>
-        Choosing classes can be challenging. Course catalogs often provide
-        high-level descriptions but leave out practical details such as grading
-        policies, workload expectations, weekly topics, and assignment types.
-        SyllabusDB exists to help students better understand what to expect
-        before enrolling.
-      </p>
-
-      <h2>What You’ll Find</h2>
-      <ul>
-        <li>Course syllabi from past semesters shared by students</li>
-        <li>
-          Practical information that helps clarify course structure and
-          expectations
-        </li>
-        <li>
-          A growing, community-supported library that improves as more students
-          contribute
-        </li>
-      </ul>
-
-      <h2>How the Platform Works</h2>
-      <ul>
-        <li>Students may upload syllabi they received in their own courses</li>
-        <li>All submissions are reviewed before being published</li>
-        <li>
-          Optional sign-in allows users to track submissions and receive updates
-        </li>
-      </ul>
-
-      <h2>What SyllabusDB Does Not Provide</h2>
-      <ul>
-        <li>
-          Exams, quizzes, homework assignments, answer keys, or textbook
-          materials
-        </li>
-        <li>
-          Official or current course requirements for any specific semester
-        </li>
-      </ul>
-
-      <p>
-        Uploaded syllabi are provided for reference only. Course content,
-        grading policies, and requirements may change over time and should
-        always be confirmed through official instructor or institutional
-        sources.
-      </p>
-
-      <h2>Respect for Instructors and Institutions</h2>
-      <p>
-        SyllabusDB respects the intellectual property rights of instructors and
-        institutions. We do not claim ownership of uploaded syllabi. If an
-        instructor, institution, or rights holder requests removal of material,
-        we review and honor valid requests in accordance with our{" "}
-        <a href="/takedown">Takedown Policy</a>.
-      </p>
-
-      <h2>How You Can Contribute</h2>
-      <p>
-        If you have a past syllabus that you are permitted to share, your
-        contribution can help other students plan more confidently and make
-        informed academic decisions.
-      </p>
-
-      <p>
-        SyllabusDB is developed as an open-source project to keep the platform
-        transparent, collaborative, and sustainable. Feedback, contributions,
-        and ideas from the community help shape where it goes next.
-      </p>
-
-      <p>
-        The source code is publicly available on{" "}
-        <a
-          href="https://github.com/Nawang17/SyllabusDB"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          GitHub
-        </a>
-        .
-      </p>
-
-      <p style={{ marginTop: "1rem" }}>
-        Questions or feedback? Contact us at{" "}
-        <a href="mailto:katophh@gmail.com">katophh@gmail.com</a>.
-      </p>
-    </div>
-  );
+  return <InfoPage title="About SyllabusDB" intro="A student-built library of past college syllabi, helping you understand a class before you enroll.">
+    <section><h2>Look beyond the course description</h2><p>A syllabus can tell you how a class is graded, what you will study, and what the workload might look like. SyllabusDB brings student-shared syllabi together so you can explore those details by college, subject, and course.</p></section>
+    <section><h2>How it works</h2><ol><li><strong>Find your college.</strong> Browse subjects and courses, then open a syllabus from a past term.</li><li><strong>Learn from other students.</strong> Some uploads include an optional class rating or written experience.</li><li><strong>Share what helped you.</strong> Upload a syllabus you have permission to share. Submissions are reviewed before they are listed.</li></ol><p>You can browse without signing in. Signing in helps you manage your uploads and notification preferences.</p><div className="info-actions"><Link to="/colleges">Browse colleges</Link><Link to="/uploadsyllabus">Share a syllabus</Link></div></section>
+    <section className="info-note"><h2>A reference, not an official source</h2><p>SyllabusDB is an independent project, not an official college service. Past syllabi and student reviews may not reflect the current class. Confirm requirements with your instructor or institution.</p></section>
+    <section><h2>Built with the community</h2><p>Missing a school? <Link to="/requestcollege">Request your college</Link>. Before contributing, read the <Link to="/guidelines">upload guidelines</Link>. If a document should not be here, <Link to="/takedown">request its removal</Link>.</p><p>The project is open source on <a href="https://github.com/Nawang17/SyllabusDB" target="_blank" rel="noopener noreferrer">GitHub</a>. Questions or ideas? Email <a href="mailto:katophh@gmail.com">katophh@gmail.com</a>.</p></section>
+  </InfoPage>;
 }

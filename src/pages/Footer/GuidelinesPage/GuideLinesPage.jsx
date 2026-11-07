@@ -1,96 +1,12 @@
-import { useEffect } from "react";
-import "./GuideLinesPage.css";
+import { Link } from "react-router";
+import InfoPage from "../InfoPage";
 
 export default function GuidelinesPage({ ismodal }) {
-  useEffect(() => {
-    document.title = "SyllabusDB | Guidelines";
-    !ismodal && window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [ismodal]);
-
-  return (
-    <div
-      style={{ marginTop: ismodal ? 0 : "2rem" }}
-      className="guidelines-page"
-    >
-      <h1>Community Guidelines</h1>
-      <p>
-        SyllabusDB is an educational platform designed to help students make
-        informed course decisions by sharing past course syllabi. These
-        guidelines outline what may be uploaded and how content is reviewed to
-        ensure accuracy, safety, and compliance.
-      </p>
-
-      <h2>Permitted Uploads</h2>
-      <ul className="guidelines-list">
-        <li>
-          Official course syllabi or course outlines from classes you personally
-          completed
-        </li>
-        <li>PDF documents only, with a maximum file size of 5 MB</li>
-        <li>
-          Documents that do not contain personal, sensitive, or private
-          information
-        </li>
-        <li>
-          Content that is factual, unaltered, and directly related to the course
-        </li>
-        <li>
-          Materials you have the legal right and any required permission to
-          share, including permission from the instructor or institution when
-          applicable
-        </li>
-      </ul>
-
-      <h2>Prohibited Content</h2>
-      <ul className="guidelines-list">
-        <li>Edited, fabricated, misleading, or incomplete documents</li>
-        <li>
-          Homework assignments, quizzes, exams, solutions, textbook pages, or
-          other instructional materials beyond syllabi
-        </li>
-        <li>
-          Confidential or restricted documents, including materials marked “do
-          not distribute”
-        </li>
-        <li>Advertisements, spam, or content unrelated to academic courses</li>
-      </ul>
-
-      <h2>Review and Enforcement</h2>
-      <ul className="guidelines-list">
-        <li>All uploads are reviewed prior to publication</li>
-        <li>
-          Files may be scanned for malware, policy violations, or restricted
-          content
-        </li>
-        <li>
-          Content that violates these Guidelines or the Terms of Service may be
-          rejected or removed, and repeated violations may result in loss of
-          upload privileges
-        </li>
-      </ul>
-
-      <h2>Important Notices</h2>
-      <ul className="guidelines-list">
-        <li>
-          Course syllabi may be updated by instructors over time. Uploaded
-          syllabi are provided for reference only and may not reflect current
-          course policies or requirements.
-        </li>
-        <li>
-          By uploading content, you confirm that you have the right and
-          permission to share the material on SyllabusDB.
-        </li>
-        <li>
-          If an instructor, institution, or rights holder submits a valid
-          removal request, the content will be removed in accordance with our{" "}
-          <a href="/takedown">Takedown Policy</a>.
-        </li>
-      </ul>
-
-      <p className="guidelines-footer">
-        SyllabusDB is intended for responsible academic use. Users are expected
-        to contribute accurate, respectful, and compliant content.
-      </p>
-    </div>
-  );
+  return <InfoPage title="Upload guidelines" intro="Share useful course information while respecting instructors, other students, and the rights of content owners." ismodal={ismodal}>
+    <section><h2>Before you upload</h2><ul><li>Upload a course syllabus or outline from a class you took, and only when you have the right and any required permission to share it.</li><li>Use a readable PDF of up to 5 MB.</li><li>Choose the correct college, course code, course name, professor, term, and year.</li><li>Check the document for private information. Remove student names, IDs, grades, personal contact details, meeting passwords, and access codes before sharing. Keep the course information accurate.</li><li>Check whether the same syllabus is already listed.</li></ul></section>
+    <section><h2>Keep these materials off the site</h2><ul><li>Exams, quizzes, homework submissions, answer keys, and solution manuals.</li><li>Textbook pages, paid resources, and other materials beyond course syllabi or outlines.</li><li>Confidential or restricted files, including documents marked "do not distribute," unless you have authorization to share them.</li><li>Fabricated documents, misleading course details, spam, or malicious files.</li></ul></section>
+    <section><h2>Write helpful student reviews</h2><p>Ratings and written experiences are optional and may be displayed publicly with the syllabus. Describe your own class experience: workload, grading, assignments, and what helped you prepare.</p><p>Keep criticism specific and respectful. Do not include harassment, threats, private information, discriminatory remarks, or unsupported accusations about individuals.</p></section>
+    <section><h2>What happens after submission</h2><p>Uploads are reviewed before publication. We may correct course details, reject unsuitable submissions, or remove content that violates these guidelines. Review does not verify every statement or guarantee that a file is accurate, current, or safe.</p><p>If you signed in, check <Link to="/myuploads">My uploads</Link> for your submissions and <Link to="/settings">Settings</Link> for notification preferences.</p></section>
+    <section className="info-note"><h2>Need something corrected or removed?</h2><p>Use the <Link to="/takedown">removal request process</Link> or email <a href="mailto:katophh@gmail.com">katophh@gmail.com</a> with the page link and a short explanation. Uploading is also subject to our <Link to="/termsofservice">Terms of Service</Link>.</p></section>
+  </InfoPage>;
 }
