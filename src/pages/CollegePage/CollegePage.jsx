@@ -12,12 +12,12 @@ import {
   where,
 } from "firebase/firestore";
 import { IconChevronRight, IconMapPin } from "@tabler/icons-react";
-import { Button, Flex, Image, Skeleton } from "@mantine/core";
+import { Button, Flex, Image } from "@mantine/core";
 import errorImage from "../../assets/5203299.jpg"; // Error image for not found
 import collegeIllustration from "../../assets/college_illustration.jpg";
 import { logEvent } from "firebase/analytics";
-import { IconInfoCircle } from "@tabler/icons-react";
-import { Alert } from "@mantine/core";
+
+
 export default function CollegePage() {
   const [loading, setLoading] = useState(true);
 
@@ -31,7 +31,7 @@ export default function CollegePage() {
   const [collegeImage, setCollegeImage] = useState("");
   const [error, setError] = useState(null);
   const [totalSyllabiCount, setTotalSyllabiCount] = useState(0);
-  const [showScrollTop, setShowScrollTop] = useState(false);
+
   const [subjectMap, setSubjectMap] = useState({});
   const [nickname, setNickname] = useState("");
 
@@ -51,15 +51,6 @@ export default function CollegePage() {
   }, [collegeId]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
     scrollToTop();
   }, []);
   const scrollToTop = () => {
@@ -67,11 +58,14 @@ export default function CollegePage() {
   };
 
   useEffect(() => {
+    let active = true;
     const fetchCollegeAndCourses = async () => {
       try {
         setLoading(true);
+        setError(null);
         const collegeDocRef = doc(db, "colleges", collegeId);
         const collegeDocSnap = await getDoc(collegeDocRef);
+        if (!active) return;
 
         if (!collegeDocSnap.exists()) {
           setError("College not found.");
@@ -82,13 +76,14 @@ export default function CollegePage() {
         setNickname(data.nickname || "");
         setCollegeImage(data.image_url || null);
         setCollegeName(data.name || "");
-        setCollegeLocation(`${data.city || ""}, ${data.state || ""}`);
+        setCollegeLocation([data.city, data.state].filter(Boolean).join(", "));
         setTotalSyllabiCount(data.approvedSyllabiTotal || 0);
         const courseQuery = query(
           collection(db, "colleges", collegeId, "courses"),
           where("approved", "==", true),
         );
         const courseSnapshot = await getDocs(courseQuery);
+        if (!active) return;
         const courseList = courseSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
@@ -112,170 +107,77 @@ export default function CollegePage() {
         setSubjectMap(grouped);
       } catch (err) {
         console.error("Error:", err);
-        setError("Something went wrong.");
+        if (active) setError("We couldn't load this college. Please try again later.");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     fetchCollegeAndCourses();
+    return () => { active = false; };
   }, [collegeId]);
 
+  const queryText = search.trim().toLowerCase();
   const filteredSubjects = Object.entries(subjectMap)
-    .filter(([subject]) => subject.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => b[1].syllabiCount - a[1].syllabiCount);
+    .filter(([subject, data]) => subject.toLowerCase().includes(queryText) ||
+      data.courses.some((course) => [course.code, course.name, course.title].some((value) => String(value || "").toLowerCase().includes(queryText))))
+    .sort(([a], [b]) => a.localeCompare(b));
+  const uploadPath = `/uploadsyllabus/${encodeURIComponent(collegeId)}`;
 
   return (
-    <>
-      {!loading && error ? (
-        <Flex gap={"1rem"} direction="column" align="center" justify="center">
-          <Image
-            src={errorImage}
-            alt="Error"
-            style={{ width: "300px", height: "300px" }}
-          />
-          <p>{error}</p>
-          <Button onClick={() => navigate("/")}>Go to Home</Button>
+    <main className="college-page">
+      {/* <Link className="cp-back" to="/colleges"><span aria-hidden="true">&larr;</span> All colleges</Link> */}
+      {loading ? (
+        <div className="cp-empty" role="status"><p>Loading college and subjects...</p></div>
+      ) : error ? (
+        <Flex className="cp-empty" gap="1rem" direction="column" align="center">
+          <Image src={errorImage} alt="" w={180} h={180} />
+          <h1>College unavailable</h1><p role="alert">{error}</p>
+          <Button onClick={() => navigate("/colleges")}>Browse colleges</Button>
         </Flex>
       ) : (
-        <div className="college-page">
-          <div className="college-hero">
-            <Image
-              src={collegeImage ? collegeImage : collegeIllustration}
-              className="college-hero-img"
-              alt={collegeName}
-            />
-            <div className="college-hero-overlay">
-              <div className="college-hero-title">{collegeName}</div>
-              <div className="college-hero-location">
-                <IconMapPin size={16} /> {collegeLocation}
+        <>
+          <header className="cp-header">
+            <Image src={collegeImage || collegeIllustration} fallbackSrc={collegeIllustration} className="cp-cover" alt="" />
+            <div className="cp-identity">
+              <div className="cp-heading">
+                <h1>{collegeName}</h1>
+                {collegeLocation && <p className="cp-location"><IconMapPin size={16} aria-hidden="true" />{collegeLocation}</p>}
+                {nickname && nickname !== collegeName && <p className="cp-nickname">{nickname}</p>}
+                <p className="cp-summary">
+                  <span>{totalSyllabiCount.toLocaleString()} {totalSyllabiCount === 1 ? "syllabus" : "syllabi"}</span>
+                  <span>{courses.length.toLocaleString()} {courses.length === 1 ? "course" : "courses"}</span>
+                  <span>{Object.keys(subjectMap).length.toLocaleString()} {Object.keys(subjectMap).length === 1 ? "subject" : "subjects"}</span>
+                </p>
               </div>
             </div>
-          </div>
-          <div className="college-header">
-            <div className="breadcrumb-nav">
-              <Link to={`/`} className="breadcrumb-link">
-                Home
-              </Link>
-              <IconChevronRight size={16} />
-              <Link to={`/college/${collegeId}`} className="breadcrumb-current">
-                {nickname ? nickname : collegeName}
-              </Link>
+            <Link className="cp-primary" to={uploadPath}>Upload a syllabus</Link>
+          </header>
+          <section className="cp-browse" aria-labelledby="cp-subjects-title">
+            <div className="cp-browse-header">
+              <div><h2 id="cp-subjects-title">Browse subjects</h2><p>Choose a subject to explore its courses and syllabi.</p></div>
+              {courses.length > 0 && <input type="search" className="cp-search" aria-label="Search subjects or courses" placeholder="Search subjects or courses" value={search} onChange={(event) => setSearch(event.target.value)} />}
             </div>
-            {courses.length > 0 && (
-              <Button onClick={() => navigate(`/uploadsyllabus/${collegeId}`)}>
-                Upload Syllabus
-              </Button>
+            {courses.length === 0 ? (
+              <div className="cp-empty"><h3>No syllabi here yet</h3><p>Share a syllabus to help students plan their classes.</p><Link className="cp-primary" to={uploadPath}>Share the first syllabus</Link></div>
+            ) : filteredSubjects.length === 0 ? (
+              <div className="cp-empty" role="status"><h3>No subjects found</h3><p>Try another subject code or course name.</p><button className="cp-secondary" onClick={() => setSearch("")}>Clear search</button></div>
+            ) : (
+              <>
+                {queryText && <p className="cp-result-count" role="status">{filteredSubjects.length} {filteredSubjects.length === 1 ? "subject" : "subjects"} found</p>}
+                <ul className="cp-subject-grid">
+                  {filteredSubjects.map(([subject, data]) => <li key={subject}>
+                    <Link className="cp-subject" to={`/college/${encodeURIComponent(collegeId)}/subject/${encodeURIComponent(subject)}`}>
+                      <div><h3>{subject}</h3><p>{data.courses.length} {data.courses.length === 1 ? "course" : "courses"}<span aria-hidden="true"> · </span>{data.syllabiCount.toLocaleString()} {data.syllabiCount === 1 ? "syllabus" : "syllabi"}</p></div>
+                      <IconChevronRight size={19} aria-hidden="true" />
+                    </Link>
+                  </li>)}
+                </ul>
+              </>
             )}
-          </div>
-          {!loading && courses.length > 0 && (
-            <>
-              <div className="total-syllabi-banner">
-                Browse{" "}
-                <span className="syllabi-count">{totalSyllabiCount}</span>{" "}
-                course syllabi
-              </div>
-              <div className="search-and-controls">
-                <label htmlFor="subject-search" className="search-label">
-                  Search for your subject
-                </label>
-                <input
-                  id="subject-search"
-                  type="text"
-                  className="syllabus-search"
-                  placeholder="e.g. CSCI, ACC, MATH..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </>
-          )}
-          {!loading && (
-            <div className="subject-list">
-              {filteredSubjects.length === 0 && !loading ? (
-                <div className="no-courses-found">
-                  {courses.length > 0 ? (
-                    <p>
-                      No subjects matched your search. Try a different name .
-                    </p>
-                  ) : (
-                    <>
-                      <p>No syllabi have been added for this college yet.</p>
-                      <p> Be the first to share a syllabus!</p>
-                    </>
-                  )}
-                  <Button
-                    onClick={() => navigate(`/uploadsyllabus/${collegeId}`)}
-                  >
-                    Upload Syllabus
-                  </Button>
-                </div>
-              ) : (
-                filteredSubjects.map(([subject, data]) => (
-                  <div
-                    key={subject}
-                    className="subject-card fade-in"
-                    onClick={() =>
-                      navigate(`/college/${collegeId}/subject/${subject}`)
-                    }
-                  >
-                    <div className="subject-main">
-                      <div className="subject-title">
-                        {search ? (
-                          <>
-                            {subject.slice(
-                              0,
-                              subject
-                                .toLowerCase()
-                                .indexOf(search.toLowerCase()),
-                            )}
-                            <strong>
-                              {subject.slice(
-                                subject
-                                  .toLowerCase()
-                                  .indexOf(search.toLowerCase()),
-                                subject
-                                  .toLowerCase()
-                                  .indexOf(search.toLowerCase()) +
-                                  search.length,
-                              )}
-                            </strong>
-                            {subject.slice(
-                              subject
-                                .toLowerCase()
-                                .indexOf(search.toLowerCase()) + search.length,
-                            )}
-                          </>
-                        ) : (
-                          subject
-                        )}
-                      </div>
-
-                      <div className="subject-count">
-                        {data.syllabiCount} syllabi
-                      </div>
-                    </div>
-                    <div className="expand-icon">
-                      <IconChevronRight />
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-          {loading && (
-            <div className="loading-spinner">
-              <div className="spinner"></div>
-              <p>Loading subjects...</p>
-            </div>
-          )}
-          {showScrollTop && (
-            <button className="scroll-to-top" onClick={scrollToTop}>
-              ↑ Scroll to Top
-            </button>
-          )}
-        </div>
+          </section>
+        </>
       )}
-    </>
+    </main>
   );
 }
