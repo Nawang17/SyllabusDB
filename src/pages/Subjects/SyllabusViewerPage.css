@@ -25,6 +25,15 @@
 .syllabus-viewer-page .svp-primary:hover { background: #1976d2; }
 .syllabus-viewer-page .svp-secondary { color: #475569; background: #fff; border-color: #cbd5e1; }
 .syllabus-viewer-page .svp-secondary:hover { background: #f8fafc; }
+.syllabus-viewer-page .svp-helpful.is-helpful { border-color: #90caf9; background: #eff6ff; color: #1976d2; }
+.syllabus-viewer-page .svp-helpful:disabled { opacity: .6; cursor: default; }
+.syllabus-viewer-page .svp-helpful-count { font-variant-numeric: tabular-nums; }
+.svp-signin-copy { color: #64748b; font-size: .95rem; line-height: 1.7; }
+.svp-signin-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: .75rem; margin-top: 1.25rem; }
+.svp-signin-actions > * { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: .65rem 1rem; border-radius: 8px; font: inherit; font-size: .9rem; text-decoration: none; cursor: pointer; }
+.svp-signin-later { border: 1px solid #cbd5e1; color: #475569; background: #fff; }
+.svp-signin-link { background: #1e88e5; color: #fff; }
+.svp-signin-actions > *:focus-visible { outline: 3px solid #1e88e5; outline-offset: 3px; }
 .syllabus-viewer-page .svp-review { margin-bottom: 1.25rem; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; }
 .syllabus-viewer-page .svp-review-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .25rem .75rem; padding: .5rem 1rem; }
 .syllabus-viewer-page .svp-review-summary { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; min-height: 44px; font-size: .85rem; color: #64748b; }

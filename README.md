@@ -9,6 +9,7 @@ Know your class before you enroll.
 - **Find your college:** search by name or abbreviation, or browse the alphabetical college directory.
 - **Explore subjects and courses:** search course codes and names, then expand a course to see available syllabi.
 - **Read a syllabus:** preview the PDF, open it in a new tab, or copy a link to share it.
+- **Mark helpful syllabi:** sign in to vote once per syllabus, or tap again to undo. Helpful counts are public.
 - **Learn from student experiences:** view optional class ratings and written reviews attached to submissions.
 - **Contribute:** upload a syllabus PDF up to 5 MB, with its college, course, professor, term, and year.
 - **Request a college:** submit a school that is missing from the directory.
@@ -24,7 +25,7 @@ Browsing does not require sign-in. Submissions made without Google sign-in use F
 - Node.js 22 or newer and npm.
 - A Firebase project with Firestore, Storage, Authentication, and an Analytics configuration.
 - Google and Anonymous authentication providers enabled for the submission flows.
-- Firestore and Storage access rules and any required indexes configured for your project. This repository does not include their deployment configuration.
+- Firestore and Storage access rules and any required indexes configured for your project. Firestore rules are included in `firestore.rules`; Storage rules and index configuration are managed separately.
 
 ### Setup
 
@@ -67,6 +68,8 @@ Open the local URL printed by Vite. For local work, use a separate Firebase proj
 The test suite covers course-code handling, upload validation, college search and directory behavior, college requests, and admin editing utilities. It does not cover the full browser or Firebase integration flows.
 
 ## Services and deployment
+
+Publish the included Firestore rules before deploying the Helpful feature. See [Helpful vote setup](docs/helpful-votes.md) for console/CLI steps and verification.
 
 The frontend uses **React 19**, **Vite 6**, **React Router 7**, **Mantine 8**, and **Tabler Icons**. Firebase provides authentication, Firestore data, PDF storage, and analytics.
 

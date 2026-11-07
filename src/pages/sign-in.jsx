@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -10,7 +10,8 @@ import {
   Alert,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
+import { safeSignInReturn } from "../utils/signInReturn.js";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -27,6 +28,8 @@ export default function SignIn() {
   const auth = getAuth();
   const db = getFirestore();
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = safeSignInReturn(new URLSearchParams(location.search).get("returnTo"));
 
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("");
@@ -36,13 +39,13 @@ export default function SignIn() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!!user && !user.isAnonymous) {
-        navigate("/");
+        navigate(returnTo, { replace: true });
       }
     });
 
     return unsubscribe;
-  }, [auth, navigate]);
-  const createUserDocIfNeeded = async (user) => {
+  }, [auth, navigate, returnTo]);
+  const createUserDocIfNeeded = useCallback(async (user) => {
     const userRef = doc(db, "users", user.uid);
     const snap = await getDoc(userRef);
 
@@ -61,7 +64,7 @@ export default function SignIn() {
         body: JSON.stringify({ message: "new user" }),
       });
     }
-  };
+  }, [db]);
 
   useEffect(() => {
     const finishEmailLinkSignIn = async () => {
@@ -96,7 +99,7 @@ export default function SignIn() {
           position: "bottom-center",
         });
 
-        navigate("/");
+        navigate(returnTo, { replace: true });
       } catch (err) {
         console.error(err);
         setError("Email sign-in failed. Try requesting a new link.");
@@ -106,7 +109,7 @@ export default function SignIn() {
     };
 
     finishEmailLinkSignIn();
-  }, []);
+  }, [auth, createUserDocIfNeeded, navigate, returnTo]);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -126,7 +129,7 @@ export default function SignIn() {
         position: "bottom-center",
       });
 
-      navigate("/");
+      navigate(returnTo, { replace: true });
     } catch (err) {
       console.error(err);
       setError("Google sign-in failed. Please try again.");
@@ -146,7 +149,7 @@ export default function SignIn() {
       setError("");
 
       const actionCodeSettings = {
-        url: `${window.location.origin}/signin`,
+        url: `${window.location.origin}/signin?returnTo=${encodeURIComponent(returnTo)}`,
         handleCodeInApp: true,
       };
 

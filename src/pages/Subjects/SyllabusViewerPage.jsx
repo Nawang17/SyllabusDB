@@ -14,6 +14,7 @@ import {
 } from "@tabler/icons-react";
 import { db } from "../../../firebaseConfig";
 import "./SyllabusViewerPage.css";
+import HelpfulButton from "../../components/HelpfulButton";
 
 const ratingLabels = { 1: "Rough class", 2: "Pretty tough", 3: "Manageable", 4: "Good class", 5: "Would recommend" };
 
@@ -113,6 +114,7 @@ export default function SyllabusViewerPage() {
               </dl>}
             </div>
             <div className="svp-actions">
+              <HelpfulButton key={`${collegeId}/${courseId}/${syllabusId}`} collegeId={collegeId} courseId={courseId} syllabusId={syllabusId} />
               <button type="button" className="svp-secondary" onClick={copyLink}><IconCopy size={17} aria-hidden="true" />Copy link</button>
               {syllabus.pdf_url && <a className="svp-primary" href={syllabus.pdf_url} target="_blank" rel="noopener noreferrer"><IconExternalLink size={17} aria-hidden="true" />Open PDF</a>}
             </div>
