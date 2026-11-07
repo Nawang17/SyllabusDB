@@ -433,8 +433,8 @@ export default function AdminApprovalPage() {
   return (
     <div className="admin-approval-page">
       <header className="admin-page-header">
-        <div><p className="admin-eyebrow">SYLLABUSDB ADMIN</p><h2>Review uploads</h2>
-        <p>Check syllabus details, make corrections, and approve submissions.</p></div>
+        <div><p className="admin-eyebrow">SYLLABUSDB ADMIN</p>
+      </div>
         <span className="admin-pending-count">{syllabi.length} pending uploads</span>
       </header>
       {notice && <Alert color="green" withCloseButton onClose={() => setNotice("")} role="status">{notice}</Alert>}
@@ -446,7 +446,7 @@ export default function AdminApprovalPage() {
       ) : (
         <>
           <div className="syllabus-list">
-            <h3>Total Pending: {syllabi.length}</h3>
+            {/* <h3>Total Pending: {syllabi.length}</h3> */}
 
             {Object.entries(groupedByCollege).map(([college, owners]) => (
               <div key={college} className="college-group">
