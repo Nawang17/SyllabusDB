@@ -1,177 +1,141 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+﻿import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router";
+import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { getAuth, signInAnonymously } from "firebase/auth";
+import { IconArrowLeft, IconCheck, IconLoader2 } from "@tabler/icons-react";
 import { db } from "../../../firebaseConfig";
-import "./RequestCollege.css";
 import { generateCollegeId } from "../../utils/adminCollegeEdit.js";
+import { validateCollegeRequest, createCollegeRequest } from "../../utils/collegeRequest.js";
+import "./RequestCollege.css";
+
+const emptyDraft = { name: "", city: "", state: "" };
 
 export default function RequestCollege() {
-  const [collegeName, setCollegeName] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [draft, setDraft] = useState(emptyDraft);
+  const [submitted, setSubmitted] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-
-  const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [duplicate, setDuplicate] = useState(null);
+  const pendingRef = useRef(false);
+  const nameRef = useRef(null);
+  const successRef = useRef(null);
+  const errorRef = useRef(null);
 
   useEffect(() => {
     document.title = "SyllabusDB | Request a College";
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
+  useEffect(() => {
+    if (submitted) successRef.current?.focus();
+  }, [submitted]);
 
-    const cleanCollegeName = collegeName.trim();
-    const cleanCity = city.trim();
-    const cleanState = state.trim();
+  useEffect(() => {
+    if (error || duplicate) errorRef.current?.focus();
+  }, [error, duplicate]);
 
-    if (!cleanCollegeName || !cleanCity || !cleanState) {
-      setError("Please fill out all required fields.");
+  const updateField = (field, value) => {
+    setDraft((previous) => ({ ...previous, [field]: value }));
+    setFieldErrors((previous) => ({ ...previous, [field]: "" }));
+    setError("");
+    setDuplicate(null);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (pendingRef.current) return;
+    setError("");
+    setDuplicate(null);
+    const { details, errors } = validateCollegeRequest(draft);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) {
+      requestAnimationFrame(() => document.getElementById(`request-college-${Object.keys(errors)[0]}`)?.focus());
       return;
     }
-
+    pendingRef.current = true;
     setSubmitting(true);
-
     try {
       const auth = getAuth();
       let user = auth.currentUser;
-
-      if (!user) {
-        const result = await signInAnonymously(auth);
-        user = result.user;
-      }
-
-      const id = generateCollegeId(cleanCollegeName);
+      if (!user) user = (await signInAnonymously(auth)).user;
+      const id = generateCollegeId(details.name);
       const collegeRef = doc(db, "colleges", id);
-      const existingDoc = await getDoc(collegeRef);
-
-      if (existingDoc.exists()) {
-        setError("This college already exists or has already been requested.");
+      const result = await runTransaction(db, (transaction) => createCollegeRequest(transaction, collegeRef, details, {
+        owner: user?.uid, createdAt: serverTimestamp(),
+      }));
+      if (!result.created) {
+        setDuplicate({ id, approved: result.approved });
         return;
       }
-
-      await setDoc(collegeRef, {
-        name: cleanCollegeName,
-        city: cleanCity,
-        state: cleanState,
-        approved: false,
-        createdAt: serverTimestamp(),
-        approvedSyllabiTotal: 0,
-        image_url: null,
-        owner: user?.uid || null,
-      });
-
-      await fetch(
-        "https://syllabusdbserver-agza.onrender.com/notify-college-request",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            collegeName: cleanCollegeName,
-            location: `${cleanCity}, ${cleanState}`,
-          }),
-        },
-      );
-
-      setSubmitted(true);
-    } catch (err) {
-      console.error("Error submitting college request:", err);
-      setError("Something went wrong. Please try again.");
+      setSubmitted(details);
+      // Notification delivery must not turn a saved request into a failed form.
+      void fetch("https://syllabusdbserver-agza.onrender.com/notify-college-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ collegeName: details.name, location: `${details.city}, ${details.state}` }),
+        keepalive: true,
+      }).catch((notificationError) => console.error("Request saved; notification failed:", notificationError));
+    } catch (submitError) {
+      console.error("Error submitting college request:", submitError);
+      setError("We couldn't submit your request. Your details are still here. Please try again.");
     } finally {
+      pendingRef.current = false;
       setSubmitting(false);
     }
   };
 
   return (
     <main className="request-college-page">
-      <section className="request-card">
-        {!submitted ? (
-          <>
-            <div className="request-header">
-              <h1>Request a College</h1>
-              <p>
-                Can’t find your college? Send a request and we’ll review it
-                before adding it to SyllabusDB.
-              </p>
+      {/* <Link className="request-back-link" to="/colleges"><IconArrowLeft size={16} aria-hidden="true" />All colleges</Link> */}
+      <section className="request-card" aria-labelledby="request-college-heading">
+        {submitted ? (
+          <div className="request-success">
+            <div className="request-success-icon" aria-hidden="true"><IconCheck size={28} /></div>
+            <h1 id="request-college-heading" ref={successRef} tabIndex={-1}>Request submitted</h1>
+            <p>We'll review your college before publishing.</p>
+            <div className="request-submitted-details"><strong>{submitted.name}</strong><span>{submitted.city}, {submitted.state}</span></div>
+            <div className="request-success-actions">
+              <Link className="request-primary" to="/colleges">Browse colleges</Link>
+              <button className="request-secondary" onClick={() => {
+                setSubmitted(null); setDraft(emptyDraft); setError(""); setFieldErrors({}); setDuplicate(null);
+                requestAnimationFrame(() => nameRef.current?.focus());
+              }}>Request another</button>
             </div>
-
-            <form onSubmit={handleSubmit} className="request-form">
-              {error && <p className="error-message">{error}</p>}
-
-              <div className="form-field">
-                <label htmlFor="collegeName">
-                  College Name <span>*</span>
-                </label>
-                <input
-                  id="collegeName"
-                  type="text"
-                  value={collegeName}
-                  onChange={(e) => setCollegeName(e.target.value)}
-                  placeholder="e.g., Boston University"
-                  required
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-field">
-                  <label htmlFor="city">
-                    City <span>*</span>
-                  </label>
-                  <input
-                    id="city"
-                    type="text"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="e.g., Boston"
-                    required
-                  />
+          </div>
+        ) : (
+          <>
+            <header className="request-header"><h1 id="request-college-heading">Request a college</h1><p>We'll review it before adding it to SyllabusDB.</p></header>
+            <form className="request-form" onSubmit={handleSubmit} noValidate aria-busy={submitting}>
+              {(error || duplicate) && <div className="request-error" role="alert" ref={errorRef} tabIndex={-1}>
+                {error || (duplicate.approved ? "This college is already listed." : "This college is already awaiting review.")}
+                {duplicate?.approved && <Link to={`/college/${encodeURIComponent(duplicate.id)}`}>View college</Link>}
+              </div>}
+              <fieldset disabled={submitting}>
+                <div className="request-field">
+                  <label htmlFor="request-college-name">College name <span aria-hidden="true">*</span></label>
+                  <input ref={nameRef} id="request-college-name" name="collegeName" autoComplete="organization" value={draft.name} onChange={(event) => updateField("name", event.target.value)} placeholder="Boston University" required aria-invalid={!!fieldErrors.name} aria-describedby={fieldErrors.name ? "request-name-error" : undefined} />
+                  {fieldErrors.name && <span className="request-field-error" id="request-name-error">{fieldErrors.name}</span>}
                 </div>
-
-                <div className="form-field">
-                  <label htmlFor="state">
-                    State <span>*</span>
-                  </label>
-                  <input
-                    id="state"
-                    type="text"
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    placeholder="e.g., Massachusetts"
-                    required
-                  />
+                <div className="request-location-row">
+                  <div className="request-field">
+                    <label htmlFor="request-college-city">City <span aria-hidden="true">*</span></label>
+                    <input id="request-college-city" name="city" autoComplete="address-level2" value={draft.city} onChange={(event) => updateField("city", event.target.value)} placeholder="Boston" required aria-invalid={!!fieldErrors.city} aria-describedby={fieldErrors.city ? "request-city-error" : undefined} />
+                    {fieldErrors.city && <span className="request-field-error" id="request-city-error">{fieldErrors.city}</span>}
+                  </div>
+                  <div className="request-field">
+                    <label htmlFor="request-college-state">State / region <span aria-hidden="true">*</span></label>
+                    <input id="request-college-state" name="state" autoComplete="address-level1" value={draft.state} onChange={(event) => updateField("state", event.target.value)} placeholder="Massachusetts" required aria-invalid={!!fieldErrors.state} aria-describedby={fieldErrors.state ? "request-state-error" : undefined} />
+                    {fieldErrors.state && <span className="request-field-error" id="request-state-error">{fieldErrors.state}</span>}
+                  </div>
                 </div>
-              </div>
-
-              <button
-                type="submit"
-                className="submit-btn"
-                disabled={submitting}
-              >
-                {submitting ? "Submitting..." : "Submit Request"}
+              </fieldset>
+              <button className="request-primary" type="submit" disabled={submitting}>
+                {submitting && <IconLoader2 size={18} className="request-spinner" aria-hidden="true" />}
+                {submitting ? "Submitting..." : "Submit request"}
               </button>
             </form>
           </>
-        ) : (
-          <div className="success-message">
-            <div className="success-icon">✓</div>
-            <h1>Request submitted</h1>
-            <p>Thanks. We’ll review your college request soon.</p>
-
-            <div className="success-actions">
-              <button onClick={() => navigate("/colleges")}>
-                Browse Colleges
-              </button>
-              <button className="secondary-btn" onClick={() => navigate("/")}>
-                Back Home
-              </button>
-            </div>
-          </div>
         )}
       </section>
     </main>

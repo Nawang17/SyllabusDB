@@ -426,8 +426,8 @@ export default function UploadSyllabus() {
         <p className="upload-success-copy">Thanks for sharing. Your syllabus is waiting for approval.</p>
         <div className="upload-dialog-actions"><Button variant="default" onClick={() => navigate("/")}>Go home</Button><Button color="#1e88e5" onClick={() => { setShowSuccessModal(false); resetForm(); }}>Upload another</Button></div>
       </Modal>
-      <Modal opened={TOSopened} onClose={closeTOS} title="Terms of Service" size="lg"><TermsOfService ismodal /></Modal>
-      <Modal opened={GuidelinesOpened} onClose={closeG} title="Community Guidelines" size="lg"><GuidelinesPage ismodal /></Modal>
+      <Modal opened={TOSopened} onClose={closeTOS} title="" size="lg"><TermsOfService ismodal /></Modal>
+      <Modal opened={GuidelinesOpened} onClose={closeG} title="" size="lg"><GuidelinesPage ismodal /></Modal>
     </main>
   );
 }
