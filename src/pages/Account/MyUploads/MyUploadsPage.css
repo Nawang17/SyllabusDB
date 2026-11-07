@@ -1,0 +1,64 @@
+.my-uploads-page {
+  width: 100%;
+  max-width: var(--page-max-width, 1200px);
+  margin: 2rem auto 4rem;
+  padding: 0 var(--page-gutter, 1rem);
+  color: #0f172a;
+}
+.my-uploads-page .mu-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem; margin-bottom: 1.5rem; }
+.my-uploads-page h1 { font-size: clamp(1.8rem, 4vw, 2.5rem); line-height: 1.2; letter-spacing: -.04em; }
+.my-uploads-page .mu-header p { margin-top: .6rem; color: #64748b; font-size: .95rem; line-height: 1.6; }
+.my-uploads-page .mu-primary, .my-uploads-page .mu-secondary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: .65rem 1rem; border: 1px solid transparent; border-radius: 8px; font: inherit; font-size: .85rem; font-weight: 600; text-decoration: none; cursor: pointer; }
+.my-uploads-page .mu-primary { background: #1e88e5; color: #fff; }
+.my-uploads-page .mu-primary:hover { background: #1976d2; }
+.my-uploads-page .mu-secondary { background: #fff; color: #475569; border-color: #e2e8f0; }
+.my-uploads-page .mu-secondary:hover { background: #f8fafc; }
+.my-uploads-page .mu-summary { display: flex; flex-wrap: wrap; gap: .35rem .65rem; margin-bottom: 1.5rem; color: #64748b; font-size: .85rem; line-height: 1.6; }
+.my-uploads-page .mu-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) 170px 170px; gap: .75rem; margin-bottom: 1.25rem; }
+.my-uploads-page .mu-search { position: relative; min-width: 0; }
+.my-uploads-page .mu-search svg { position: absolute; top: 50%; left: 14px; transform: translateY(-50%); color: #64748b; pointer-events: none; }
+.my-uploads-page .mu-search input, .my-uploads-page .mu-toolbar select { width: 100%; min-width: 0; min-height: 48px; border: 1px solid #cbd5e1; border-radius: 9px; background: #fff; color: #334155; padding: .65rem .75rem; font: inherit; font-size: .95rem; }
+.my-uploads-page .mu-search input { padding-left: 42px; font-size: 1rem; }
+.my-uploads-page .mu-search input:focus, .my-uploads-page .mu-toolbar select:focus { outline: 3px solid #1e88e526; border-color: #1e88e5; }
+.my-uploads-page .mu-results { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; font-size: .85rem; color: #64748b; }
+.my-uploads-page .mu-results button { min-height: 44px; border: 0; background: transparent; color: #1976d2; font: inherit; cursor: pointer; }
+.my-uploads-page .mu-list { display: grid; gap: 1rem; }
+.my-uploads-page .mu-card { min-width: 0; padding: 1.5rem; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; }
+.my-uploads-page .mu-card-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: .85rem; }
+.my-uploads-page .mu-course { flex: 1 1 260px; min-width: 0; }
+.my-uploads-page .mu-code { color: #1976d2; font-size: .8rem; font-weight: 700; }
+.my-uploads-page .mu-card h2 { margin-top: .3rem; font-size: 1.1rem; font-weight: 650; line-height: 1.5; overflow-wrap: anywhere; }
+.my-uploads-page .mu-card h2 a { color: inherit; text-decoration: none; }
+.my-uploads-page .mu-card h2 a:hover { color: #1976d2; text-decoration: underline; }
+.my-uploads-page .mu-college { margin-top: .3rem; color: #64748b; font-size: .85rem; }
+.my-uploads-page .mu-status { padding: .3rem .65rem; border-radius: 6px; font-size: .75rem; font-weight: 600; white-space: nowrap; }
+.my-uploads-page .mu-status.is-published { background: #f0fdf4; color: #15803d; }
+.my-uploads-page .mu-status.is-pending { background: #fffbeb; color: #92400e; }
+.my-uploads-page .mu-meta { display: flex; flex-wrap: wrap; gap: .4rem 1.25rem; margin-top: 1rem; font-size: .8rem; line-height: 1.6; color: #64748b; overflow-wrap: anywhere; }
+.my-uploads-page .mu-helpful { display: inline-flex; align-items: center; gap: .5rem; margin-top: 1rem; color: #1976d2; font-size: .85rem; font-weight: 600; line-height: 1.6; }
+.my-uploads-page .mu-helpful svg { flex-shrink: 0; }
+.my-uploads-page .mu-pending-note { color: #64748b; font-size: .8rem; margin-top: 1rem; line-height: 1.6; }
+.my-uploads-page .mu-card-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .65rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f1f5f9; }
+.my-uploads-page .mu-pdf { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; margin-left: auto; color: #1976d2; font-size: .85rem; text-decoration: none; }
+.my-uploads-page .mu-pdf:hover { text-decoration: underline; }
+.my-uploads-page .mu-review { margin-top: .75rem; font-size: .85rem; }
+.my-uploads-page .mu-review summary { display: list-item; min-height: 44px; padding: .65rem 0; color: #475569; cursor: pointer; }
+.my-uploads-page .mu-rating { color: #64748b; }
+.my-uploads-page .mu-experience { margin-top: .5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; color: #475569; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.75; }
+.my-uploads-page .mu-empty { display: grid; justify-items: center; gap: 1rem; padding: 3rem 1.25rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; text-align: center; }
+.my-uploads-page .mu-empty h2 { font-size: 1.25rem; }
+.my-uploads-page .mu-empty p { color: #64748b; font-size: .9rem; line-height: 1.7; max-width: 480px; }
+.my-uploads-page .mu-empty > svg { color: #94a3b8; }
+.my-uploads-page a:focus-visible, .my-uploads-page button:focus-visible, .my-uploads-page summary:focus-visible { outline: 3px solid #1e88e5; outline-offset: 3px; }
+@media (max-width: 700px) {
+  .my-uploads-page .mu-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .my-uploads-page .mu-search { grid-column: 1 / -1; }
+}
+@media (max-width: 500px) {
+  .my-uploads-page { margin-top: 1.5rem; }
+  .my-uploads-page .mu-header > .mu-primary { width: 100%; }
+  .my-uploads-page .mu-card { padding: 1rem; }
+  .my-uploads-page .mu-course { flex-basis: 100%; }
+  .my-uploads-page .mu-card-actions .mu-secondary { flex: 1; }
+  .my-uploads-page .mu-pdf { margin-left: 0; padding: 0 .5rem; }
+}

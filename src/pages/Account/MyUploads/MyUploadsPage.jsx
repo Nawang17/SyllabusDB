@@ -1,4 +1,4 @@
-import { normalizeCourseCode } from "../../../utils/courseCode.js";
+import { extractSubject, normalizeCourseCode } from "../../../utils/courseCode.js";
 import { useEffect, useMemo, useState } from "react";
 import {
   collectionGroup,
@@ -9,36 +9,33 @@ import {
   getDoc,
   updateDoc,
   serverTimestamp,
+  onSnapshot,
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
-  Container,
-  Title,
-  Card,
   Text,
-  Badge,
   Group,
   Stack,
-  Chip,
   Button,
   Skeleton,
-  TextInput,
   Textarea,
   Modal,
-  Paper,
-  Divider,
   Rating,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { db } from "../../../../firebaseConfig";
-import { useNavigate } from "react-router";
+import { Link } from "react-router";
+import "./MyUploadsPage.css";
 import {
   IconX,
   IconPencil,
   IconCheck,
   IconTrash,
-  IconStarFilled,
+  IconThumbUp,
+  IconExternalLink,
+  IconUpload,
+  IconSearch,
 } from "@tabler/icons-react";
 
 function toTitleCaseCollege(slug) {
@@ -52,7 +49,7 @@ function dt(s) {
 
 function fmtDate(d) {
   try {
-    return d?.toLocaleString?.() ?? "";
+    return d?.toLocaleDateString?.(undefined, { month: "short", day: "numeric", year: "numeric" }) ?? "";
   } catch {
     return "";
   }
@@ -67,6 +64,22 @@ const ratingLabels = {
   5: "Would recommend",
 };
 
+function HelpfulCount({ path }) {
+  const [count, setCount] = useState(null);
+  const [error, setError] = useState(false);
+  useEffect(() => {
+    setCount(null);
+    setError(false);
+    return onSnapshot(doc(db, `${path}/helpfulStats/total`), (snapshot) => {
+      setCount(snapshot.exists() ? snapshot.data().count : 0);
+    }, (err) => {
+      console.error("Could not load helpful count:", err);
+      setError(true);
+    });
+  }, [path]);
+  return <span className="mu-helpful"><IconThumbUp size={17} aria-hidden="true" />{error ? "Helpful count unavailable" : count === null ? "Loading helpful count..." : `${count.toLocaleString()} ${count === 1 ? "person" : "people"} found this helpful`}</span>;
+}
+
 export default function MyUploadsPage() {
   const [authResolved, setAuthResolved] = useState(false);
   const [authUser, setAuthUser] = useState(null);
@@ -76,12 +89,10 @@ export default function MyUploadsPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [termFilter, setTermFilter] = useState(null);
-  const [yearFilter, setYearFilter] = useState(null);
-  const [collegeFilter, setCollegeFilter] = useState(null);
   const [sortBy, setSortBy] = useState("newest");
 
-  const navigate = useNavigate();
+  const [loadError, setLoadError] = useState("");
+  const [retry, setRetry] = useState(0);
   const auth = getAuth();
 
   const [expModalOpened, { open: openExpModal, close: closeExpModal }] =
@@ -95,7 +106,14 @@ export default function MyUploadsPage() {
   const EXP_MIN = 8;
 
   useEffect(() => {
+    document.title = "SyllabusDB | My uploads";
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
+      setRows([]);
+      setLoading(!!u && !u.isAnonymous);
       setAuthUser(u && !u.isAnonymous ? u : null);
       setAuthResolved(true);
     });
@@ -105,6 +123,7 @@ export default function MyUploadsPage() {
 
   useEffect(() => {
     if (!authResolved) return;
+    let active = true;
 
     if (!authUser) {
       setRows([]);
@@ -115,6 +134,7 @@ export default function MyUploadsPage() {
     const fetchUploadsWithCourseInfo = async () => {
       try {
         setLoading(true);
+        setLoadError("");
 
         const q = fbQuery(
           collectionGroup(db, "syllabi"),
@@ -128,7 +148,7 @@ export default function MyUploadsPage() {
             const syllabus = docSnap.data();
             const pathSegments = docSnap.ref.path.split("/");
             const collegeId = pathSegments[1];
-            const courseId = decodeURIComponent(pathSegments[3]);
+            const courseId = pathSegments[3];
 
             let courseData = {
               title: "Unknown Course",
@@ -160,7 +180,8 @@ export default function MyUploadsPage() {
               course: {
                 ...courseData,
                 collegeId,
-                code: courseId,
+                id: courseId,
+                code: courseData.code || courseId,
               },
             };
           }),
@@ -170,34 +191,25 @@ export default function MyUploadsPage() {
           (a, b) => dt(b.syllabus.createdAt) - dt(a.syllabus.createdAt),
         );
 
-        setRows(enriched);
+        if (active) setRows(enriched);
       } catch (err) {
         console.error("Error fetching syllabi:", err);
+        if (active) setLoadError("We couldn't load your uploads. Please try again.");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     fetchUploadsWithCourseInfo();
-  }, [authResolved, authUser]);
-
-  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
-
-  useEffect(() => {
-    const t = setTimeout(
-      () => setDebouncedQuery(searchQuery.trim().toLowerCase()),
-      200,
-    );
-
-    return () => clearTimeout(t);
-  }, [searchQuery]);
+    return () => { active = false; };
+  }, [authResolved, authUser, retry]);
 
   const filtered = useMemo(() => {
     let out = rows.filter(({ syllabus, course }) => {
-      const q = debouncedQuery;
+      const q = searchQuery.trim().toLowerCase();
 
       if (q) {
-        const hay = `${course?.title ?? ""} ${course?.code ?? ""} ${
+        const hay = `${toTitleCaseCollege(course?.collegeId)} ${course?.title ?? ""} ${course?.code ?? ""} ${
           syllabus?.professor ?? ""
         }`.toLowerCase();
 
@@ -207,16 +219,8 @@ export default function MyUploadsPage() {
         ) return false;
       }
 
-      if (termFilter && String(syllabus?.term) !== termFilter) return false;
-      if (yearFilter && String(syllabus?.year) !== yearFilter) return false;
-
       if (statusFilter === "approved" && !syllabus?.approved) return false;
       if (statusFilter === "pending" && syllabus?.approved) return false;
-
-      if (collegeFilter) {
-        const nice = toTitleCaseCollege(course?.collegeId);
-        if (nice !== collegeFilter) return false;
-      }
 
       return true;
     });
@@ -244,20 +248,14 @@ export default function MyUploadsPage() {
     return out;
   }, [
     rows,
-    debouncedQuery,
-    termFilter,
-    yearFilter,
+    searchQuery,
     statusFilter,
-    collegeFilter,
     sortBy,
   ]);
 
   const clearAll = () => {
     setSearchQuery("");
-    setTermFilter(null);
-    setYearFilter(null);
     setStatusFilter("all");
-    setCollegeFilter(null);
     setSortBy("newest");
   };
 
@@ -276,7 +274,7 @@ export default function MyUploadsPage() {
   };
 
   const saveExperience = async () => {
-    if (!activeRow) return;
+    if (!activeRow || expSaving || auth.currentUser?.uid !== activeRow.syllabus.owner) return;
 
     const trimmed = expDraft.trim();
 
@@ -309,7 +307,7 @@ export default function MyUploadsPage() {
 
       setRows((prev) =>
         prev.map((r) =>
-          r.id === activeRow.id
+          r.ref.path === activeRow.ref.path
             ? {
                 ...r,
                 syllabus: {
@@ -349,7 +347,7 @@ export default function MyUploadsPage() {
   };
 
   const deleteExperience = async () => {
-    if (!activeRow) return;
+    if (!activeRow || expSaving || auth.currentUser?.uid !== activeRow.syllabus.owner) return;
 
     try {
       setExpSaving(true);
@@ -362,7 +360,7 @@ export default function MyUploadsPage() {
 
       setRows((prev) =>
         prev.map((r) =>
-          r.id === activeRow.id
+          r.ref.path === activeRow.ref.path
             ? {
                 ...r,
                 syllabus: {
@@ -398,211 +396,66 @@ export default function MyUploadsPage() {
     }
   };
 
-  if (!authResolved || loading) {
-    return (
-      <Container size="1200px" py="xl" px="2rem">
-        <Title order={2} mb="xs">
-          My Uploaded Syllabi
-        </Title>
-
-        <Stack>
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} withBorder radius="md">
-              <Skeleton height={16} width="60%" mb="xs" />
-              <Skeleton height={12} width="40%" mb="sm" />
-              <Skeleton height={12} width="30%" mb="sm" />
-              <Skeleton height={10} width="25%" />
-            </Card>
-          ))}
-        </Stack>
-      </Container>
-    );
-  }
-
-  if (!authUser) {
-    return (
-      <Container size="1200px" py="xl" px="2rem">
-        <Card shadow="sm" radius="md" withBorder p="lg">
-          <Title order={3} mb="sm">
-            You’re not signed in
-          </Title>
-
-          <Text mb="md" c="dimmed">
-            Please sign in to view your uploads.
-          </Text>
-
-          <Button onClick={() => navigate("/")} variant="light">
-            Go to Home Page
-          </Button>
-        </Card>
-      </Container>
-    );
-  }
+  const approvedCount = rows.filter((row) => row.syllabus.approved).length;
+  const hasFilters = Boolean(searchQuery.trim()) || statusFilter !== "all";
+  const busy = !authResolved || loading;
 
   return (
-    <Container size="1200px" py="xl" px="2rem">
-      <Group justify="space-between" align="end" mb="xs">
-        <div>
-          <Title order={2}>My Uploaded Syllabi</Title>
-
-          <Text size="sm" c="dimmed">
-            Showing {filtered.length} of {rows.length} upload
-            {rows.length !== 1 ? "s" : ""}
-          </Text>
-        </div>
-      </Group>
-
-      <Card withBorder radius="md" mb="md" p="md">
-        <Stack gap="sm">
-          <TextInput
-            label="Search"
-            placeholder="Search by course, code, or professor"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.currentTarget.value)}
-          />
-
-          <Group justify="space-between" wrap="wrap">
-            <Chip.Group
-              multiple={false}
-              value={statusFilter}
-              onChange={setStatusFilter}
-            >
-              <Chip value="all">All</Chip>
-              <Chip value="approved">Approved</Chip>
-              <Chip value="pending">Pending</Chip>
-            </Chip.Group>
-          </Group>
-        </Stack>
-      </Card>
-
-      {filtered.length === 0 ? (
-        <Card withBorder radius="md" p="lg" style={{ textAlign: "center" }}>
-          <Text fw={600} mb={4}>
-            No results
-          </Text>
-
-          <Text size="sm" c="dimmed" mb="md">
-            Try adjusting your search or filters.
-          </Text>
-
-          <Button
-            variant="subtle"
-            leftSection={<IconX size={16} />}
-            onClick={clearAll}
-          >
-            Clear all filters
-          </Button>
-        </Card>
+    <main className="my-uploads-page">
+      <header className="mu-header">
+        <div><h1>My uploads</h1><p>Manage your syllabi and see how they help other students.</p></div>
+        {authUser && <Link className="mu-primary" to="/uploadsyllabus"><IconUpload size={18} aria-hidden="true" />Upload a syllabus</Link>}
+      </header>
+      {busy ? (
+        <div className="mu-list" role="status" aria-label="Loading uploads">{Array.from({ length: 3 }, (_, index) => <Skeleton key={index} height={180} radius="md" />)}</div>
+      ) : !authUser ? (
+        <section className="mu-empty"><h2>Sign in to see your uploads</h2><p>Track your submissions, update your reviews, and see how many people found your syllabi helpful.</p><Link className="mu-primary" to="/signin?returnTo=%2Fmyuploads">Sign in</Link></section>
+      ) : loadError ? (
+        <section className="mu-empty" role="alert"><h2>Uploads unavailable</h2><p>{loadError}</p><button className="mu-primary" onClick={() => setRetry((value) => value + 1)}>Try again</button></section>
+      ) : rows.length === 0 ? (
+        <section className="mu-empty"><IconUpload size={32} aria-hidden="true" /><h2>Share your first syllabus</h2><p>Your uploads will appear here after submission. Help another student know what to expect.</p><Link className="mu-primary" to="/uploadsyllabus">Upload a syllabus</Link></section>
       ) : (
-        <Stack gap="md">
-          {filtered.map((row) => {
-            const { id, syllabus, course } = row;
-            const approved = Boolean(syllabus?.approved);
-            const ratingValue = Number(syllabus?.rating || 0);
-            const hasRating = ratingValue > 0;
-
-            const createdAt = syllabus?.createdAt?.toDate?.()
-              ? syllabus.createdAt.toDate()
-              : null;
-
-            const updatedAt = syllabus?.experience_updatedAt?.toDate?.()
-              ? syllabus.experience_updatedAt.toDate()
-              : null;
-
-            return (
-              <Card key={id} shadow="sm" radius="md" withBorder>
-                <Group justify="space-between" mb="xs" align="start">
-                  <div>
-                    <Text fw={600} size="md">
-                      {normalizeCourseCode(course?.code)} {course?.title ? `- ${course.title}` : ""}
-                    </Text>
-
-                    <Text size="sm" c="dimmed">
-                      {syllabus?.term || "Unknown Term"} {syllabus?.year ?? ""}{" "}
-                      • {toTitleCaseCollege(course?.collegeId)}
-                    </Text>
-                  </div>
-
-                  <Badge color={approved ? "green" : "yellow"} variant="light">
-                    {approved ? "Approved" : "Pending"}
-                  </Badge>
-                </Group>
-
-                <Group justify="space-between" wrap="wrap" mb="xs">
-                  <Text size="sm">
-                    Professor: {syllabus?.professor || "N/A"}
-                  </Text>
-
-                  {createdAt && (
-                    <Text size="sm" c="dimmed">
-                      Uploaded: {fmtDate(createdAt)}
-                    </Text>
-                  )}
-                </Group>
-
-                {hasRating && (
-                  <Group gap={6} mb="xs">
-                    <IconStarFilled size={16} color="#d97706" />
-
-                    <Text size="sm" fw={700}>
-                      {ratingValue}/5
-                    </Text>
-
-                    <Text size="sm" c="dimmed">
-                      {ratingLabels[ratingValue]}
-                    </Text>
-                  </Group>
-                )}
-
-                <Divider my="xs" />
-
-                <Group gap="xs" align="flex-start">
-                  <Button
-                    color="indigo"
-                    variant="light"
-                    size="xs"
-                    leftSection={<IconPencil size={16} />}
-                    onClick={() => openExperienceModal(row)}
-                  >
-                    {syllabus?.experience_text || syllabus?.rating
-                      ? "Edit review"
-                      : "Add review"}
-                  </Button>
-
-                  {syllabus?.pdf_url && (
-                    <Button
-                      component="a"
-                      href={syllabus.pdf_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      variant="subtle"
-                      size="xs"
-                    >
-                      View PDF
-                    </Button>
-                  )}
-                </Group>
-
-                {syllabus?.experience_text && (
-                  <Paper withBorder p="sm" radius="md" mt="sm">
-                    <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>
-                      {syllabus.experience_text}
-                    </Text>
-
-                    <Text size="xs" c="dimmed" mt="xs">
-                      {updatedAt ? `Last updated: ${fmtDate(updatedAt)}` : ""}
-                    </Text>
-                  </Paper>
-                )}
-              </Card>
-            );
-          })}
-        </Stack>
+        <>
+          <p className="mu-summary">{rows.length} {rows.length === 1 ? "upload" : "uploads"}<span aria-hidden="true"> · </span>{approvedCount} published<span aria-hidden="true"> · </span>{rows.length - approvedCount} awaiting review</p>
+          <div className="mu-toolbar">
+            <div className="mu-search"><IconSearch size={19} aria-hidden="true" /><input type="search" placeholder="Search course, college, or professor" aria-label="Search your uploads" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} /></div>
+            <select aria-label="Filter uploads by status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">All statuses</option><option value="approved">Published</option><option value="pending">Awaiting review</option></select>
+            <select aria-label="Sort uploads" value={sortBy} onChange={(event) => setSortBy(event.target.value)}><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="az">Course: A to Z</option></select>
+          </div>
+          {hasFilters && <div className="mu-results" role="status"><span>{filtered.length} of {rows.length} uploads</span><button onClick={clearAll}>Clear filters</button></div>}
+          {filtered.length === 0 ? (
+            <section className="mu-empty"><h2>No uploads match</h2><p>Try a different search or status.</p><button className="mu-secondary" onClick={clearAll}>Clear filters</button></section>
+          ) : <div className="mu-list">{filtered.map((row) => {
+            const { syllabus, course } = row;
+            const approved = Boolean(syllabus.approved);
+            const code = normalizeCourseCode(course.code);
+            const viewerPath = `/college/${encodeURIComponent(course.collegeId)}/subject/${encodeURIComponent(extractSubject(course.code))}/course/${encodeURIComponent(course.id)}/syllabus/${encodeURIComponent(row.id)}`;
+            const createdAt = syllabus.createdAt?.toDate?.();
+            const rating = Number(syllabus.rating || 0);
+            const hasReview = Boolean(syllabus.experience_text || rating);
+            return <article className="mu-card" key={row.ref.path}>
+              <div className="mu-card-header">
+                <div className="mu-course"><p className="mu-code">{code}</p><h2>{approved ? <Link to={viewerPath}>{course.title || "Course syllabus"}</Link> : course.title || "Course syllabus"}</h2><p className="mu-college">{toTitleCaseCollege(course.collegeId)}</p></div>
+                <span className={`mu-status ${approved ? "is-published" : "is-pending"}`}>{approved ? "Published" : "Awaiting review"}</span>
+              </div>
+              <div className="mu-meta"><span>{[syllabus.term, syllabus.year].filter(Boolean).join(" ") || "Term not provided"}</span>{syllabus.professor && <span>{syllabus.professor}</span>}{createdAt && <span>Uploaded {fmtDate(createdAt)}</span>}</div>
+              {approved ? <HelpfulCount path={row.ref.path} /> : <p className="mu-pending-note">Helpful counts will appear once your syllabus is published.</p>}
+              {hasReview && <details className="mu-review"><summary>Your review{rating > 0 ? ` (${rating}/5)` : ""}</summary>{rating > 0 && <p className="mu-rating">{ratingLabels[rating]}</p>}{syllabus.experience_text && <p className="mu-experience">{syllabus.experience_text}</p>}</details>}
+              <div className="mu-card-actions">
+                <button className="mu-secondary" onClick={() => openExperienceModal(row)}><IconPencil size={16} aria-hidden="true" />{hasReview ? "Edit review" : "Add review"}</button>
+                {approved && <Link className="mu-secondary" to={viewerPath}>View syllabus</Link>}
+                {syllabus.pdf_url && <a className="mu-pdf" href={syllabus.pdf_url} target="_blank" rel="noopener noreferrer">Open PDF<IconExternalLink size={16} aria-hidden="true" /></a>}
+              </div>
+            </article>;
+          })}</div>}
+        </>
       )}
-
       <Modal
-        opened={expModalOpened}
-        onClose={resetReviewModal}
+        opened={expModalOpened && !!authUser && activeRow?.syllabus.owner === authUser.uid}
+        onClose={() => !expSaving && resetReviewModal()}
+        closeOnClickOutside={!expSaving}
+        closeOnEscape={!expSaving}
+        withCloseButton={!expSaving}
         title="Edit review"
         centered
         radius="md"
@@ -614,7 +467,7 @@ export default function MyUploadsPage() {
             </Text>
 
             <Group gap="sm">
-              <Rating value={ratingDraft} onChange={setRatingDraft} size="lg" />
+              <Rating value={ratingDraft} onChange={setRatingDraft} size="lg" readOnly={expSaving} aria-label="Your class rating" />
 
               <Text size="sm" c="dimmed">
                 {ratingLabels[ratingDraft]}
@@ -623,6 +476,8 @@ export default function MyUploadsPage() {
           </div>
 
           <Textarea
+            label="Your experience"
+            disabled={expSaving}
             autosize
             minRows={4}
             maxRows={8}
@@ -638,6 +493,7 @@ export default function MyUploadsPage() {
               variant="default"
               leftSection={<IconX size={16} />}
               onClick={resetReviewModal}
+              disabled={expSaving}
             >
               Cancel
             </Button>
@@ -651,7 +507,7 @@ export default function MyUploadsPage() {
                 onClick={deleteExperience}
                 disabled={!activeRow?.syllabus}
               >
-                Delete
+                Remove review
               </Button>
 
               <Button
@@ -670,6 +526,6 @@ export default function MyUploadsPage() {
           </Group>
         </Stack>
       </Modal>
-    </Container>
+    </main>
   );
 }
