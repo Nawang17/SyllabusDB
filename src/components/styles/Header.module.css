@@ -22,13 +22,13 @@
 }
 
 .headerInner {
-  max-width: 1200px;
+  max-width: var(--page-max-width);
   margin-inline: auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  padding-inline: 1rem;
+  padding-inline: var(--page-gutter);
 }
 
 .logo {

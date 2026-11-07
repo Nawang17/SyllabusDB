@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import { IconSearch, IconChevronRight } from "@tabler/icons-react";
 import { db } from "../../../firebaseConfig";
 import { publicHomeColleges } from "../../utils/homeColleges.js";
-import { filterCollegeDirectory, groupCollegeDirectory } from "../../utils/collegeDirectory.js";
+import { filterCollegeDirectory } from "../../utils/collegeDirectory.js";
 import "./AllCollegesPage.css";
 
 export default function AllCollegesPage() {
@@ -13,8 +13,6 @@ export default function AllCollegesPage() {
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   const [search, setSearch] = useState("");
-  const [state, setState] = useState("");
-  const [sort, setSort] = useState("name");
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -42,14 +40,11 @@ export default function AllCollegesPage() {
     return () => { active = false; };
   }, [retry]);
 
-  const states = useMemo(() => groupCollegeDirectory(colleges).map(([name]) => name), [colleges]);
-  const filtered = useMemo(() => filterCollegeDirectory(colleges, { search, state, sort }), [colleges, search, state, sort]);
-  const groups = useMemo(() => groupCollegeDirectory(filtered), [filtered]);
-  const hasFilters = !!search.trim() || !!state;
+  const filtered = useMemo(() => filterCollegeDirectory(colleges, { search }), [colleges, search]);
+  const hasFilters = !!search.trim();
 
   const resetFilters = () => {
     setSearch("");
-    setState("");
     searchRef.current?.focus();
   };
 
@@ -73,14 +68,6 @@ export default function AllCollegesPage() {
           />
           {search && <button className="acp-clear" aria-label="Clear search" onClick={() => { setSearch(""); searchRef.current?.focus(); }}>&times;</button>}
         </div>
-        <select className="acp-select" aria-label="Filter by state" value={state} onChange={(event) => setState(event.target.value)} disabled={loading || !!error}>
-          <option value="">All states</option>
-          {states.map((name) => <option key={name} value={name}>{name}</option>)}
-        </select>
-        <select className="acp-select" aria-label="Sort colleges within each state" value={sort} onChange={(event) => setSort(event.target.value)}>
-          <option value="name">Name: A to Z</option>
-          <option value="uploads">Most syllabi in each state</option>
-        </select>
       </div>
 
       {loading ? (
@@ -98,37 +85,29 @@ export default function AllCollegesPage() {
         <>
           <div className="acp-results-summary" role="status">
             <span>{hasFilters ? `${filtered.length} of ${colleges.length}` : colleges.length} {colleges.length === 1 ? "college" : "colleges"}</span>
-            {hasFilters && <button className="acp-reset" onClick={resetFilters}>Clear filters</button>}
+            {hasFilters && <button className="acp-reset" onClick={resetFilters}>Clear search</button>}
           </div>
-          {groups.length === 0 ? (
+          {filtered.length === 0 ? (
             <div className="acp-message">
               <h2>{hasFilters ? "No colleges found" : "No colleges listed yet"}</h2>
               <p>{hasFilters ? "Try a different name or location." : "Help add the first college."}</p>
-              {hasFilters ? <button className="acp-primary" onClick={resetFilters}>Clear filters</button> : <Link className="acp-primary" to="/requestcollege">Request a college</Link>}
+              {hasFilters ? <button className="acp-primary" onClick={resetFilters}>Clear search</button> : <Link className="acp-primary" to="/requestcollege">Request a college</Link>}
             </div>
           ) : (
-            <div className="acp-groups">
-              {groups.map(([name, items]) => (
-                <section key={name} className="acp-state-section" aria-label={`${name} colleges`}>
-                  <h2 className="acp-state-title">{name}<span className="acp-state-count">{items.length}</span></h2>
-                  <ul className="acp-college-list">
-                    {items.map((college) => (
+                  <ul className="acp-college-list" aria-label="Colleges">
+                    {filtered.map((college) => (
                       <li key={college.id}>
                         <Link className="acp-college-card" to={`/college/${encodeURIComponent(college.id)}`}>
-                          <span className="acp-monogram" aria-hidden="true">{college.name.split(/\s+/).slice(0, 2).map((word) => word[0]).join("")}</span>
                           <span className="acp-college-info">
                             <span className="acp-college-name">{college.name}</span>
-                            {college.city && <span className="acp-college-city">{college.city}</span>}
-                            <span className="acp-upload-count">{college.uploads.toLocaleString()} {college.uploads === 1 ? "syllabus" : "syllabi"}</span>
+                            {[college.city, college.state].filter(Boolean).length > 0 && <span className="acp-college-city">{[college.city, college.state].filter(Boolean).join(", ")}</span>}
                           </span>
+                          <span className="acp-upload-count">{college.uploads.toLocaleString()} {college.uploads === 1 ? "syllabus" : "syllabi"}</span>
                           <IconChevronRight size={18} aria-hidden="true" className="acp-chevron" />
                         </Link>
                       </li>
                     ))}
                   </ul>
-                </section>
-              ))}
-            </div>
           )}
           {(colleges.length > 0 || hasFilters) && <div className="acp-request">Missing your college? <Link to="/requestcollege">Request it</Link></div>}
         </>
