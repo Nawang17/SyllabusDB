@@ -1,25 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   collection,
   doc,
   getDocs,
-  limit,
   onSnapshot,
-  orderBy,
-  query,
 } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
 import "./HomePage.css";
-import studentImage from "../../assets/studentshangingout.jpg";
-import verifiedImage from "../../assets/verified-illustration.jpg";
+import studentImage from "../../assets/studentshangingout-home.jpg";
 import CountUp from "react-countup";
+import { publicHomeColleges, searchHomeColleges, topHomeColleges } from "../../utils/homeColleges.js";
 
-const TOP_CACHE_KEY = "topColleges:v1";
-const TOP_CACHE_TTL_MS = 60 * 1000;
-
-const IDX_CACHE_KEY = "collegesIndex:v1";
-const IDX_CACHE_TTL_MS = 60 * 1000;
+const CACHE_KEY = "homeColleges:v3";
 
 export default function HomePage() {
   useEffect(() => {
@@ -29,9 +22,6 @@ export default function HomePage() {
 
   const navigate = useNavigate();
 
-  const [topColleges, setTopColleges] = useState([]);
-  const [loadingTop, setLoadingTop] = useState(true);
-
   const [searchIndex, setSearchIndex] = useState([]);
   const [loadingIndex, setLoadingIndex] = useState(false);
   const [indexLoadedOnce, setIndexLoadedOnce] = useState(false);
@@ -40,113 +30,57 @@ export default function HomePage() {
   const [debounced, setDebounced] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
-  const [totalUploads, setTotalUploads] = useState(0);
+  const [totalUploads, setTotalUploads] = useState(null);
   const [animateCount, setAnimateCount] = useState(false);
 
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const fetchTopColleges = async (toggleLoading = false) => {
-    try {
-      if (toggleLoading) setLoadingTop(true);
-      const qy = query(
-        collection(db, "colleges"),
-        orderBy("approvedSyllabiTotal", "desc"),
-        limit(10),
-      );
-      const snapshot = await getDocs(qy);
-      const data = snapshot.docs.map((d) => {
-        const x = d.data();
-        return {
-          id: d.id,
-          name: x.name,
-          image_url: x.image_url,
-          uploads: x.approvedSyllabiTotal || 0,
-        };
-      });
-      setTopColleges(data);
-      localStorage.setItem(
-        TOP_CACHE_KEY,
-        JSON.stringify({ data, ts: Date.now() }),
-      );
-    } catch (err) {
-      console.error("Error fetching top colleges:", err);
-    } finally {
-      if (toggleLoading) setLoadingTop(false);
-    }
-  };
+  const [loadError, setLoadError] = useState("");
+  const requestRef = useRef(null);
+  const topColleges = useMemo(() => topHomeColleges(searchIndex), [searchIndex]);
+  const loadingTop = !indexLoadedOnce && !loadError;
 
-  const fetchSearchIndex = async (force = false) => {
-    try {
-      if (!force) {
-        const raw = localStorage.getItem(IDX_CACHE_KEY);
-        if (raw) {
-          try {
-            const { data, ts } = JSON.parse(raw);
-            if (Array.isArray(data)) {
-              setSearchIndex(data);
-              setIndexLoadedOnce(true);
-              if (!ts || Date.now() - ts > IDX_CACHE_TTL_MS)
-                void fetchSearchIndex(true);
-              return;
-            }
-          } catch {
-            /* ignore */
-          }
-        }
-      }
-
-      setLoadingIndex(true);
-      const snap = await getDocs(collection(db, "colleges"));
-      const all = snap.docs
-        .map((d) => {
-          const x = d.data();
-          return {
-            id: d.id,
-            name: (x.name || "").trim(),
-            approved: x.approved !== false,
-          };
-        })
-        .filter((c) => c.approved && c.name);
-
-      setSearchIndex(all);
-      setIndexLoadedOnce(true);
-      localStorage.setItem(
-        IDX_CACHE_KEY,
-        JSON.stringify({ data: all, ts: Date.now() }),
-      );
-    } catch (e) {
-      console.error("Error fetching search index:", e);
-    } finally {
-      setLoadingIndex(false);
-    }
-  };
-
-  // SWR top list + stats listener + CountUp gate
-  useEffect(() => {
-    const raw = localStorage.getItem(TOP_CACHE_KEY);
-    if (raw) {
+  const fetchSearchIndex = useCallback(() => {
+    if (requestRef.current) return requestRef.current;
+    setLoadingIndex(true);
+    setLoadError("");
+    const request = (async () => {
       try {
-        const { data, ts } = JSON.parse(raw);
-        if (Array.isArray(data)) {
-          setTopColleges(data);
-          setLoadingTop(false);
-        }
-        if (!ts || Date.now() - ts > TOP_CACHE_TTL_MS)
-          void fetchTopColleges(true);
-        else void fetchTopColleges(false);
-      } catch {
-        void fetchTopColleges(true);
+        // Filter before ranking, including legacy public records without an
+        // approved field. Search and rankings share this one collection read.
+        const snapshot = await getDocs(collection(db, "colleges"));
+        const data = publicHomeColleges(snapshot.docs.map((item) => ({ ...item.data(), id: item.id })));
+        setSearchIndex(data);
+        setIndexLoadedOnce(true);
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch { /* Storage is optional. */ }
+      } catch (error) {
+        console.error("Error fetching colleges:", error);
+        setLoadError("We couldn't load colleges. Please try again.");
+      } finally {
+        setLoadingIndex(false);
+        requestRef.current = null;
       }
-    } else {
-      void fetchTopColleges(true);
-    }
+    })();
+    requestRef.current = request;
+    return request;
+  }, []);
+
+  useEffect(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+      if (Array.isArray(cached) && cached.every((item) => item && typeof item.id === "string" && typeof item.name === "string" && Array.isArray(item.aliases) && item.aliases.every((alias) => typeof alias === "string") && typeof item.nickname === "string" && Number.isFinite(item.uploads))) {
+        setSearchIndex(cached);
+        setIndexLoadedOnce(true);
+      }
+    } catch { /* Fetch fresh data when storage is unavailable or invalid. */ }
+    void fetchSearchIndex();
 
     const unsubStats = onSnapshot(
       doc(db, "stats", "global"),
       (snap) => setTotalUploads(snap.data()?.total_syllabi || 0),
-      (err) => console.error("stats/global listener error:", err),
+      (err) => { setTotalUploads(null); console.error("stats/global listener error:", err); },
     );
 
     const countEl = document.querySelector(".hero-syllabi-count");
@@ -169,7 +103,7 @@ export default function HomePage() {
       unsubStats();
       if (io) io.disconnect();
     };
-  }, []);
+  }, [fetchSearchIndex]);
 
   // Debounce
   useEffect(() => {
@@ -182,35 +116,18 @@ export default function HomePage() {
 
   const onSearchFocus = () => {
     setDropdownOpen(true);
-    if (!indexLoadedOnce && !loadingIndex) void fetchSearchIndex(false);
+    if (!indexLoadedOnce && !loadingIndex) void fetchSearchIndex();
   };
 
+  const filtered = useMemo(() => searchHomeColleges(searchIndex, debounced), [searchIndex, debounced]);
+  const activeResult = filtered[selectedIndex];
+  const searchPending = searchQuery.trim().toLowerCase() !== debounced;
+
   useEffect(() => {
-    if (searchQuery && !indexLoadedOnce && !loadingIndex)
-      void fetchSearchIndex(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery]);
-
-  const filtered = useMemo(() => {
-    if (!debounced) return [];
-
-    const q = debounced;
-
-    const score = (name) => {
-      const n = name.toLowerCase();
-      if (n === q) return 100;
-      if (n.startsWith(q)) return 80;
-      if (n.includes(` ${q}`)) return 60; // word boundary-ish
-      if (n.includes(q)) return 40;
-      return 0;
-    };
-
-    return searchIndex
-      .map((c) => ({ ...c, _score: score(c.name) }))
-      .filter((c) => c._score > 0)
-      .sort((a, b) => b._score - a._score || a.name.localeCompare(b.name))
-      .slice(0, 12);
-  }, [searchIndex, debounced]);
+    if (dropdownOpen && activeResult && !searchPending) {
+      document.getElementById(`college-option-${activeResult.id}`)?.scrollIntoView({ block: "nearest" });
+    }
+  }, [activeResult, dropdownOpen, searchPending]);
 
   const goToCollege = (id) => {
     setDropdownOpen(false);
@@ -230,15 +147,14 @@ export default function HomePage() {
       if (!debounced) return;
       if (!dropdownOpen) setDropdownOpen(true);
 
-      const idx = selectedIndex >= 0 ? selectedIndex : 0;
-      if (filtered.length > 0) {
-        goToCollege(filtered[idx].id);
-      }
+      e.preventDefault();
+      const result = activeResult || filtered[0];
+      if (result && !searchPending) goToCollege(result.id);
       return;
     }
 
     if (!dropdownOpen) return;
-    if (!debounced || filtered.length === 0) return;
+    if (!debounced || searchPending || filtered.length === 0) return;
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -246,7 +162,7 @@ export default function HomePage() {
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setSelectedIndex(
-        (prev) => (prev - 1 + filtered.length) % filtered.length,
+        (prev) => prev <= 0 ? filtered.length - 1 : (prev - 1) % filtered.length,
       );
     }
   };
@@ -262,8 +178,8 @@ export default function HomePage() {
       setDropdownOpen(false);
       setSelectedIndex(-1);
     };
-    window.addEventListener("mousedown", onDown);
-    return () => window.removeEventListener("mousedown", onDown);
+    window.addEventListener("pointerdown", onDown);
+    return () => window.removeEventListener("pointerdown", onDown);
   }, [dropdownOpen]);
 
   const highlightMatch = (name) => {
@@ -283,19 +199,16 @@ export default function HomePage() {
     <div className="home-page">
       <section className="search-section">
         <div className="hero-inner">
-          {/* <p className="hero-eyebrow">Real syllabi uploaded by students</p> */}
-
           <div className="headline">
-            <h1>See what a class is really like before you take it</h1>
+            <h1>Know your class before you enroll.</h1>
             <p className="hero-subtext">
-              View grading, workload, and weekly topics from real college
-              syllabi.
+              Explore real syllabi shared by students.
             </p>
           </div>
 
-          <p className="hero-syllabi-count">
+          <p className="hero-syllabi-count" hidden={totalUploads === null}>
             <strong>
-              {animateCount ? (
+              {animateCount && totalUploads !== null ? (
                 <CountUp
                   start={Math.max(
                     0,
@@ -306,15 +219,19 @@ export default function HomePage() {
                   separator=","
                 />
               ) : (
-                totalUploads.toLocaleString()
+                (totalUploads ?? 0).toLocaleString()
               )}
-              +
             </strong>{" "}
             syllabi available
           </p>
 
           <div className="hero-search-card">
-            <div className="search-wrapper">
+            <div className="search-wrapper" onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) {
+                setDropdownOpen(false);
+                setSelectedIndex(-1);
+              }
+            }}>
               <input
                 type="text"
                 className="search-input"
@@ -330,11 +247,11 @@ export default function HomePage() {
                 ref={searchInputRef}
                 aria-label="Search for a college"
                 aria-autocomplete="list"
-                aria-expanded={dropdownOpen && !!searchQuery}
+                aria-expanded={dropdownOpen && !!searchQuery.trim()}
                 aria-controls="college-search-listbox"
                 aria-activedescendant={
-                  selectedIndex >= 0
-                    ? `college-option-${filtered[selectedIndex]?.id}`
+                  dropdownOpen && activeResult && !searchPending
+                    ? `college-option-${activeResult.id}`
                     : undefined
                 }
                 role="combobox"
@@ -357,20 +274,23 @@ export default function HomePage() {
                 </button>
               )}
 
-              {dropdownOpen && searchQuery && (
+              {dropdownOpen && searchQuery.trim() && (
                 <div
                   className="results-box"
                   ref={dropdownRef}
-                  role="listbox"
+                  role={filtered.length > 0 && !searchPending && !(loadError && !indexLoadedOnce) ? "listbox" : undefined}
                   id="college-search-listbox"
                 >
-                  {loadingIndex && !indexLoadedOnce ? (
-                    <div className="no-result">Loading colleges…</div>
+                  {loadError && !indexLoadedOnce ? (
+                    <div className="no-result" role="alert"><p>{loadError}</p><button className="home-retry" onClick={() => fetchSearchIndex()}>Try again</button></div>
+                  ) : (loadingIndex && !indexLoadedOnce) || searchPending ? (
+                    <div className="no-result" role="status">Loading colleges…</div>
                   ) : filtered.length > 0 ? (
                     filtered.map((college, index) => (
                       <button
                         type="button"
                         key={college.id}
+                        id={`college-option-${college.id}`}
                         className={`result-item ${
                           selectedIndex === index ? "highlighted" : ""
                         }`}
@@ -379,7 +299,8 @@ export default function HomePage() {
                         role="option"
                         aria-selected={selectedIndex === index}
                       >
-                        {highlightMatch(college.name)}
+                        <span>{highlightMatch(college.name)}</span>
+                        {[college.city, college.state].filter(Boolean).length > 0 && <small>{[college.city, college.state].filter(Boolean).join(", ")}</small>}
                       </button>
                     ))
                   ) : (
@@ -405,13 +326,15 @@ export default function HomePage() {
 
       <section className="college-scroll-wrapper">
         <div className="scroll-header">
-          <h2 className="scroll-title">Top Colleges</h2>
+          <h2 className="scroll-title">Browse colleges</h2>
           <button className="scroll-cta" onClick={() => navigate("/colleges")}>
             View all
           </button>
         </div>
 
-        <div className="top-colleges-list">
+        {loadError && <div className="home-load-error" role="alert"><p>{loadError}{indexLoadedOnce ? " Showing previously loaded colleges." : ""}</p><button className="home-retry" disabled={loadingIndex} onClick={() => fetchSearchIndex()}>{loadingIndex ? "Retrying..." : "Try again"}</button></div>}
+        {!loadingTop && !loadError && topColleges.length === 0 && <p className="home-empty">No colleges to browse yet. <button onClick={() => navigate("/requestcollege")}>Request your college</button></p>}
+        <div className="top-colleges-list" aria-busy={loadingTop}>
           {loadingTop
             ? [...Array(3)].map((_, i) => (
                 <div key={i} className="top-college-row skeleton">
@@ -434,23 +357,14 @@ export default function HomePage() {
 
                   <div className="top-college-info">
                     <div className="top-college-name">{college.name}</div>
-                    {college.uploads > 0 && (
-                      <div className="top-college-count">
-                        {college.uploads} syllabi
-                      </div>
-                    )}
+                    <div className="top-college-location">{[college.city, college.state].filter(Boolean).join(", ")}</div>
+                    <div className="top-college-count">{college.uploads.toLocaleString()} {college.uploads === 1 ? "syllabus" : "syllabi"}</div>
                   </div>
 
-                  <img
-                    loading="lazy"
-                    src={college.image_url}
-                    alt=""
-                    className="top-college-thumb"
-                    onError={(e) => {
-                      e.currentTarget.src =
-                        "https://via.placeholder.com/120x120?text=College";
-                    }}
-                  />
+                  <div className="top-college-thumb" aria-hidden="true">
+                    <span>{college.name.split(/\s+/).slice(0, 2).map((word) => word[0]).join("")}</span>
+                    {college.image_url && <img loading="lazy" decoding="async" src={college.image_url} alt="" width="64" height="64" onError={(event) => { event.currentTarget.hidden = true; }} />}
+                  </div>
                 </button>
               ))}
         </div>
@@ -458,60 +372,28 @@ export default function HomePage() {
 
       <section
         className="why-section fade-in"
-        style={{ contentVisibility: "auto", containIntrinsicSize: "720px" }}
       >
         <img
           loading="lazy"
+          decoding="async"
+          width="720"
+          height="450"
           src={studentImage}
           alt="Helping each other"
           className="why-img"
         />
         <div className="why-content">
-          <h3>Why this matters</h3>
+          <h3>Help the next student.</h3>
           <p>
-            SyllabusDB helps students review past course syllabi before
-            registering so they can better understand grading policies, workload
-            expectations, and weekly topics. If you upload a syllabus, you help
-            other students plan more confidently.
+            Share a syllabus so others can plan their semester.
           </p>
           <button onClick={() => navigate("/uploadsyllabus")} className="btn">
             Upload a Syllabus
           </button>
+          <p className="home-review-note">Uploads are reviewed before publishing.</p>
         </div>
       </section>
 
-      <section
-        className="trust-section fade-in"
-        style={{ contentVisibility: "auto", containIntrinsicSize: "680px" }}
-      >
-        <div className="trust-content">
-          <h3>Reviewed Before Publishing</h3>
-          <p>How we maintain quality and safety:</p>
-
-          {/* FIXED: proper list semantics */}
-          <ul className="trust-list">
-            <li>Submissions are reviewed before they appear on the site</li>
-            <li>
-              Uploaded files may be scanned for malware and policy violations
-            </li>
-            <li>
-              Many submissions are reviewed within 24 hours, depending on volume
-            </li>
-          </ul>
-
-          <p>
-            We aim to keep SyllabusDB accurate, respectful, and compliant with
-            our policies.
-          </p>
-        </div>
-
-        <img
-          loading="lazy"
-          src={verifiedImage}
-          alt="Verified submission process"
-          className="trust-image"
-        />
-      </section>
     </div>
   );
 }
