@@ -35,6 +35,7 @@ export default function HomePage() {
 
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
+  const dropdownPointerActiveRef = useRef(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const [loadError, setLoadError] = useState("");
@@ -170,6 +171,7 @@ export default function HomePage() {
   // Close dropdown on outside click
   useEffect(() => {
     const onDown = (e) => {
+      dropdownPointerActiveRef.current = !!dropdownRef.current?.contains(e.target);
       if (!dropdownOpen) return;
       const input = searchInputRef.current;
       const drop = dropdownRef.current;
@@ -178,8 +180,17 @@ export default function HomePage() {
       setDropdownOpen(false);
       setSelectedIndex(-1);
     };
+    const onPointerEnd = () => {
+      dropdownPointerActiveRef.current = false;
+    };
     window.addEventListener("pointerdown", onDown);
-    return () => window.removeEventListener("pointerdown", onDown);
+    window.addEventListener("pointerup", onPointerEnd);
+    window.addEventListener("pointercancel", onPointerEnd);
+    return () => {
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointerup", onPointerEnd);
+      window.removeEventListener("pointercancel", onPointerEnd);
+    };
   }, [dropdownOpen]);
 
   const highlightMatch = (name) => {
@@ -227,6 +238,9 @@ export default function HomePage() {
 
           <div className="hero-search-card">
             <div className="search-wrapper" onBlur={(event) => {
+              // Mobile browsers can blur the input without focusing the tapped
+              // button. Keep it mounted until its click can run (and allow scrolling).
+              if (dropdownPointerActiveRef.current) return;
               if (!event.currentTarget.contains(event.relatedTarget)) {
                 setDropdownOpen(false);
                 setSelectedIndex(-1);
