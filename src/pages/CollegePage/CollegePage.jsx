@@ -143,7 +143,7 @@ export default function CollegePage() {
               <div className="cp-heading">
                 <h1>{collegeName}</h1>
                 {collegeLocation && <p className="cp-location"><IconMapPin size={16} aria-hidden="true" />{collegeLocation}</p>}
-                {nickname && nickname !== collegeName && <p className="cp-nickname">{nickname}</p>}
+                {/* {nickname && nickname !== collegeName && <p className="cp-nickname">{nickname}</p>} */}
                 <p className="cp-summary">
                   <span>{totalSyllabiCount.toLocaleString()} {totalSyllabiCount === 1 ? "syllabus" : "syllabi"}</span>
                   <span>{courses.length.toLocaleString()} {courses.length === 1 ? "course" : "courses"}</span>

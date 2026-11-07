@@ -1,334 +1,145 @@
 import { normalizeCourseCode } from "../../utils/courseCode.js";
-import { useParams, useNavigate } from "react-router";
+import { Link, useParams } from "react-router";
 import { doc, getDoc } from "firebase/firestore";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { Collapse, Rating, Skeleton } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import {
-  Alert,
-  Badge,
-  Box,
-  Button,
-  Collapse,
-  Group,
-  Paper,
-  Rating,
-  Skeleton,
-  Text,
-  Title,
-} from "@mantine/core";
-import {
-  IconCaretRight,
-  IconCaretRightFilled,
+  IconArrowLeft,
   IconChevronDown,
-  IconChevronUp,
+  IconCopy,
   IconExternalLink,
-  IconInfoCircle,
+  IconFileDescription,
   IconStarFilled,
 } from "@tabler/icons-react";
 import { db } from "../../../firebaseConfig";
+import "./SyllabusViewerPage.css";
 
-function formatCollegeName(collegeId) {
-  if (!collegeId) return "";
-  return collegeId
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const query = window.matchMedia("(max-width: 768px)");
-    const update = () => setIsMobile(query.matches);
-
-    update();
-    query.addEventListener("change", update);
-
-    return () => query.removeEventListener("change", update);
-  }, []);
-
-  return isMobile;
-}
-
-const ratingLabels = {
-  1: "Rough class",
-  2: "Pretty tough",
-  3: "Manageable",
-  4: "Good class",
-  5: "Would recommend",
-};
+const ratingLabels = { 1: "Rough class", 2: "Pretty tough", 3: "Manageable", 4: "Good class", 5: "Would recommend" };
 
 export default function SyllabusViewerPage() {
   const { collegeId, subject, courseId, syllabusId } = useParams();
-  const navigate = useNavigate();
-
   const [syllabus, setSyllabus] = useState(null);
+  const [course, setCourse] = useState(null);
+  const [college, setCollege] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
   const [reviewOpen, setReviewOpen] = useState(false);
-
-  const isMobile = useIsMobile();
+  const [previewLoaded, setPreviewLoaded] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
+  const subjectPath = `/college/${encodeURIComponent(collegeId)}/subject/${encodeURIComponent(subject)}`;
+  const coursePath = `${subjectPath}?course=${encodeURIComponent(course?.code || courseId)}`;
 
   useEffect(() => {
+    let active = true;
     window.scrollTo(0, 0);
-
-    async function fetchSyllabus() {
+    setLoading(true);
+    setError("");
+    setReviewOpen(false);
+    setPreviewLoaded(false);
+    setPreviewError(false);
+    const load = async () => {
       try {
-        const ref = doc(
-          db,
-          "colleges",
-          collegeId,
-          "courses",
-          courseId,
-          "syllabi",
-          syllabusId,
-        );
-
-        const snap = await getDoc(ref);
-
-        if (snap.exists()) {
-          setSyllabus({ id: snap.id, ...snap.data() });
+        const results = await Promise.allSettled([
+          getDoc(doc(db, "colleges", collegeId, "courses", courseId, "syllabi", syllabusId)),
+          getDoc(doc(db, "colleges", collegeId, "courses", courseId)),
+          getDoc(doc(db, "colleges", collegeId)),
+        ]);
+        if (!active) return;
+        const [syllabusResult, courseResult, collegeResult] = results;
+        if (syllabusResult.status === "rejected") throw syllabusResult.reason;
+        if (!syllabusResult.value.exists()) {
+          setSyllabus(null);
+          setError("This syllabus couldn't be found. It may have been removed.");
+          return;
         }
-      } catch (error) {
-        console.error("Error fetching syllabus:", error);
+        setSyllabus({ ...syllabusResult.value.data(), id: syllabusResult.value.id });
+        setCourse(courseResult.status === "fulfilled" && courseResult.value.exists() ? courseResult.value.data() : null);
+        setCollege(collegeResult.status === "fulfilled" && collegeResult.value.exists() ? collegeResult.value.data() : null);
+      } catch (err) {
+        console.error("Could not load syllabus:", err);
+        if (active) setError("We couldn't load this syllabus. Please try again.");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
-    }
+    };
+    void load();
+    return () => { active = false; };
+  }, [collegeId, courseId, syllabusId, retry]);
 
-    fetchSyllabus();
-  }, [collegeId, courseId, syllabusId]);
-
-  const collegeName = useMemo(() => formatCollegeName(collegeId), [collegeId]);
-
-  const syllabusTitle =
-    syllabus?.title || syllabus?.file_path?.split("/")?.pop() || "Syllabus PDF";
-
-  const ratingValue = Number(syllabus?.rating || 0);
-  const hasRating = ratingValue > 0;
+  const courseCode = normalizeCourseCode(course?.code || courseId);
+  const title = course?.title || syllabus?.title || "Course syllabus";
+  const collegeName = college?.name || collegeId.split("-").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+  const term = [syllabus?.term, syllabus?.year].filter(Boolean).join(" ");
+  const rating = Number(syllabus?.rating || 0);
+  const hasRating = Number.isFinite(rating) && rating >= 1 && rating <= 5;
   const hasReview = Boolean(syllabus?.experience_text?.trim());
-  const hasStudentIntel = hasRating || hasReview;
 
-  const openPdf = () => {
-    if (!syllabus?.pdf_url) return;
-    window.open(syllabus.pdf_url, "_blank", "noopener,noreferrer");
+  useEffect(() => {
+    document.title = `SyllabusDB | ${courseCode} Syllabus`;
+  }, [courseCode]);
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      notifications.show({ title: "Link copied", message: "Syllabus link copied to your clipboard.", color: "blue" });
+    } catch {
+      notifications.show({ title: "Couldn't copy link", message: "You can copy the page address from your browser.", color: "red" });
+    }
   };
 
-  if (loading) {
-    return (
-      <Box maw={1250} mx="auto" p={{ base: "sm", sm: "xl" }}>
-        <Skeleton height={42} width={260} mb="md" />
-        <Skeleton height={isMobile ? "82vh" : "80vh"} radius="lg" />
-      </Box>
-    );
-  }
-
-  if (!syllabus) {
-    return (
-      <Box maw={900} mx="auto" p="xl">
-        <Alert icon={<IconInfoCircle size={18} />} color="red" radius="md">
-          Syllabus not found.
-        </Alert>
-      </Box>
-    );
-  }
-
   return (
-    <Box
-      maw={1230}
-      mx="auto"
-      p={{ base: "xs", sm: "xl" }}
-      style={{
-        minHeight: "100vh",
-      }}
-    >
-      {isMobile && (
-        <Alert
-          icon={<IconInfoCircle size={18} />}
-          my={10}
-          color="blue"
-          radius="md"
-        >
-          Use the Open PDF button for the best viewing experience.
-        </Alert>
-      )}
-      <Paper
-        withBorder={!isMobile}
-        radius={isMobile ? 0 : "lg"}
-        p={{ base: "sm", sm: "md" }}
-        mb={{ base: "xs", sm: "md" }}
-      >
-        <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
-          <Box style={{ minWidth: 0 }}>
-            <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
-              <Text
-                component="button"
-                type="button"
-                onClick={() =>
-                  navigate(`/college/${collegeId}/subject/${subject}`)
-                }
-                style={{
-                  border: 0,
-                  background: "transparent",
-                  padding: 0,
-                  color: "#2563eb",
-                  fontWeight: 800,
-                  fontSize: isMobile ? 14 : 16,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {subject?.toUpperCase()}
-              </Text>
-
-              <IconCaretRightFilled
-                size={16}
-                color="#6b7280"
-                style={{ flexShrink: 0 }}
-              />
-              <Text
-                size={isMobile ? "sm" : "md"}
-                order={isMobile ? 5 : 3}
-                lineClamp={1}
-              >
-                {normalizeCourseCode(courseId)}
-              </Text>
-            </Group>
-
-            {!isMobile && (
-              <Text size="sm" c="dimmed" lineClamp={1}>
-                {collegeName}
-                {syllabus?.term ? ` • ${syllabus.term}` : ""}
-                {syllabus?.year ? ` ${syllabus.year}` : ""}
-                {syllabus?.professor ? ` • ${syllabus.professor}` : ""}
-              </Text>
-            )}
-          </Box>
-
-          {syllabus?.pdf_url && (
-            <Button
-              leftSection={<IconExternalLink size={15} />}
-              variant={isMobile ? "filled" : "light"}
-              size={isMobile ? "xs" : "sm"}
-              onClick={openPdf}
-              style={{ flexShrink: 0 }}
-            >
-              PDF
-            </Button>
-          )}
-        </Group>
-      </Paper>
-
-      {isMobile && (
-        <Box mb="xs" px="xs">
-          <Text size="xs" c="dimmed" lineClamp={1}>
-            {collegeName}
-            {syllabus?.term ? ` • ${syllabus.term}` : ""}
-            {syllabus?.year ? ` ${syllabus.year}` : ""}
-            {syllabus?.professor ? ` • ${syllabus.professor}` : ""}
-          </Text>
-        </Box>
-      )}
-
-      {hasStudentIntel && (
-        <Paper
-          withBorder
-          radius="md"
-          p={isMobile ? "xs" : "md"}
-          mb={isMobile ? "xs" : "md"}
-          style={{
-            background: "#fffef7",
-            borderColor: "#fde68a",
-          }}
-        >
-          <Group justify="space-between" wrap="nowrap">
-            <Group gap="xs" style={{ minWidth: 0 }}>
-              <IconStarFilled size={16} color="#d97706" />
-
-              <Box style={{ minWidth: 0 }}>
-                <Text fw={700} size={isMobile ? "sm" : "md"} lineClamp={1}>
-                  Student Review
-                </Text>
-
-                {hasRating && (
-                  <Text size="xs" c="dimmed" lineClamp={1}>
-                    {ratingValue}/5 · {ratingLabels[ratingValue]}
-                  </Text>
-                )}
-              </Box>
-            </Group>
-
-            <Button
-              variant="subtle"
-              size="xs"
-              color="yellow"
-              rightSection={
-                reviewOpen ? (
-                  <IconChevronUp size={14} />
-                ) : (
-                  <IconChevronDown size={14} />
-                )
-              }
-              onClick={() => setReviewOpen((prev) => !prev)}
-            >
-              {reviewOpen ? "Hide" : "Show"}
-            </Button>
-          </Group>
-
-          <Collapse in={reviewOpen}>
-            <Box mt="sm">
-              {hasRating && (
-                <Group gap="xs" mb={hasReview ? "sm" : 0}>
-                  <Rating value={ratingValue} readOnly size="sm" />
-                  <Text size="sm" fw={700}>
-                    {ratingLabels[ratingValue]}
-                  </Text>
-                </Group>
-              )}
-
-              {hasReview && (
-                <Text
-                  size="sm"
-                  c="dark"
-                  style={{
-                    whiteSpace: "pre-line",
-                    lineHeight: 1.65,
-                  }}
-                >
-                  {syllabus.experience_text}
-                </Text>
-              )}
-            </Box>
-          </Collapse>
-        </Paper>
-      )}
-
-      {!syllabus?.pdf_url ? (
-        <Alert icon={<IconInfoCircle size={18} />} color="orange" radius="md">
-          This syllabus does not have a PDF URL.
-        </Alert>
+    <main className="syllabus-viewer-page">
+      <Link className="svp-back" to={coursePath}><IconArrowLeft size={18} aria-hidden="true" />Back to {subject.toUpperCase()} courses</Link>
+      {loading ? (
+        <div className="svp-loading" role="status" aria-label="Loading syllabus">
+          <Skeleton height={32} width="45%" radius="sm" />
+          <Skeleton height={20} width="65%" radius="sm" />
+          <Skeleton height="65vh" radius="md" />
+        </div>
+      ) : error ? (
+        <section className="svp-empty" role="alert"><IconFileDescription size={32} aria-hidden="true" /><h1>Syllabus unavailable</h1><p>{error}</p><button className="svp-primary" onClick={() => setRetry((value) => value + 1)}>Try again</button></section>
       ) : (
-        <Box
-          style={{
-            height: isMobile ? "calc(100vh - 140px)" : "82vh",
-            border: isMobile ? "none" : "1px solid #e5e7eb",
-            borderRadius: isMobile ? 0 : 14,
-            overflow: "hidden",
-            background: "#fff",
-            boxShadow: isMobile ? "none" : "0 8px 24px rgba(15, 23, 42, 0.06)",
-          }}
-        >
-          <iframe
-            src={syllabus.pdf_url}
-            title={syllabusTitle}
-            style={{
-              width: "100%",
-              height: "100%",
-              border: 0,
-              display: "block",
-            }}
-          />
-        </Box>
+        <>
+          <header className="svp-header">
+            <div className="svp-heading">
+              <p className="svp-course-code">{courseCode}</p>
+              <h1>{title}</h1>
+              <p className="svp-college"><Link to={`/college/${encodeURIComponent(collegeId)}`}>{collegeName}</Link></p>
+              {(term || syllabus.professor) && <dl className="svp-details">
+                {term && <div><dt>Term</dt><dd>{term}</dd></div>}
+                {syllabus.professor && <div><dt>Professor</dt><dd>{syllabus.professor}</dd></div>}
+              </dl>}
+            </div>
+            <div className="svp-actions">
+              <button type="button" className="svp-secondary" onClick={copyLink}><IconCopy size={17} aria-hidden="true" />Copy link</button>
+              {syllabus.pdf_url && <a className="svp-primary" href={syllabus.pdf_url} target="_blank" rel="noopener noreferrer"><IconExternalLink size={17} aria-hidden="true" />Open PDF</a>}
+            </div>
+          </header>
+
+          {(hasRating || hasReview) && <section className="svp-review" aria-label="Student review">
+            <div className="svp-review-header">
+              <div className="svp-review-summary"><IconStarFilled size={18} aria-hidden="true" /><h2>Student review</h2>{hasRating && <span>{rating}/5<span className="svp-rating-label"> &middot; {ratingLabels[Math.round(rating)]}</span></span>}</div>
+              {hasReview && <button type="button" className="svp-review-toggle" aria-expanded={reviewOpen} aria-controls="svp-review-text" onClick={() => setReviewOpen((value) => !value)}>{reviewOpen ? "Hide review" : "Read review"}<IconChevronDown size={17} className={reviewOpen ? "is-open" : ""} aria-hidden="true" /></button>}
+            </div>
+            {hasReview && <Collapse in={reviewOpen}><div className="svp-review-content" id="svp-review-text">{hasRating && <Rating value={rating} readOnly size="sm" aria-label={`${rating} out of 5 stars`} />}<p>{syllabus.experience_text}</p></div></Collapse>}
+          </section>}
+
+          {!syllabus.pdf_url ? (
+            <section className="svp-empty"><IconFileDescription size={32} aria-hidden="true" /><h2>PDF unavailable</h2><p>The document isn't available for this syllabus.</p><Link className="svp-secondary" to={coursePath}>Browse other syllabi</Link></section>
+          ) : (
+            <section className="svp-document" aria-label="Syllabus document">
+              <div className="svp-document-toolbar"><span><IconFileDescription size={18} aria-hidden="true" />Syllabus PDF</span><a href={syllabus.pdf_url} target="_blank" rel="noopener noreferrer">Open in new tab<IconExternalLink size={15} aria-hidden="true" /></a></div>
+              <div className="svp-mobile-note">For easier reading on your phone, use <a href={syllabus.pdf_url} target="_blank" rel="noopener noreferrer">Open PDF</a>.</div>
+              {previewError ? <div className="svp-empty" role="alert"><h2>Preview unavailable</h2><p>Open the PDF in a new tab to read it.</p><a className="svp-primary" href={syllabus.pdf_url} target="_blank" rel="noopener noreferrer">Open PDF<IconExternalLink size={17} aria-hidden="true" /></a></div> : <div className="svp-preview" aria-busy={!previewLoaded}>
+                {!previewLoaded && <p className="svp-preview-loading" role="status">Loading PDF preview...</p>}
+                <iframe src={syllabus.pdf_url} title={`${courseCode}: ${title}`} onLoad={() => setPreviewLoaded(true)} onError={() => { setPreviewLoaded(true); setPreviewError(true); }} />
+              </div>}
+            </section>
+          )}
+        </>
       )}
-    </Box>
+    </main>
   );
 }
