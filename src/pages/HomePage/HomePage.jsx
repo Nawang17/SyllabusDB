@@ -35,7 +35,7 @@ export default function HomePage() {
 
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
-  const dropdownPointerActiveRef = useRef(false);
+  const searchWrapperRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const [loadError, setLoadError] = useState("");
@@ -171,7 +171,6 @@ export default function HomePage() {
   // Close dropdown on outside click
   useEffect(() => {
     const onDown = (e) => {
-      dropdownPointerActiveRef.current = !!dropdownRef.current?.contains(e.target);
       if (!dropdownOpen) return;
       const input = searchInputRef.current;
       const drop = dropdownRef.current;
@@ -180,16 +179,16 @@ export default function HomePage() {
       setDropdownOpen(false);
       setSelectedIndex(-1);
     };
-    const onPointerEnd = () => {
-      dropdownPointerActiveRef.current = false;
+    const onFocusIn = (event) => {
+      if (searchWrapperRef.current?.contains(event.target)) return;
+      setDropdownOpen(false);
+      setSelectedIndex(-1);
     };
     window.addEventListener("pointerdown", onDown);
-    window.addEventListener("pointerup", onPointerEnd);
-    window.addEventListener("pointercancel", onPointerEnd);
+    window.addEventListener("focusin", onFocusIn);
     return () => {
       window.removeEventListener("pointerdown", onDown);
-      window.removeEventListener("pointerup", onPointerEnd);
-      window.removeEventListener("pointercancel", onPointerEnd);
+      window.removeEventListener("focusin", onFocusIn);
     };
   }, [dropdownOpen]);
 
@@ -237,15 +236,9 @@ export default function HomePage() {
           </p>
 
           <div className="hero-search-card">
-            <div className="search-wrapper" onBlur={(event) => {
-              // Mobile browsers can blur the input without focusing the tapped
-              // button. Keep it mounted until its click can run (and allow scrolling).
-              if (dropdownPointerActiveRef.current) return;
-              if (!event.currentTarget.contains(event.relatedTarget)) {
-                setDropdownOpen(false);
-                setSelectedIndex(-1);
-              }
-            }}>
+            {/* A mobile tap can blur the input before clicking a result. Close
+                only on an outside pointer or actual focus moving outside. */}
+            <div className="search-wrapper" ref={searchWrapperRef}>
               <input
                 type="text"
                 className="search-input"
@@ -308,7 +301,9 @@ export default function HomePage() {
                         className={`result-item ${
                           selectedIndex === index ? "highlighted" : ""
                         }`}
-                        onMouseEnter={() => setSelectedIndex(index)}
+                        onPointerEnter={(event) => {
+                          if (event.pointerType === "mouse") setSelectedIndex(index);
+                        }}
                         onClick={() => goToCollege(college.id)}
                         role="option"
                         aria-selected={selectedIndex === index}
