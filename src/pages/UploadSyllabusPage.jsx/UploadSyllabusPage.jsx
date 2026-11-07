@@ -1,3 +1,4 @@
+import { syllabusFileError, syllabusDetailsError } from "../../utils/uploadValidation.js";
 import { normalizeCourseCode } from "../../utils/courseCode.js";
 import { useState, useEffect, useRef } from "react";
 import { db, storage } from "../../../firebaseConfig";
@@ -10,10 +11,11 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { useNavigate, useParams } from "react-router";
 import "./UploadSyllabusPage.css";
 import {
+  Autocomplete,
   Button,
   Modal,
   Rating,
@@ -38,7 +40,7 @@ export default function UploadSyllabus() {
     });
 
     return unsubscribe;
-  }, []);
+  }, [auth]);
   const { collegeName } = useParams();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -62,12 +64,15 @@ export default function UploadSyllabus() {
   const [uploadError, setUploadError] = useState("");
 
   const [courseOptions, setCourseOptions] = useState([]);
-  const [courseSuggestions, setCourseSuggestions] = useState([]);
+  const [loadingColleges, setLoadingColleges] = useState(true);
+  const [collegeLoadError, setCollegeLoadError] = useState("");
+  const [courseLoadError, setCourseLoadError] = useState("");
+  const [loadingCourses, setLoadingCourses] = useState(false);
+  const [reloadColleges, setReloadColleges] = useState(0);
+  const [reloadCourses, setReloadCourses] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  const [showUploadWarning, setShowUploadWarning] = useState(() => {
-    return localStorage.getItem("hideUploadWarning") !== "true";
-  });
-  const isMobile = window.innerWidth <= 768;
   const [TOSopened, { close: closeTOS, open: openTOS }] = useDisclosure(false);
   const [GuidelinesOpened, { close: closeG, open: openG }] =
     useDisclosure(false);
@@ -78,67 +83,44 @@ export default function UploadSyllabus() {
   }, []);
 
   useEffect(() => {
-    const fetchColleges = async () => {
-      const snapshot = await getDocs(collection(db, "colleges"));
-
-      const list = snapshot.docs
-        .filter((doc) => doc.data().approved !== false)
-        .map((doc) => ({
-          id: doc.id,
-          name: doc.data().name,
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-      setColleges(list);
-    };
-
-    fetchColleges();
-  }, []);
+    let active = true;
+    setLoadingColleges(true);
+    setCollegeLoadError("");
+    getDocs(collection(db, "colleges")).then((snapshot) => {
+      if (!active) return;
+      setColleges(snapshot.docs.filter((item) => item.data().approved !== false)
+        .map((item) => ({ id: item.id, name: item.data().name || item.id }))
+        .sort((a, b) => a.name.localeCompare(b.name)));
+    }).catch(() => {
+      if (active) setCollegeLoadError("Couldn't load colleges.");
+    }).finally(() => { if (active) setLoadingColleges(false); });
+    return () => { active = false; };
+  }, [reloadColleges]);
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      if (!collegeId) return;
-
-      const courseQuery = query(
-        collection(db, "colleges", collegeId, "courses"),
-        where("approved", "==", true),
-      );
-
-      const courseSnap = await getDocs(courseQuery);
-
-      const courseList = courseSnap.docs.map((doc) => ({
-        code: doc.id,
-        title: doc.data().title,
-      }));
-
-      setCourseOptions(courseList);
-    };
-
-    fetchCourses();
     setCourseCode("");
     setCourseTitle("");
-    setCourseSuggestions([]);
   }, [collegeId]);
 
   useEffect(() => {
-    if (courseCode.trim() === "") {
-      setCourseSuggestions([]);
-      return;
-    }
+    setCourseOptions([]);
+    setCourseLoadError("");
+    if (!collegeId) { setLoadingCourses(false); return; }
+    let active = true;
+    setLoadingCourses(true);
+    getDocs(query(collection(db, "colleges", collegeId, "courses"), where("approved", "==", true)))
+      .then((snapshot) => {
+        if (active) setCourseOptions(snapshot.docs.map((item) => ({ code: item.id, title: item.data().title || "" })));
+      }).catch(() => {
+        if (active) setCourseLoadError("Course suggestions are unavailable. You can still enter a course.");
+      }).finally(() => { if (active) setLoadingCourses(false); });
+    return () => { active = false; };
+  }, [collegeId, reloadCourses]);
 
-    const filtered = courseOptions.filter((c) =>
-      normalizeCourseCode(c.code).startsWith(normalizeCourseCode(courseCode)),
-    );
-
-    setCourseSuggestions(filtered);
-
-    const exactMatch = courseOptions.find(
-      (c) => normalizeCourseCode(c.code) === normalizeCourseCode(courseCode),
-    );
-    if (exactMatch) {
-      setCourseTitle(exactMatch.title);
-    }
-  }, [courseCode, courseOptions]);
+  const existingCourse = courseOptions.find((course) => normalizeCourseCode(course.code) === normalizeCourseCode(courseCode));
+  useEffect(() => {
+    if (existingCourse) setCourseTitle(existingCourse.title);
+  }, [existingCourse]);
 
   function getCurrentTerm() {
     const m = new Date().getMonth() + 1;
@@ -170,7 +152,6 @@ export default function UploadSyllabus() {
     setRating(0);
     setExperience("");
     setUploadError("");
-    setCourseSuggestions([]);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -178,37 +159,27 @@ export default function UploadSyllabus() {
   };
 
   const handleFileChange = (file) => {
-    setUploadError("");
-
     if (!file) return;
-
-    if (file.type !== "application/pdf") {
-      setUploadError("Please upload a PDF file.");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError("PDF file is too large. Maximum size is 5 MB.");
-      return;
-    }
-
-    setPdfFile(file);
+    const error = syllabusFileError(file);
+    setUploadError(error);
+    setPdfFile(error ? null : file);
+    if (error && fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setUploadError("");
-
-    if (!pdfFile) {
-      setUploadError("Please upload a syllabus PDF.");
-      return;
-    }
-
-    setShowReviewModal(true);
+  const detailsError = () => syllabusDetailsError({ collegeId, courseCode, courseTitle, professor, term, year });
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const error = detailsError() || (selectedCollegeName ? "" : "Choose an available college.") || syllabusFileError(pdfFile);
+    setUploadError(error);
+    if (!error) setShowReviewModal(true);
   };
 
   const handleSubmitUpload = async () => {
+    if (isSubmitting) return;
+    const validationError = detailsError() || syllabusFileError(pdfFile);
+    if (validationError) { setUploadError(validationError); return; }
     setUploadError("");
+    setUploadProgress(0);
     setIsSubmitting(true);
 
     try {
@@ -242,12 +213,6 @@ export default function UploadSyllabus() {
         }
       }
 
-      if (!pdfFile || pdfFile.size > 5 * 1024 * 1024) {
-        setUploadError("PDF file is too large. Maximum size is 5 MB.");
-        setIsSubmitting(false);
-        return;
-      }
-
       const cleanedCourseCode = normalizeCourseCode(courseCode);
       const cleanedCourseTitle = courseTitle.trim();
       const cleanedProfessor = professor.trim();
@@ -257,30 +222,6 @@ export default function UploadSyllabus() {
         rawExperience.length > EXPERIENCE_MAX
           ? rawExperience.slice(0, EXPERIENCE_MAX)
           : rawExperience;
-
-      const filePath = `syllabi/${collegeId}/${cleanedCourseCode}/${Date.now()}-${pdfFile.name}`;
-      const storageRef = ref(storage, filePath);
-
-      await uploadBytes(storageRef, pdfFile);
-      const pdfUrl = await getDownloadURL(storageRef);
-
-      const courseRef = doc(
-        db,
-        "colleges",
-        collegeId,
-        "courses",
-        cleanedCourseCode,
-      );
-
-      const courseSnap = await getDoc(courseRef);
-
-      if (!courseSnap.exists()) {
-        await setDoc(courseRef, {
-          code: cleanedCourseCode,
-          title: cleanedCourseTitle,
-          approved: false,
-        });
-      }
 
       const existingQuery = query(
         collection(
@@ -307,6 +248,35 @@ export default function UploadSyllabus() {
         return;
       }
 
+      const filePath = `syllabi/${collegeId}/${cleanedCourseCode}/${Date.now()}-${pdfFile.name}`;
+      const storageRef = ref(storage, filePath);
+
+      await new Promise((resolve, reject) => {
+        const task = uploadBytesResumable(storageRef, pdfFile);
+        task.on("state_changed", (snapshot) => {
+          setUploadProgress(Math.round(snapshot.bytesTransferred / snapshot.totalBytes * 100));
+        }, reject, resolve);
+      });
+      const pdfUrl = await getDownloadURL(storageRef);
+
+      const courseRef = doc(
+        db,
+        "colleges",
+        collegeId,
+        "courses",
+        cleanedCourseCode,
+      );
+
+      const courseSnap = await getDoc(courseRef);
+
+      if (!courseSnap.exists()) {
+        await setDoc(courseRef, {
+          code: cleanedCourseCode,
+          title: cleanedCourseTitle,
+          approved: false,
+        });
+      }
+
       const syllabusRef = collection(
         db,
         "colleges",
@@ -329,6 +299,7 @@ export default function UploadSyllabus() {
         ...(cleanedExperience ? { experience_text: cleanedExperience } : {}),
       });
 
+      // A notification failure must not report a successfully saved upload as failed.
       await fetch("https://syllabusdbserver-agza.onrender.com/notify-upload", {
         method: "POST",
         headers: {
@@ -339,7 +310,7 @@ export default function UploadSyllabus() {
           courseCode: `${cleanedCourseCode} - ${cleanedCourseTitle}`,
           hasExperience: !!cleanedExperience,
         }),
-      });
+      }).catch((error) => console.error("Upload saved; notification failed:", error));
 
       setShowReviewModal(false);
       setShowSuccessModal(true);
@@ -352,411 +323,111 @@ export default function UploadSyllabus() {
   };
 
   return (
-    <div className="upload-page">
-      <section className="upload-hero">
-        <h1>Upload a Syllabus</h1>
-      </section>
-
-      {/* {showUploadWarning && (
-        <div className="upload-warning">
-          <span className="warning-text">
-            📌 Before uploading, please check that the same course, term, year,
-            and professor has not already been shared to avoid duplicates.
-          </span>
-
-          <button
-            className="dismiss-warning"
-            onClick={() => {
-              localStorage.setItem("hideUploadWarning", "true");
-              setShowUploadWarning(false);
-            }}
-            aria-label="Dismiss warning"
-            type="button"
-          >
-            ✕
-          </button>
-        </div>
-      )} */}
-      {!isSignedIn && (
-        <div className="signin-reminder">
-          <p>
-            👋 Looks like you're not signed in. Sign in to track uploads, edit
-            reviews, and receive email updates.
-          </p>
-
-          <Button
-            variant="light"
-            size={"xs"}
-            onClick={() => navigate("/signin")}
-          >
-            Sign In
-          </Button>
-        </div>
-      )}
-      <div className="upload-layout">
-        <form className="upload-form" onSubmit={handleSubmit}>
-          <div className="form-section">
-            <div className="form-section-header">
-              <span>1</span>
-              <div>
-                <h2>Class details</h2>
+    <main className="upload-page">
+      <header className="upload-hero"><h1>Upload a syllabus</h1><p>Share a PDF. Help the next student.</p></header>
+      {!isSignedIn && <div className="upload-signin"><span>Want to manage your uploads?</span><Button variant="subtle" color="#1e88e5" onClick={() => navigate("/signin")}>Sign in</Button></div>}
+      <form className="upload-form" onSubmit={handleSubmit}>
+        <fieldset className="upload-fields" disabled={isSubmitting}>
+          <section className="upload-section" aria-labelledby="class-details-title">
+            <h2 id="class-details-title"><span className="upload-step">1</span>Class details</h2>
+            <Select
+              label="College" required searchable size="md" radius="md"
+              data={colleges.map((college) => ({ value: college.id, label: college.name }))}
+              value={collegeId || null} onChange={setCollegeId}
+              placeholder={loadingColleges ? "Loading colleges..." : "Find your college"}
+              nothingFoundMessage="No college found" disabled={loadingColleges || !!collegeLoadError}
+            />
+            {collegeLoadError && <div className="upload-inline-error" role="alert">{collegeLoadError}<button type="button" onClick={() => setReloadColleges((value) => value + 1)}>Try again</button></div>}
+            {!loadingColleges && !collegeLoadError && <button type="button" className="upload-text-link upload-request" onClick={() => navigate("/requestcollege")}>College missing? Request it</button>}
+            <div className="upload-course-grid">
+              <Autocomplete
+                label="Course code" required size="md" radius="md"
+                placeholder="e.g. CSCI 12700"
+                value={courseCode}
+                onChange={(value) => setCourseCode(value.toUpperCase().trimStart())}
+                onBlur={() => setCourseCode(normalizeCourseCode(courseCode))}
+                data={courseOptions.map((course) => course.code)}
+                filter={({ options, search }) => options.filter((option) => normalizeCourseCode(option.value).startsWith(normalizeCourseCode(search))).slice(0, 8)}
+                renderOption={({ option }) => <div className="upload-course-option"><strong>{normalizeCourseCode(option.value)}</strong><span>{courseOptions.find((course) => course.code === option.value)?.title}</span></div>}
+                disabled={!collegeId} maxDropdownHeight={240}
+              />
+              <div className="upload-native-field">
+                <label htmlFor="upload-course-title">Course name <span aria-hidden="true">*</span></label>
+                <input className="upload-text-input" id="upload-course-title" type="text" value={courseTitle} onChange={(event) => setCourseTitle(event.target.value.trimStart())} required readOnly={!!existingCourse?.title} placeholder="e.g. Introduction to Computer Science" />
               </div>
             </div>
-
-            <label>
-              Choose College
-              <Select
-                data={colleges.map((col) => ({
-                  value: col.id,
-                  label: col.name,
-                }))}
-                value={collegeId}
-                onChange={setCollegeId}
-                placeholder="Search for your college"
-                required
-                size="md"
-                searchable
-                nothingFoundMessage="No college found"
-              />
-            </label>
-
-            <label>
-              Course Code
-              <div className="course-input-wrapper">
-                <input
-                  type="text"
-                  className="full-width"
-                  value={courseCode.toUpperCase()}
-                  onChange={(e) =>
-                    setCourseCode(e.target.value.toUpperCase().trimStart())
-                  }
-                  onBlur={() => setCourseCode(normalizeCourseCode(courseCode))}
-                  required
-                  autoComplete="off"
-                  placeholder="e.g. CSCI 127"
-                />
-
-                {courseSuggestions.length > 0 && (
-                  <ul className="suggestions-dropdown">
-                    {courseSuggestions.map((course) => (
-                      <li
-                        key={course.code}
-                        onClick={() => {
-                          setCourseCode(course.code);
-                          setCourseTitle(course.title);
-                          setCourseSuggestions([]);
-                        }}
-                      >
-                        <strong>{course.code}</strong>
-                        <span>{course.title}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </label>
-
-            <label>
-              Course Title
-              <input
-                type="text"
-                value={courseTitle}
-                onChange={(e) => setCourseTitle(e.target.value.trimStart())}
-                required
-                disabled={!!courseOptions.find(
-                  (c) => normalizeCourseCode(c.code) === normalizeCourseCode(courseCode),
-                )}
-                placeholder="e.g. Introduction to Computer Science"
-              />
-            </label>
-
-            <label>
-              Professor Name
-              <input
-                placeholder="e.g. Jane Smith"
-                type="text"
-                value={professor}
-                onChange={(e) => setProfessor(e.target.value.trimStart())}
-                required
-              />
-            </label>
-
-            <div className="two-column-fields">
-              <label>
-                Term
-                <Select
-                  data={["Fall", "Spring", "Summer", "Winter"].map((item) => ({
-                    value: item,
-                    label: item,
-                  }))}
-                  value={term}
-                  onChange={setTerm}
-                  required
-                  size="md"
-                />
-              </label>
-
-              <label>
-                Year
-                <input
-                  type="number"
-                  value={year}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val.length <= 4) setYear(val);
-                  }}
-                  max={9999}
-                  min={1000}
-                  required
-                />
-              </label>
+            {loadingCourses && <p className="upload-field-note" role="status">Loading course suggestions...</p>}
+            {courseLoadError && <div className="upload-inline-error" role="alert">{courseLoadError}<button type="button" onClick={() => setReloadCourses((value) => value + 1)}>Try again</button></div>}
+            <div className="upload-native-field">
+              <label htmlFor="upload-professor">Professor <span aria-hidden="true">*</span></label>
+              <input className="upload-text-input" id="upload-professor" type="text" value={professor} onChange={(event) => setProfessor(event.target.value.trimStart())} required placeholder="e.g. Jane Smith" />
             </div>
-          </div>
-
-          <div className="form-section">
-            <div className="form-section-header">
-              <span>2</span>
-              <div>
-                <h2>Upload PDF</h2>
-                <p>One syllabus PDF. Max 5 MB.</p>
+            <div className="upload-two-columns">
+              <Select label="Term" required data={["Fall", "Spring", "Summer", "Winter"]} value={term} onChange={setTerm} allowDeselect={false} size="md" radius="md" />
+              <div className="upload-native-field">
+                <label htmlFor="upload-year">Year <span aria-hidden="true">*</span></label>
+                <input className="upload-text-input" id="upload-year" type="number" inputMode="numeric" value={year} onChange={(event) => { if (event.target.value.length <= 4) setYear(event.target.value); }} min={1000} max={9999} step={1} required />
               </div>
             </div>
+          </section>
 
-            <label className={`file-drop-card ${pdfFile ? "has-file" : ""}`}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/pdf"
-                onChange={(e) => handleFileChange(e.target.files?.[0])}
-                hidden
-              />
-
-              <div className="file-icon">
-                <IconFile size={48} color="#64748b" />
-              </div>
-
-              {pdfFile ? (
-                <>
-                  <strong>{pdfFile.name}</strong>
-                  <span>
-                    {(pdfFile.size / 1024 / 1024).toFixed(2)} MB selected
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPdfFile(null);
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = "";
-                      }
-                    }}
-                  >
-                    Remove file
-                  </button>
-                </>
-              ) : (
-                <>
-                  <strong>Click to upload your syllabus</strong>
-                  <span>PDF only, max 5 MB</span>
-                </>
-              )}
-            </label>
-          </div>
-
-          <div className="form-section review-section">
-            <div className="form-section-header">
-              <span>3</span>
-              <div>
-                <h2>Optional student review</h2>
-              </div>
-            </div>
-
-            <div className="student-review-card">
-              <div>
-                <h3>Help the next student survive this class 👀</h3>
-                <p>
-                  Rate your overall class experience. Think workload, grading,
-                  clarity, professor style, and whether you would recommend it.
-                </p>
-              </div>
-
-              <div className="rating-box">
-                <Rating value={rating} onChange={setRating} size="xl" />
-                <span>{ratingLabel[rating]}</span>
-              </div>
-            </div>
-
-            <label>
-              Quick Class Review
-              <Textarea
-                radius="md"
-                value={experience}
-                onChange={(e) => {
-                  const value = e.currentTarget.value;
-                  if (value.length <= EXPERIENCE_MAX) setExperience(value);
-                }}
-                placeholder="Drop the real tea: workload, exams, grading, attendance, professor style, and tips you wish you knew before taking it."
-                autosize
-                minRows={4}
-                maxRows={8}
-              />
-              <div className="character-row">
-                <span>Keep it helpful, not hateful.</span>
-                <span>
-                  {experience.length}/{EXPERIENCE_MAX}
-                </span>
-              </div>
-            </label>
-          </div>
-
-          {uploadError && (
-            <div className="upload-status error">{uploadError}</div>
-          )}
-
-          <p className="upload-guideline-reminder">
-            By uploading, you agree to follow our{" "}
-            <button type="button" onClick={openG}>
-              Community Guidelines
-            </button>{" "}
-            and{" "}
-            <button type="button" onClick={openTOS}>
-              Terms of Service
+          <section className="upload-section" aria-labelledby="upload-pdf-title">
+            <h2 id="upload-pdf-title"><span className="upload-step">2</span>Syllabus PDF</h2>
+            <input ref={fileInputRef} type="file" accept="application/pdf,.pdf" onChange={(event) => handleFileChange(event.target.files?.[0])} hidden />
+            <button
+              type="button" className={`upload-dropzone${dragging ? " is-dragging" : ""}${pdfFile ? " has-file" : ""}`}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(event) => { event.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(event) => {
+                event.preventDefault(); setDragging(false);
+                if (event.dataTransfer.files.length !== 1) { setUploadError("Choose one syllabus PDF at a time."); return; }
+                handleFileChange(event.dataTransfer.files[0]);
+              }}
+              aria-label={pdfFile ? `Replace selected PDF: ${pdfFile.name}` : "Choose a syllabus PDF, maximum 5 MB"}
+            >
+              <IconFile size={32} aria-hidden="true" />
+              <strong>{pdfFile ? pdfFile.name : "Choose a PDF or drop it here"}</strong>
+              <span>{pdfFile ? `${(pdfFile.size / 1024 / 1024).toFixed(2)} MB - click to replace` : "PDF only, up to 5 MB"}</span>
             </button>
-            . Only upload real syllabi. No private materials, personal info, or
-            spam.
-          </p>
+            {pdfFile && <div className="upload-file-actions"><span role="status">PDF selected</span><button type="button" className="upload-text-link" onClick={() => { setPdfFile(null); setUploadError(""); if (fileInputRef.current) fileInputRef.current.value = ""; }}>Remove file</button></div>}
+          </section>
 
-          <Button
-            type="submit"
-            size="lg"
-            radius="xl"
-            fullWidth
-            loading={isSubmitting}
-            disabled={isSubmitting}
-          >
-            Review Upload
-          </Button>
-        </form>
-      </div>
-
-      {showSuccessModal && (
-        <div className="upload-modal">
-          <div className="modal-content success-modal">
-            <div className="success-emoji">🎉</div>
-
-            <h3>Syllabus submitted!</h3>
-
-            <p>
-              Your syllabus is now waiting for approval. Once approved, students
-              will be able to find it on SyllabusDB.
-            </p>
-
-            <div className="modal-buttons">
-              <Button
-                color="green"
-                fullWidth
-                onClick={() => {
-                  setShowSuccessModal(false);
-                  resetForm();
-                }}
-              >
-                Upload Another
-              </Button>
-
-              <Button
-                color="gray"
-                variant="subtle"
-                fullWidth
-                onClick={() => navigate("/")}
-              >
-                Go to Home
-              </Button>
+          <details className="upload-section upload-review">
+            <summary>Add a student review <span>Optional</span></summary>
+            <div className="upload-review-content">
+              <div className="upload-rating"><Rating value={rating} onChange={setRating} size="lg" aria-label="Rate your class experience" /><span>{ratingLabel[rating]}</span>{rating > 0 && <button type="button" className="upload-text-link" onClick={() => setRating(0)}>Clear</button>}</div>
+              <Textarea label="Your experience" value={experience} onChange={(event) => setExperience(event.currentTarget.value.slice(0, EXPERIENCE_MAX))} placeholder="Workload, grading, or advice for future students." autosize minRows={3} maxRows={7} maxLength={EXPERIENCE_MAX} radius="md" />
+              <span className="upload-character-count">{experience.length}/{EXPERIENCE_MAX}</span>
             </div>
-          </div>
-        </div>
-      )}
+          </details>
+        </fieldset>
+        {uploadError && <div className="upload-error" role="alert">{uploadError}</div>}
+        <p className="upload-terms">By uploading, you agree to our <button type="button" onClick={openG}>Guidelines</button> and <button type="button" onClick={openTOS}>Terms of Service</button>.</p>
+        <Button type="submit" color="#1e88e5" size="md" radius="md" fullWidth disabled={isSubmitting || loadingColleges || !!collegeLoadError}>Review upload</Button>
+      </form>
 
-      {showReviewModal && (
-        <div className="upload-modal">
-          <div className="modal-content">
-            <h3>Confirm your upload</h3>
-
-            <p className="confirm-subtext">
-              Quick check before this goes to the approval queue.
-            </p>
-
-            <ul className="confirm-list">
-              <li>
-                <strong>College:</strong> {selectedCollegeName}
-              </li>
-              <li>
-                <strong>Course Code:</strong> {normalizeCourseCode(courseCode)}
-              </li>
-              <li>
-                <strong>Course Title:</strong> {courseTitle.trim()}
-              </li>
-              <li>
-                <strong>Professor:</strong> {professor.trim()}
-              </li>
-              <li>
-                <strong>Term:</strong> {term}
-              </li>
-              <li>
-                <strong>Year:</strong> {year}
-              </li>
-              <li>
-                <strong>File:</strong> {pdfFile?.name}
-              </li>
-              {rating > 0 && (
-                <li>
-                  <strong>Rating:</strong> {rating}/5, {ratingLabel[rating]}
-                </li>
-              )}
-              {experience.trim() && (
-                <li>
-                  <strong>Review:</strong>{" "}
-                  <span style={{ whiteSpace: "pre-wrap" }}>
-                    {experience.trim()}
-                  </span>
-                </li>
-              )}
-            </ul>
-
-            {uploadError && (
-              <div className="upload-status error">{uploadError}</div>
-            )}
-
-            <div className="modal-buttons">
-              <Button
-                variant="default"
-                fullWidth
-                onClick={() => setShowReviewModal(false)}
-                disabled={isSubmitting}
-              >
-                Edit
-              </Button>
-
-              <Button
-                color="green"
-                fullWidth
-                onClick={handleSubmitUpload}
-                loading={isSubmitting}
-              >
-                Confirm & Submit
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <Modal opened={TOSopened} onClose={closeTOS} title="">
-        <TermsOfService ismodal />
+      <Modal opened={showReviewModal} onClose={() => !isSubmitting && setShowReviewModal(false)} title="Review your upload" centered size="lg" closeOnClickOutside={!isSubmitting} closeOnEscape={!isSubmitting} withCloseButton={!isSubmitting} classNames={{ body: "upload-dialog", title: "upload-dialog-title" }}>
+        <dl className="upload-summary">
+          <div><dt>College</dt><dd>{selectedCollegeName}</dd></div>
+          <div><dt>Course</dt><dd>{normalizeCourseCode(courseCode)}<span>{courseTitle.trim()}</span></dd></div>
+          <div><dt>Professor</dt><dd>{professor.trim()}</dd></div>
+          <div><dt>Term</dt><dd>{term} {year}</dd></div>
+          <div><dt>PDF</dt><dd>{pdfFile?.name}</dd></div>
+          {rating > 0 && <div><dt>Rating</dt><dd>{rating}/5</dd></div>}
+          {experience.trim() && <div><dt>Review</dt><dd className="upload-review-text">{experience.trim()}</dd></div>}
+        </dl>
+        {uploadError && <div className="upload-error" role="alert">{uploadError}</div>}
+        {isSubmitting && <div className="upload-progress" role="status"><Progress value={uploadProgress} color="#1e88e5" aria-label="PDF upload progress" /><p>{uploadProgress === 100 ? "Saving your upload..." : `Uploading PDF: ${uploadProgress}%`}</p></div>}
+        <p className="upload-dialog-note">Your syllabus will be reviewed before publishing.</p>
+        <div className="upload-dialog-actions"><Button variant="default" disabled={isSubmitting} onClick={() => setShowReviewModal(false)}>Back to edit</Button><Button color="#1e88e5" onClick={handleSubmitUpload} loading={isSubmitting}>Submit syllabus</Button></div>
       </Modal>
-
-      <Modal opened={GuidelinesOpened} onClose={closeG} title="">
-        <GuidelinesPage ismodal />
+      <Modal opened={showSuccessModal} onClose={() => { setShowSuccessModal(false); resetForm(); }} title="Syllabus submitted" centered classNames={{ body: "upload-dialog", title: "upload-dialog-title" }}>
+        <p className="upload-success-copy">Thanks for sharing. Your syllabus is waiting for approval.</p>
+        <div className="upload-dialog-actions"><Button variant="default" onClick={() => navigate("/")}>Go home</Button><Button color="#1e88e5" onClick={() => { setShowSuccessModal(false); resetForm(); }}>Upload another</Button></div>
       </Modal>
-    </div>
+      <Modal opened={TOSopened} onClose={closeTOS} title="Terms of Service" size="lg"><TermsOfService ismodal /></Modal>
+      <Modal opened={GuidelinesOpened} onClose={closeG} title="Community Guidelines" size="lg"><GuidelinesPage ismodal /></Modal>
+    </main>
   );
 }

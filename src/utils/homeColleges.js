@@ -18,7 +18,7 @@ export function topHomeColleges(colleges) {
   return [...colleges].sort((a, b) => b.uploads - a.uploads || a.name.localeCompare(b.name)).slice(0, 3);
 }
 
-export function searchHomeColleges(colleges, search) {
+export function searchHomeColleges(colleges, search, maxResults = 12) {
   const query = search.trim().toLowerCase();
   if (!query) return [];
   const score = (value) => {
@@ -38,5 +38,5 @@ export function searchHomeColleges(colleges, search) {
     };
   }).filter((college) => college.score > 0)
     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
-    .slice(0, 12);
+    .slice(0, maxResults);
 }
