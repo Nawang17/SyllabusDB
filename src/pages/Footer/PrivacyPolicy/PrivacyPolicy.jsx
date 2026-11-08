@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link } from "../../../lib/navigation.jsx";
 import InfoPage from "../InfoPage";
 
 export default function PrivacyPolicy() {

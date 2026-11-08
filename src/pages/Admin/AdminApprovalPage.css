@@ -11,7 +11,7 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  color: #111827;
+  color: var(--foreground);
 }
 
 .admin-approval-page h2 {
@@ -19,7 +19,7 @@
   font-size: 2rem;
   font-weight: 850;
   letter-spacing: -0.04em;
-  color: #111827;
+  color: var(--foreground);
 }
 
 .admin-approval-page .syllabus-list {
@@ -30,10 +30,10 @@
 .admin-approval-page .syllabus-list h3 {
   margin: 0;
   padding: 0.85rem 1rem;
-  border: 1px solid #dbeafe;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: var(--muted);
+  color: var(--link);
   font-size: 0.95rem;
   font-weight: 800;
 }
@@ -41,17 +41,17 @@
 .admin-approval-page .college-group {
   padding: 0;
   margin: 0;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--card);
   overflow: hidden;
 }
 
 .admin-approval-page .owner-group {
   margin: 0;
   padding: 0.75rem 1rem 1rem;
-  border-top: 1px solid #f1f5f9;
-  background: #fbfdff;
+  border-top: 1px solid var(--border);
+  background: var(--card);
 }
 
 .admin-approval-page .dropdown-btn {
@@ -63,8 +63,8 @@
   margin: 0;
   padding: 1rem;
   border: 0;
-  background: #ffffff;
-  color: #111827;
+  background: var(--card);
+  color: var(--foreground);
   font: inherit;
   font-size: 1rem;
   font-weight: 800;
@@ -73,22 +73,22 @@
 }
 
 .admin-approval-page .dropdown-btn:hover {
-  background: #f8fafc;
+  background: var(--card);
 }
 
 .admin-approval-page .dropdown-btn.inner {
   margin: 0 0 0.75rem;
   padding: 0.75rem 0.85rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--card);
   font-size: 0.92rem;
   font-weight: 750;
-  color: #334155;
+  color: var(--foreground);
 }
 
 .admin-approval-page .dropdown-btn.inner:hover {
-  background: #f8fafc;
+  background: var(--card);
 }
 
 .admin-approval-page .syllabus-card {
@@ -98,9 +98,9 @@
   align-items: start;
   margin-top: 0.75rem;
   padding: 1rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--card);
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
 }
 
@@ -114,21 +114,21 @@
 }
 
 .admin-approval-page .admin-page-header h2 { margin-bottom: 0.5rem; }
-.admin-approval-page .admin-page-header p { margin: 0; color: #64748b; line-height: 1.6; }
-.admin-approval-page .admin-page-header .admin-eyebrow { color: #2563eb; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; margin-bottom: 0.5rem; }
-.admin-approval-page .admin-pending-count { padding: 0.65rem 1rem; border-radius: 100px; background: #eff6ff; color: #1d4ed8; font-weight: 700; }
+.admin-approval-page .admin-page-header p { margin: 0; color: var(--muted-foreground); line-height: 1.6; }
+.admin-approval-page .admin-page-header .admin-eyebrow { color: var(--link); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; margin-bottom: 0.5rem; }
+.admin-approval-page .admin-pending-count { padding: 0.65rem 1rem; border-radius: 100px; background: var(--muted); color: var(--link); font-weight: 700; }
 .admin-approval-page .syllabus-info,
 .admin-approval-page .dropdown-btn,
 .admin-approval-page .college-request-card,
 .admin-approval-page .scan-result { overflow-wrap: anywhere; }
 .admin-approval-page .syllabus-actions { min-width: 0; }
 .admin-approval-page .syllabus-actions > * { min-height: 44px; flex: 1 1 110px; box-sizing: border-box; }
-.admin-approval-page .syllabus-card .admin-edit-button { background: #eff6ff; color: #1d4ed8; }
+.admin-approval-page .syllabus-card .admin-edit-button { background: var(--muted); color: var(--link); }
 .admin-approval-page button:focus-visible,
-.admin-approval-page a:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+.admin-approval-page a:focus-visible { outline: 3px solid var(--border); outline-offset: 3px; }
 
 /* The editor is rendered in Mantine's modal portal, outside the page wrapper. */
-.admin-edit-form > p { color: #64748b; font-size: 0.9rem; line-height: 1.6; margin-top: 0; }
+.admin-edit-form > p { color: var(--muted-foreground); font-size: 0.9rem; line-height: 1.6; margin-top: 0; }
 .admin-edit-form fieldset { border: 0; padding: 0; margin: 1rem 0; min-width: 0; }
 .admin-edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .admin-edit-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0.75rem; }
@@ -145,13 +145,13 @@
 .admin-approval-page .syllabus-info {
   min-width: 0;
   margin: 0;
-  color: #334155;
+  color: var(--foreground);
   font-size: 0.94rem;
   line-height: 1.65;
 }
 
 .admin-approval-page .syllabus-info strong {
-  color: #111827;
+  color: var(--foreground);
 }
 
 .admin-approval-page .syllabus-actions {
@@ -173,8 +173,8 @@
   padding: 0.45rem 0.75rem;
   border: 0;
   border-radius: 10px;
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--muted);
+  color: var(--foreground);
   font: inherit;
   font-size: 0.85rem;
   font-weight: 750;
@@ -183,7 +183,7 @@
 }
 
 .admin-approval-page .syllabus-actions a:hover {
-  background: #e2e8f0;
+  background: var(--muted);
 }
 
 .admin-approval-page .syllabus-card button:hover,
@@ -192,18 +192,18 @@
 }
 
 .admin-approval-page .syllabus-card .admin-scan-button {
-  background: #eef2ff;
-  color: #3730a3;
+  background: var(--muted);
+  color: var(--link);
 }
 
 .admin-approval-page .syllabus-card .admin-approve-button {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--muted);
+  color: var(--success);
 }
 
 .admin-approval-page .syllabus-card .admin-reject-button {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--muted);
+  color: var(--destructive);
 }
 
 .admin-approval-page .syllabus-card button:disabled {
@@ -216,14 +216,14 @@
   margin-top: 0.25rem;
   padding: 0.75rem 0.9rem;
   border-radius: 12px;
-  background: #f8fafc;
-  color: #374151;
+  background: var(--card);
+  color: var(--foreground);
   font-size: 0.88rem;
   line-height: 1.5;
 }
 
 .admin-approval-page .scan-result .error {
-  color: #b91c1c;
+  color: var(--destructive);
   font-weight: 800;
 }
 
@@ -231,9 +231,9 @@
 .admin-approval-page .college-request-section {
   margin-top: 1.5rem;
   padding: 0;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--card);
   overflow: hidden;
 }
 
@@ -245,21 +245,21 @@
 
 .admin-approval-page .college-request-card {
   padding: 1rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--card);
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
 }
 
 .admin-approval-page .college-request-card h4 {
   margin: 0 0 0.35rem;
   font-size: 1.05rem;
-  color: #111827;
+  color: var(--foreground);
 }
 
 .admin-approval-page .college-request-card p {
   margin: 0.25rem 0;
-  color: #475569;
+  color: var(--muted-foreground);
   font-size: 0.93rem;
 }
 

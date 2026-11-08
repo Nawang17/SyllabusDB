@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "../../lib/navigation.jsx";
 import {
   collection,
   doc,
@@ -9,22 +9,24 @@ import {
 import { db } from "../../../firebaseConfig";
 import "./HomePage.css";
 import studentImage from "../../assets/studentshangingout-home.jpg";
-import CountUp from "react-countup";
+import CountUpImport from "react-countup";
 import { publicHomeColleges, searchHomeColleges, topHomeColleges } from "../../utils/homeColleges.js";
 
 const CACHE_KEY = "homeColleges:v3";
+// The CommonJS package has a nested default in Vite's development prebundle.
+// Production bundling exposes the component directly.
+const CountUp = CountUpImport.default ?? CountUpImport;
 
-export default function HomePage() {
+export default function HomePage({ initialColleges }) {
   useEffect(() => {
-    document.title = "SyllabusDB | Browse Past College Syllabi";
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   const navigate = useNavigate();
 
-  const [searchIndex, setSearchIndex] = useState([]);
+  const [searchIndex, setSearchIndex] = useState(() => publicHomeColleges(initialColleges || []));
   const [loadingIndex, setLoadingIndex] = useState(false);
-  const [indexLoadedOnce, setIndexLoadedOnce] = useState(false);
+  const [indexLoadedOnce, setIndexLoadedOnce] = useState(Boolean(initialColleges));
 
   const [searchQuery, setSearchQuery] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -69,14 +71,14 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    try {
+    if (!initialColleges) try {
       const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
       if (Array.isArray(cached) && cached.every((item) => item && typeof item.id === "string" && typeof item.name === "string" && Array.isArray(item.aliases) && item.aliases.every((alias) => typeof alias === "string") && typeof item.nickname === "string" && Number.isFinite(item.uploads))) {
         setSearchIndex(cached);
         setIndexLoadedOnce(true);
       }
     } catch { /* Fetch fresh data when storage is unavailable or invalid. */ }
-    void fetchSearchIndex();
+    if (!initialColleges) void fetchSearchIndex();
 
     const unsubStats = onSnapshot(
       doc(db, "stats", "global"),
@@ -104,7 +106,7 @@ export default function HomePage() {
       unsubStats();
       if (io) io.disconnect();
     };
-  }, [fetchSearchIndex]);
+  }, [fetchSearchIndex, initialColleges]);
 
   // Debounce
   useEffect(() => {
@@ -382,15 +384,6 @@ export default function HomePage() {
       <section
         className="why-section fade-in"
       >
-        <img
-          loading="lazy"
-          decoding="async"
-          width="720"
-          height="450"
-          src={studentImage}
-          alt="Helping each other"
-          className="why-img"
-        />
         <div className="why-content">
           <h3>Help the next student.</h3>
           <p>

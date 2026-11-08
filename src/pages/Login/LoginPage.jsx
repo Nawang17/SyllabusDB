@@ -1,6 +1,6 @@
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../../firebaseConfig";
-import { useNavigate } from "react-router";
+import { useNavigate } from "../../lib/navigation.jsx";
 import { useState } from "react";
 
 export default function LoginPage() {

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { NavLink } from "react-router";
+import { NavLink } from "../../lib/navigation.jsx";
 import { IconMail } from "@tabler/icons-react";
 import "./InfoPage.css";
 
@@ -8,7 +8,6 @@ const pages = [["/aboutpage", "About"], ["/guidelines", "Guidelines"], ["/termso
 export default function InfoPage({ title, intro, updated, ismodal = false, children }) {
   useEffect(() => {
     if (ismodal) return;
-    document.title = `SyllabusDB | ${title}`;
     window.scrollTo(0, 0);
   }, [title, ismodal]);
 

@@ -1,4 +1,4 @@
-import { Container, Title, Text, Stack } from "@mantine/core";
+import { Container, Title, Text, Stack } from "../../components/ui/controls.jsx";
 
 export default function ExtensionPrivacyPolicy() {
   return (

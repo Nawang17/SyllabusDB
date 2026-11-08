@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation } from "../lib/navigation.jsx";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, onSnapshot, runTransaction, serverTimestamp } from "firebase/firestore";
-import { Modal } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
+import { Modal } from "./ui/controls.jsx";
+import { notifications } from "../lib/notifications.js";
 import { IconThumbUp, IconThumbUpFilled } from "@tabler/icons-react";
 import { auth, db } from "../../firebaseConfig";
 import { toggleHelpfulVote } from "../utils/helpfulVote.js";

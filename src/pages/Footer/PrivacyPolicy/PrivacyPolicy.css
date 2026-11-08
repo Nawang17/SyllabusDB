@@ -3,7 +3,7 @@
   margin: 2rem auto;
   padding: 0 2rem;
   font-family: "Segoe UI", sans-serif;
-  color: #333;
+  color: var(--foreground);
 }
 
 .privacy-page h1 {

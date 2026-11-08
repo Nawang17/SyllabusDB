@@ -1,26 +1,28 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { Link } from "react-router";
+import { useHydrated } from '@tanstack/react-router';
+import { Link } from "../../lib/navigation.jsx";
 import { IconSearch, IconChevronRight } from "@tabler/icons-react";
 import { db } from "../../../firebaseConfig";
 import { publicHomeColleges } from "../../utils/homeColleges.js";
 import { filterCollegeDirectory } from "../../utils/collegeDirectory.js";
 import "./AllCollegesPage.css";
 
-export default function AllCollegesPage() {
-  const [colleges, setColleges] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function AllCollegesPage({ initialColleges }) {
+  const hydrated = useHydrated();
+  const [colleges, setColleges] = useState(() => publicHomeColleges(initialColleges || []));
+  const [loading, setLoading] = useState(!initialColleges);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   const [search, setSearch] = useState("");
   const searchRef = useRef(null);
 
   useEffect(() => {
-    document.title = "SyllabusDB | All Colleges";
     window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {
+    if (initialColleges && retry === 0) return;
     let active = true;
     const fetchColleges = async () => {
       setLoading(true);
@@ -38,7 +40,7 @@ export default function AllCollegesPage() {
     };
     void fetchColleges();
     return () => { active = false; };
-  }, [retry]);
+  }, [retry, initialColleges]);
 
   const filtered = useMemo(() => filterCollegeDirectory(colleges, { search }), [colleges, search]);
   const hasFilters = !!search.trim();
@@ -65,6 +67,7 @@ export default function AllCollegesPage() {
             aria-label="Search by college name, abbreviation, city, or state"
             className="acp-search-input"
             type="search"
+            disabled={!hydrated}
           />
           {search && <button className="acp-clear" aria-label="Clear search" onClick={() => { setSearch(""); searchRef.current?.focus(); }}>&times;</button>}
         </div>

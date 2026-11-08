@@ -4,7 +4,7 @@
   max-width: 1150px;
   margin: 0 auto;
   padding: 2rem 2rem 3rem 2rem;
-  color: #0f172a; /* slate-900 */
+  color: var(--foreground); /* slate-900 */
   font-size: 14px;
   line-height: 1.7;
   background: transparent;
@@ -26,7 +26,7 @@
 
 .about-page p {
   margin: 0.75rem 0;
-  color: #1f2937; /* gray-800 */
+  color: var(--foreground); /* gray-800 */
 }
 
 .about-page ul {
@@ -40,7 +40,7 @@
 }
 
 .about-page a {
-  color: #1e88e5;
+  color: var(--link);
   text-decoration: none;
   border-bottom: 1px solid rgba(30, 136, 229, 0.25);
   transition:
@@ -49,7 +49,7 @@
 }
 
 .about-page a:hover {
-  color: #1565c0;
+  color: var(--link);
   border-bottom-color: rgba(21, 101, 192, 0.4);
 }
 

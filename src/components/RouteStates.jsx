@@ -1,0 +1,3 @@
+import { Link, useRouter } from '@tanstack/react-router'
+export function NotFoundPage() { return <main className="page-shell"><h1>Page not found</h1><p>This public record does not exist or has not been published.</p><Link to="/colleges">Browse colleges</Link></main> }
+export function ErrorPage({ reset }) { const router = useRouter(); return <main className="page-shell" role="alert"><h1>Temporarily unavailable</h1><p>We couldn’t load this page. Please try again.</p><button className="rounded border px-4 py-2" onClick={async () => { await router.invalidate(); reset?.() }}>Try again</button></main> }

@@ -12,7 +12,7 @@ import {
   where,
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "../../lib/navigation.jsx";
 import "./UploadSyllabusPage.css";
 import {
   Autocomplete,
@@ -22,10 +22,10 @@ import {
   Select,
   Textarea,
   Progress,
-} from "@mantine/core";
+} from "../../components/ui/controls.jsx";
 import { getAuth, signInAnonymously } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure } from "../../components/ui/controls.jsx";
 import TermsOfService from "../Footer/TermsOfService/TermsOfService";
 import GuidelinesPage from "../Footer/GuidelinesPage/GuideLinesPage";
 import { IconFile } from "@tabler/icons-react";
@@ -110,7 +110,7 @@ export default function UploadSyllabus() {
     setLoadingCourses(true);
     getDocs(query(collection(db, "colleges", collegeId, "courses"), where("approved", "==", true)))
       .then((snapshot) => {
-        if (active) setCourseOptions(snapshot.docs.map((item) => ({ code: item.id, title: item.data().title || "" })));
+        if (active) setCourseOptions(snapshot.docs.map((item) => ({ code: item.data().code || item.id, title: item.data().title || item.data().name || "" })));
       }).catch(() => {
         if (active) setCourseLoadError("Course suggestions are unavailable. You can still enter a course.");
       }).finally(() => { if (active) setLoadingCourses(false); });
@@ -183,6 +183,7 @@ export default function UploadSyllabus() {
     setIsSubmitting(true);
 
     try {
+      await auth.authStateReady();
       let user = auth.currentUser;
 
       if (!user) {
@@ -325,7 +326,7 @@ export default function UploadSyllabus() {
   return (
     <main className="upload-page">
       <header className="upload-hero"><h1>Upload a syllabus</h1><p>Share a PDF. Help the next student.</p></header>
-      {!isSignedIn && <div className="upload-signin"><span>Want to manage your uploads?</span><Button variant="subtle" color="#1e88e5" onClick={() => navigate("/signin")}>Sign in</Button></div>}
+      {!isSignedIn && <div className="upload-signin"><span>Want to manage your uploads?</span><Button variant="subtle" onClick={() => navigate("/signin")}>Sign in</Button></div>}
       <form className="upload-form" onSubmit={handleSubmit}>
         <fieldset className="upload-fields" disabled={isSubmitting}>
           <section className="upload-section" aria-labelledby="class-details-title">
@@ -346,9 +347,8 @@ export default function UploadSyllabus() {
                 value={courseCode}
                 onChange={(value) => setCourseCode(value.toUpperCase().trimStart())}
                 onBlur={() => setCourseCode(normalizeCourseCode(courseCode))}
-                data={courseOptions.map((course) => course.code)}
-                filter={({ options, search }) => options.filter((option) => normalizeCourseCode(option.value).startsWith(normalizeCourseCode(search))).slice(0, 8)}
-                renderOption={({ option }) => <div className="upload-course-option"><strong>{normalizeCourseCode(option.value)}</strong><span>{courseOptions.find((course) => course.code === option.value)?.title}</span></div>}
+                data={courseOptions.map((course) => ({ value: normalizeCourseCode(course.code), label: course.title }))}
+                filterOption={(option, search) => normalizeCourseCode(option.value).startsWith(normalizeCourseCode(search)) || option.label.toLowerCase().includes(search.toLowerCase())}
                 disabled={!collegeId} maxDropdownHeight={240}
               />
               <div className="upload-native-field">
@@ -404,7 +404,7 @@ export default function UploadSyllabus() {
         </fieldset>
         {uploadError && <div className="upload-error" role="alert">{uploadError}</div>}
         <p className="upload-terms">By uploading, you agree to our <button type="button" onClick={openG}>Guidelines</button> and <button type="button" onClick={openTOS}>Terms of Service</button>.</p>
-        <Button type="submit" color="#1e88e5" size="md" radius="md" fullWidth disabled={isSubmitting || loadingColleges || !!collegeLoadError}>Review upload</Button>
+        <Button type="submit" size="md" radius="md" fullWidth disabled={isSubmitting || loadingColleges || !!collegeLoadError}>Review upload</Button>
       </form>
 
       <Modal opened={showReviewModal} onClose={() => !isSubmitting && setShowReviewModal(false)} title="Review your upload" centered size="lg" closeOnClickOutside={!isSubmitting} closeOnEscape={!isSubmitting} withCloseButton={!isSubmitting} classNames={{ body: "upload-dialog", title: "upload-dialog-title" }}>
@@ -418,13 +418,13 @@ export default function UploadSyllabus() {
           {experience.trim() && <div><dt>Review</dt><dd className="upload-review-text">{experience.trim()}</dd></div>}
         </dl>
         {uploadError && <div className="upload-error" role="alert">{uploadError}</div>}
-        {isSubmitting && <div className="upload-progress" role="status"><Progress value={uploadProgress} color="#1e88e5" aria-label="PDF upload progress" /><p>{uploadProgress === 100 ? "Saving your upload..." : `Uploading PDF: ${uploadProgress}%`}</p></div>}
+        {isSubmitting && <div className="upload-progress" role="status"><Progress value={uploadProgress} aria-label="PDF upload progress" /><p>{uploadProgress === 100 ? "Saving your upload..." : `Uploading PDF: ${uploadProgress}%`}</p></div>}
         <p className="upload-dialog-note">Your syllabus will be reviewed before publishing.</p>
-        <div className="upload-dialog-actions"><Button variant="default" disabled={isSubmitting} onClick={() => setShowReviewModal(false)}>Back to edit</Button><Button color="#1e88e5" onClick={handleSubmitUpload} loading={isSubmitting}>Submit syllabus</Button></div>
+        <div className="upload-dialog-actions"><Button variant="default" disabled={isSubmitting} onClick={() => setShowReviewModal(false)}>Back to edit</Button><Button onClick={handleSubmitUpload} loading={isSubmitting}>Submit syllabus</Button></div>
       </Modal>
       <Modal opened={showSuccessModal} onClose={() => { setShowSuccessModal(false); resetForm(); }} title="Syllabus submitted" centered classNames={{ body: "upload-dialog", title: "upload-dialog-title" }}>
         <p className="upload-success-copy">Thanks for sharing. Your syllabus is waiting for approval.</p>
-        <div className="upload-dialog-actions"><Button variant="default" onClick={() => navigate("/")}>Go home</Button><Button color="#1e88e5" onClick={() => { setShowSuccessModal(false); resetForm(); }}>Upload another</Button></div>
+        <div className="upload-dialog-actions"><Button variant="default" onClick={() => navigate("/")}>Go home</Button><Button onClick={() => { setShowSuccessModal(false); resetForm(); }}>Upload another</Button></div>
       </Modal>
       <Modal opened={TOSopened} onClose={closeTOS} title="" size="lg"><TermsOfService ismodal /></Modal>
       <Modal opened={GuidelinesOpened} onClose={closeG} title="" size="lg"><GuidelinesPage ismodal /></Modal>

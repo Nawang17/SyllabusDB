@@ -20,8 +20,8 @@ import {
 import { ref as storageRef, deleteObject } from "firebase/storage";
 import "./AdminApprovalPage.css";
 import { onAuthStateChanged } from "firebase/auth";
-import { useNavigate } from "react-router";
-import { Button, Modal, TextInput, Select, Alert } from "@mantine/core";
+import { useNavigate } from "../../lib/navigation.jsx";
+import { Button, Modal, TextInput, Select, Alert } from "../../components/ui/controls.jsx";
 import { normalizeCourseCode } from "../../utils/courseCode.js";
 import { COURSE_TERMS, validateSyllabusEdit, applyPendingSyllabusEdit, cleanupEmptySourceCourse } from "../../utils/adminSyllabusEdit.js";
 import { generateCollegeId, validateCollegeEdit, applyPendingCollegeEdit } from "../../utils/adminCollegeEdit.js";

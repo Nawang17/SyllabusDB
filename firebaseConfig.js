@@ -1,5 +1,5 @@
 // src/firebase.js
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import {
   initializeFirestore,
   persistentLocalCache,
@@ -7,7 +7,7 @@ import {
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getAnalytics } from "firebase/analytics";
+import { getAnalytics, isSupported } from "firebase/analytics";
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -19,13 +19,14 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
+  ...(typeof window !== 'undefined' ? { localCache: persistentLocalCache({
     tabManager: persistentSingleTabManager(), // helps when multiple tabs open
-  }),
+  }) } : {}),
 });
 export const storage = getStorage(app);
 export const auth = getAuth(app);
 export const provider = new GoogleAuthProvider();
-export const analytics = getAnalytics(app);
+export let analytics = null;
+if (typeof window !== 'undefined') isSupported().then(supported => { if (supported) analytics = getAnalytics(app); }).catch(() => {});

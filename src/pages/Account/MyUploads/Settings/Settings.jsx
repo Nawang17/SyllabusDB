@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import { Avatar, Skeleton, Switch } from "@mantine/core";
-import { Link } from "react-router";
+import { Avatar, Skeleton, Switch } from "../../../../components/ui/controls.jsx";
+import { Link } from "../../../../lib/navigation.jsx";
 import { IconBell, IconCheck, IconChevronRight, IconLogout, IconShieldLock, IconUser } from "@tabler/icons-react";
 import { db } from "../../../../../firebaseConfig";
 import "./Settings.css";

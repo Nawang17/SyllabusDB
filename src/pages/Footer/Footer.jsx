@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link } from "../../lib/navigation.jsx";
 import { IconBrandGithub, IconMail } from "@tabler/icons-react";
 import "./Footer.css";
 

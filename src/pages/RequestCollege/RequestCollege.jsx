@@ -1,5 +1,5 @@
 ﻿import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link } from "../../lib/navigation.jsx";
 import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { getAuth, signInAnonymously } from "firebase/auth";
 import { IconArrowLeft, IconCheck, IconLoader2 } from "@tabler/icons-react";
@@ -57,6 +57,7 @@ export default function RequestCollege() {
     setSubmitting(true);
     try {
       const auth = getAuth();
+      await auth.authStateReady();
       let user = auth.currentUser;
       if (!user) user = (await signInAnonymously(auth)).user;
       const id = generateCollegeId(details.name);
