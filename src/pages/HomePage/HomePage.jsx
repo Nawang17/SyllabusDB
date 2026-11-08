@@ -305,11 +305,6 @@ export default function HomePage({ initialColleges }) {
                         onPointerEnter={(event) => {
                           if (event.pointerType === "mouse") setSelectedIndex(index);
                         }}
-                        onPointerDown={(event) => {
-                          // Keep the search input focused on touch so mobile
-                          // browsers don't dismiss the list before click fires.
-                          if (event.pointerType === "touch") event.preventDefault();
-                        }}
                         onClick={() => goToCollege(college.id)}
                         role="option"
                         aria-selected={selectedIndex === index}
