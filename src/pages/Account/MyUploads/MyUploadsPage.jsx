@@ -21,11 +21,11 @@ import {
   Textarea,
   Modal,
   Rating,
-} from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { notifications } from "@mantine/notifications";
+} from "../../../components/ui/controls.jsx";
+import { useDisclosure } from "../../../components/ui/controls.jsx";
+import { notifications } from "../../../lib/notifications.js";
 import { db } from "../../../../firebaseConfig";
-import { Link } from "react-router";
+import { Link } from "../../../lib/navigation.jsx";
 import "./MyUploadsPage.css";
 import {
   IconX,

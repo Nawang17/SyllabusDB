@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "../../lib/navigation.jsx";
 import {
   collection,
   doc,
@@ -8,34 +8,32 @@ import {
 } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
 import "./HomePage.css";
-import studentImage from "../../assets/studentshangingout-home.jpg";
-import CountUp from "react-countup";
+import CountUpImport from "react-countup";
 import { publicHomeColleges, searchHomeColleges, topHomeColleges } from "../../utils/homeColleges.js";
 
 const CACHE_KEY = "homeColleges:v3";
-
-export default function HomePage() {
+const CountUp = CountUpImport.default ?? CountUpImport;
+export default function HomePage({ initialColleges }) {
   useEffect(() => {
-    document.title = "SyllabusDB | Browse Past College Syllabi";
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   const navigate = useNavigate();
 
-  const [searchIndex, setSearchIndex] = useState([]);
+  const [searchIndex, setSearchIndex] = useState(() => publicHomeColleges(initialColleges || []));
   const [loadingIndex, setLoadingIndex] = useState(false);
-  const [indexLoadedOnce, setIndexLoadedOnce] = useState(false);
+  const [indexLoadedOnce, setIndexLoadedOnce] = useState(Boolean(initialColleges));
 
   const [searchQuery, setSearchQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const [totalUploads, setTotalUploads] = useState(null);
-  const [animateCount, setAnimateCount] = useState(false);
 
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
   const searchWrapperRef = useRef(null);
+  const resultPointerRef = useRef(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const [loadError, setLoadError] = useState("");
@@ -69,14 +67,14 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    try {
+    if (!initialColleges) try {
       const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
       if (Array.isArray(cached) && cached.every((item) => item && typeof item.id === "string" && typeof item.name === "string" && Array.isArray(item.aliases) && item.aliases.every((alias) => typeof alias === "string") && typeof item.nickname === "string" && Number.isFinite(item.uploads))) {
         setSearchIndex(cached);
         setIndexLoadedOnce(true);
       }
     } catch { /* Fetch fresh data when storage is unavailable or invalid. */ }
-    void fetchSearchIndex();
+    if (!initialColleges) void fetchSearchIndex();
 
     const unsubStats = onSnapshot(
       doc(db, "stats", "global"),
@@ -84,27 +82,10 @@ export default function HomePage() {
       (err) => { setTotalUploads(null); console.error("stats/global listener error:", err); },
     );
 
-    const countEl = document.querySelector(".hero-syllabi-count");
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let io;
-    if (!reduce.matches && countEl) {
-      io = new IntersectionObserver(
-        ([e]) => {
-          if (e.isIntersecting) {
-            setAnimateCount(true);
-            io.disconnect();
-          }
-        },
-        { rootMargin: "120px" },
-      );
-      io.observe(countEl);
-    }
-
     return () => {
       unsubStats();
-      if (io) io.disconnect();
     };
-  }, [fetchSearchIndex]);
+  }, [fetchSearchIndex, initialColleges]);
 
   // Debounce
   useEffect(() => {
@@ -181,6 +162,9 @@ export default function HomePage() {
     };
     const onFocusIn = (event) => {
       if (searchWrapperRef.current?.contains(event.target)) return;
+      // Mobile browsers may focus the document body between a tap and the
+      // synthetic click on a suggestion. Keep the list mounted for that click.
+      if (resultPointerRef.current) return;
       setDropdownOpen(false);
       setSelectedIndex(-1);
     };
@@ -216,21 +200,9 @@ export default function HomePage() {
             </p>
           </div>
 
-          <p className="hero-syllabi-count" hidden={totalUploads === null}>
+          <p className="hero-syllabi-count">
             <strong>
-              {animateCount && totalUploads !== null ? (
-                <CountUp
-                  start={Math.max(
-                    0,
-                    totalUploads - Math.floor(totalUploads * 0.05),
-                  )}
-                  end={totalUploads}
-                  duration={0.7}
-                  separator=","
-                />
-              ) : (
-                (totalUploads ?? 0).toLocaleString()
-              )}
+              {totalUploads === null ? "800" : <CountUp start={800} end={totalUploads} duration={0.9} separator="," />}
             </strong>{" "}
             syllabi available
           </p>
@@ -304,6 +276,10 @@ export default function HomePage() {
                         onPointerEnter={(event) => {
                           if (event.pointerType === "mouse") setSelectedIndex(index);
                         }}
+                        onPointerDown={() => {
+                          resultPointerRef.current = true;
+                          window.setTimeout(() => { resultPointerRef.current = false; }, 700);
+                        }}
                         onClick={() => goToCollege(college.id)}
                         role="option"
                         aria-selected={selectedIndex === index}
@@ -316,7 +292,12 @@ export default function HomePage() {
                     <div className="no-result">
                       <p className="no-result-title">No colleges found.</p>
                       <button
+                        type="button"
                         className="request-college-btn"
+                        onPointerDown={() => {
+                          resultPointerRef.current = true;
+                          window.setTimeout(() => { resultPointerRef.current = false; }, 700);
+                        }}
                         onClick={() => {
                           setDropdownOpen(false);
                           navigate("/requestcollege");
@@ -382,15 +363,6 @@ export default function HomePage() {
       <section
         className="why-section fade-in"
       >
-        <img
-          loading="lazy"
-          decoding="async"
-          width="720"
-          height="450"
-          src={studentImage}
-          alt="Helping each other"
-          className="why-img"
-        />
         <div className="why-content">
           <h3>Help the next student.</h3>
           <p>

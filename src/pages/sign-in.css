@@ -1,33 +1,33 @@
-.sign-in-page { width: 100%; max-width: var(--page-max-width, 1200px); margin: 2rem auto 3rem; padding: 0 var(--page-gutter, 1rem); color: #0f172a; }
+.sign-in-page { width: 100%; max-width: var(--page-max-width, 1200px); margin: 2rem auto 3rem; padding: 0 var(--page-gutter, 1rem); color: var(--foreground); }
 .sign-in-page .signin-wrap { width: 100%; max-width: 460px; margin: 0 auto; }
-.sign-in-page .signin-back { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; margin-bottom: .75rem; color: #64748b; font-size: .85rem; text-decoration: none; }
+.sign-in-page .signin-back { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; margin-bottom: .75rem; color: var(--muted-foreground); font-size: .85rem; text-decoration: none; }
 .sign-in-page .signin-back svg { flex-shrink: 0; }
-.sign-in-page .signin-back:hover { color: #1976d2; }
-.sign-in-page .signin-card { padding: 2rem; border: 1px solid #e2e8f0; border-radius: 14px; background: #fff; box-shadow: 0 8px 30px #0f172a05; }
+.sign-in-page .signin-back:hover { color: var(--link); }
+.sign-in-page .signin-card { padding: 2rem; border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: 0 8px 30px var(--shadow); }
 .sign-in-page .signin-header { margin-bottom: 1.75rem; }
 .sign-in-page h1 { font-size: clamp(1.5rem, 4vw, 1.85rem); line-height: 1.25; letter-spacing: -.04em; }
-.sign-in-page .signin-header p { margin-top: .75rem; color: #64748b; font-size: .9rem; line-height: 1.75; }
+.sign-in-page .signin-header p { margin-top: .75rem; color: var(--muted-foreground); font-size: .9rem; line-height: 1.75; }
 .sign-in-page .signin-google { min-height: 48px; font-size: .9rem; font-weight: 600; }
-.sign-in-page .signin-divider { display: flex; align-items: center; gap: .75rem; margin: 1.5rem 0; color: #64748b; font-size: .8rem; }
-.sign-in-page .signin-divider::before, .sign-in-page .signin-divider::after { content: ""; flex: 1; height: 1px; background: #e2e8f0; }
+.sign-in-page .signin-divider { display: flex; align-items: center; gap: .75rem; margin: 1.5rem 0; color: var(--muted-foreground); font-size: .8rem; }
+.sign-in-page .signin-divider::before, .sign-in-page .signin-divider::after { content: ""; flex: 1; height: 1px; background: var(--muted); }
 .sign-in-page .signin-form { display: grid; gap: .5rem; }
 .sign-in-page .signin-form label { font-size: .85rem; font-weight: 600; }
 .sign-in-page .signin-email-field { position: relative; }
-.sign-in-page .signin-email-field svg { position: absolute; top: 50%; left: 14px; transform: translateY(-50%); color: #94a3b8; pointer-events: none; }
-.sign-in-page .signin-email-field input { width: 100%; min-width: 0; min-height: 48px; padding: .7rem .85rem .7rem 42px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a; font: inherit; font-size: 1rem; }
-.sign-in-page .signin-email-field input:focus { outline: 3px solid #1e88e526; border-color: #1e88e5; }
-.sign-in-page .signin-email-field input:disabled { background: #f8fafc; color: #64748b; }
-.sign-in-page .signin-hint { color: #64748b; font-size: .8rem; line-height: 1.6; }
+.sign-in-page .signin-email-field svg { position: absolute; top: 50%; left: 14px; transform: translateY(-50%); color: var(--muted-foreground); pointer-events: none; }
+.sign-in-page .signin-email-field input { width: 100%; min-width: 0; min-height: 48px; padding: .7rem .85rem .7rem 42px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--foreground); font: inherit; font-size: 1rem; }
+.sign-in-page .signin-email-field input:focus { outline: 3px solid var(--shadow); border-color: var(--border); }
+.sign-in-page .signin-email-field input:disabled { background: var(--card); color: var(--muted-foreground); }
+.sign-in-page .signin-hint { color: var(--muted-foreground); font-size: .8rem; line-height: 1.6; }
 .sign-in-page .signin-form > button { margin-top: .65rem; min-height: 48px; font-size: .9rem; font-weight: 600; }
-.sign-in-page .signin-error { padding: .85rem 1rem; margin-bottom: 1.25rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #b91c1c; font-size: .85rem; line-height: 1.7; }
-.sign-in-page .signin-policy { border-top: 1px solid #e2e8f0; padding-top: 1.25rem; margin-top: 1.5rem; color: #64748b; font-size: .75rem; line-height: 1.8; }
-.sign-in-page .signin-policy a, .sign-in-page .signin-browse a { color: #1976d2; text-underline-offset: 3px; }
-.sign-in-page .signin-browse { margin-top: 1.25rem; color: #64748b; font-size: .85rem; text-align: center; line-height: 1.8; }
+.sign-in-page .signin-error { padding: .85rem 1rem; margin-bottom: 1.25rem; background: var(--muted); border: 1px solid var(--border); border-radius: 8px; color: var(--destructive); font-size: .85rem; line-height: 1.7; }
+.sign-in-page .signin-policy { border-top: 1px solid var(--border); padding-top: 1.25rem; margin-top: 1.5rem; color: var(--muted-foreground); font-size: .75rem; line-height: 1.8; }
+.sign-in-page .signin-policy a, .sign-in-page .signin-browse a { color: var(--link); text-underline-offset: 3px; }
+.sign-in-page .signin-browse { margin-top: 1.25rem; color: var(--muted-foreground); font-size: .85rem; text-align: center; line-height: 1.8; }
 .sign-in-page .signin-sent { display: grid; justify-items: start; gap: .85rem; }
-.sign-in-page .signin-sent > svg { color: #1976d2; }
-.sign-in-page .signin-sent p { color: #64748b; font-size: .9rem; line-height: 1.8; overflow-wrap: anywhere; }
-.sign-in-page .signin-sent strong { font-weight: 600; color: #334155; }
-.sign-in-page .signin-text-button { min-height: 44px; padding: .65rem 0; border: 0; background: transparent; color: #1976d2; font: inherit; font-size: .85rem; text-align: left; cursor: pointer; }
+.sign-in-page .signin-sent > svg { color: var(--link); }
+.sign-in-page .signin-sent p { color: var(--muted-foreground); font-size: .9rem; line-height: 1.8; overflow-wrap: anywhere; }
+.sign-in-page .signin-sent strong { font-weight: 600; color: var(--foreground); }
+.sign-in-page .signin-text-button { min-height: 44px; padding: .65rem 0; border: 0; background: transparent; color: var(--link); font: inherit; font-size: .85rem; text-align: left; cursor: pointer; }
 .sign-in-page .signin-text-button:disabled { opacity: .6; cursor: wait; }
-.sign-in-page a:focus-visible, .sign-in-page button:focus-visible { outline: 3px solid #1e88e5; outline-offset: 3px; }
+.sign-in-page a:focus-visible, .sign-in-page button:focus-visible { outline: 3px solid var(--border); outline-offset: 3px; }
 @media (max-width: 500px) { .sign-in-page { margin-top: 1rem; } .sign-in-page .signin-card { padding: 1.5rem 1.25rem; } }

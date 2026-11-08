@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { Link, useLocation, useNavigate } from "react-router";
+import { Button } from "../components/ui/controls.jsx";
+import { notifications } from "../lib/notifications.js";
+import { Link, useLocation, useNavigate } from "../lib/navigation.jsx";
 import { getAuth, GoogleAuthProvider, isSignInWithEmailLink, onAuthStateChanged, sendSignInLinkToEmail, signInWithEmailLink, signInWithPopup } from "firebase/auth";
 import { doc, getDoc, getFirestore, serverTimestamp, setDoc } from "firebase/firestore";
 import { IconArrowLeft, IconCheck, IconMail, IconMailOpened } from "@tabler/icons-react";
@@ -175,13 +175,12 @@ export default function SignIn() {
               <label htmlFor="signin-email">Email address</label>
               <div className="signin-email-field"><IconMail size={18} aria-hidden="true" /><input id="signin-email" type="email" name="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required value={email} onChange={(event) => { setEmail(event.target.value); setError(""); }} placeholder="you@example.com" disabled={!!busy} aria-invalid={!!error} aria-describedby="signin-email-hint" /></div>
               <p id="signin-email-hint" className="signin-hint">{emailLinkMode ? "Use the same address you entered when requesting the link." : "We'll send you a sign-in link. No password needed."}</p>
-              <Button type="submit" fullWidth size="md" radius="md" color="#1e88e5" loading={busy === "send" || busy === "complete"} disabled={!!busy}>{emailLinkMode ? "Confirm and sign in" : "Send sign-in link"}</Button>
+              <Button type="submit" fullWidth size="md" radius="md" loading={busy === "send" || busy === "complete"} disabled={!!busy}>{emailLinkMode ? "Confirm and sign in" : "Send sign-in link"}</Button>
             </form>
             {emailLinkMode && <button type="button" className="signin-text-button" onClick={requestNewLink} disabled={!!busy}>Request a new link</button>}
           </>}
           <p className="signin-policy">By signing in, you agree to our <Link to="/termsofservice">Terms of Service</Link>. Read how we handle your information in our <Link to="/privacy-policy">Privacy Policy</Link>.</p>
         </section>
-        <p className="signin-browse">Just exploring? <Link to="/">Browse without signing in</Link></p>
       </div>
     </main>
   );

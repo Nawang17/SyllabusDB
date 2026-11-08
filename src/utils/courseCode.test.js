@@ -14,6 +14,8 @@ test("normalizes CUNY and hyphenated subjects consistently", () => {
     ["MATH 101", "MATH 101"],
     ["  cs-gy\t 9215  ", "CS-GY 9215"],
     ["CSCI 101a", "CSCI 101A"],
+    ["csci101ab", "CSCI 101AB"],
+    ["cs-gy9215-a", "CS-GY 9215-A"],
     ["A&B101", "A&B 101"],
     ["ABC-DE-FG123", "ABC-DE-FG 123"],
   ]) {
@@ -47,4 +49,14 @@ test("search handles compact, spaced, partial and hyphenated codes", () => {
   assert.equal(courseCodeMatches("CSCI 12800", "csci128"), true);
   assert.equal(courseCodeMatches("CSCI 12800", "CSCI-128"), true);
   assert.equal(courseCodeMatches("MATH 101", "CSCI101"), false);
+});
+
+test("explicitly separated subjects can contain digits and punctuation", () => {
+  for (const [code, subject] of [["2D 101A", "2D"], ["CS2 101", "CS2"], ["ENG/LIT 201H", "ENG/LIT"], ["CS-GY 9215", "CS-GY"]]) {
+    assert.equal(normalizeCourseCode(code.toLowerCase()), code);
+    assert.equal(extractSubject(code), subject);
+    assert.equal(courseCodeMatches(code, `${subject} 10`), code.includes(' 10'));
+  }
+  assert.equal(normalizeCourseCode('CS-GY 9215 AB'), 'CS-GY 9215 AB');
+  assert.equal(extractSubject('CS-GY 9215 AB'), 'CS-GY');
 });

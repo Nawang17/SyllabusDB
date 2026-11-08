@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link } from "../../../lib/navigation.jsx";
 import { IconMail } from "@tabler/icons-react";
 import InfoPage from "../InfoPage";
 
