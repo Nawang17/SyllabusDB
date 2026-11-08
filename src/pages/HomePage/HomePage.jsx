@@ -37,6 +37,7 @@ export default function HomePage({ initialColleges }) {
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
   const searchWrapperRef = useRef(null);
+  const resultPointerRef = useRef(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const [loadError, setLoadError] = useState("");
@@ -182,6 +183,9 @@ export default function HomePage({ initialColleges }) {
     };
     const onFocusIn = (event) => {
       if (searchWrapperRef.current?.contains(event.target)) return;
+      // Mobile browsers may focus the document body between a tap and the
+      // synthetic click on a suggestion. Keep the list mounted for that click.
+      if (resultPointerRef.current) return;
       setDropdownOpen(false);
       setSelectedIndex(-1);
     };
@@ -304,6 +308,10 @@ export default function HomePage({ initialColleges }) {
                         }`}
                         onPointerEnter={(event) => {
                           if (event.pointerType === "mouse") setSelectedIndex(index);
+                        }}
+                        onPointerDown={() => {
+                          resultPointerRef.current = true;
+                          window.setTimeout(() => { resultPointerRef.current = false; }, 700);
                         }}
                         onClick={() => goToCollege(college.id)}
                         role="option"
