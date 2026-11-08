@@ -8,7 +8,6 @@ import {
 } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
 import "./HomePage.css";
-import studentImage from "../../assets/studentshangingout-home.jpg";
 import CountUpImport from "react-countup";
 import { publicHomeColleges, searchHomeColleges, topHomeColleges } from "../../utils/homeColleges.js";
 
@@ -305,6 +304,11 @@ export default function HomePage({ initialColleges }) {
                         }`}
                         onPointerEnter={(event) => {
                           if (event.pointerType === "mouse") setSelectedIndex(index);
+                        }}
+                        onPointerDown={(event) => {
+                          // Keep the search input focused on touch so mobile
+                          // browsers don't dismiss the list before click fires.
+                          if (event.pointerType === "touch") event.preventDefault();
                         }}
                         onClick={() => goToCollege(college.id)}
                         role="option"

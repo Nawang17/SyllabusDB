@@ -16,6 +16,10 @@ export default function CollegeCourseBrowser({ collegeId, courses }) {
   const [scrollEdges, setScrollEdges] = useState({ left:false, right:false })
   useEffect(() => {
     const strip = filterRef.current
+    if (!strip) {
+      setScrollEdges({ left:false, right:false })
+      return
+    }
     const update = () => setScrollEdges({ left:strip.scrollLeft > 1, right:strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 1 })
     const observer = new ResizeObserver(update)
     observer.observe(strip)
@@ -37,14 +41,14 @@ export default function CollegeCourseBrowser({ collegeId, courses }) {
       <h2>Browse courses</h2>
       <input type="search" className="cp-search" aria-label="Search course code or name" placeholder="Search course code or name" disabled={!hydrated} value={search} onChange={event => { setSearch(event.target.value); setLimit(50) }} />
     </div>
-    <div className="cp-course-controls">
+    {courses.length > 0 && <div className="cp-course-controls">
       {scrollEdges.left && <button type="button" className="cp-filter-arrow" aria-label="Scroll course filters left" onClick={() => scrollFilters(-1)}><IconChevronLeft size={18} aria-hidden="true" /></button>}
       <div ref={filterRef} className="cp-letter-filter" role="group" aria-label="Course filters">
         <button type="button" aria-pressed={!letter} disabled={!hydrated} onClick={() => { setLetter(''); setLimit(50) }}>Popular</button>
         {letters.map(initial => <button type="button" key={initial} aria-label={initial === '#' ? 'Other course codes' : `Courses starting with ${initial}`} aria-pressed={letter === initial} disabled={!hydrated} onClick={() => { setLetter(initial); setLimit(50) }}>{initial}</button>)}
       </div>
       {scrollEdges.right && <button type="button" className="cp-filter-arrow" aria-label="Scroll course filters right" onClick={() => scrollFilters(1)}><IconChevronRight size={18} aria-hidden="true" /></button>}
-    </div>
+    </div>}
     <p className="cp-result-count" role="status">{shown.length} {shown.length === 1 ? 'course' : 'courses'}{search || letter ? ` of ${courses.length}` : ''}{letter ? ` starting with ${letter === '#' ? 'a number or symbol' : letter}` : ''}</p>
     {shown.length ? <ul className="cp-course-grid" aria-label="College courses">
       {shown.slice(0, limit).map(item => {
