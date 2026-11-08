@@ -12,10 +12,7 @@ import CountUpImport from "react-countup";
 import { publicHomeColleges, searchHomeColleges, topHomeColleges } from "../../utils/homeColleges.js";
 
 const CACHE_KEY = "homeColleges:v3";
-// The CommonJS package has a nested default in Vite's development prebundle.
-// Production bundling exposes the component directly.
 const CountUp = CountUpImport.default ?? CountUpImport;
-
 export default function HomePage({ initialColleges }) {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -32,7 +29,6 @@ export default function HomePage({ initialColleges }) {
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const [totalUploads, setTotalUploads] = useState(null);
-  const [animateCount, setAnimateCount] = useState(false);
 
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -86,25 +82,8 @@ export default function HomePage({ initialColleges }) {
       (err) => { setTotalUploads(null); console.error("stats/global listener error:", err); },
     );
 
-    const countEl = document.querySelector(".hero-syllabi-count");
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let io;
-    if (!reduce.matches && countEl) {
-      io = new IntersectionObserver(
-        ([e]) => {
-          if (e.isIntersecting) {
-            setAnimateCount(true);
-            io.disconnect();
-          }
-        },
-        { rootMargin: "120px" },
-      );
-      io.observe(countEl);
-    }
-
     return () => {
       unsubStats();
-      if (io) io.disconnect();
     };
   }, [fetchSearchIndex, initialColleges]);
 
@@ -221,21 +200,9 @@ export default function HomePage({ initialColleges }) {
             </p>
           </div>
 
-          <p className="hero-syllabi-count" hidden={totalUploads === null}>
+          <p className="hero-syllabi-count">
             <strong>
-              {animateCount && totalUploads !== null ? (
-                <CountUp
-                  start={Math.max(
-                    0,
-                    totalUploads - Math.floor(totalUploads * 0.05),
-                  )}
-                  end={totalUploads}
-                  duration={0.7}
-                  separator=","
-                />
-              ) : (
-                (totalUploads ?? 0).toLocaleString()
-              )}
+              {totalUploads === null ? "800" : <CountUp start={800} end={totalUploads} duration={0.9} separator="," />}
             </strong>{" "}
             syllabi available
           </p>
@@ -325,7 +292,12 @@ export default function HomePage({ initialColleges }) {
                     <div className="no-result">
                       <p className="no-result-title">No colleges found.</p>
                       <button
+                        type="button"
                         className="request-college-btn"
+                        onPointerDown={() => {
+                          resultPointerRef.current = true;
+                          window.setTimeout(() => { resultPointerRef.current = false; }, 700);
+                        }}
                         onClick={() => {
                           setDropdownOpen(false);
                           navigate("/requestcollege");
