@@ -7,6 +7,7 @@ import { notifications } from "../../lib/notifications.js";
 import {
   IconChevronDown,
   IconCopy,
+  IconExternalLink,
   IconFileDescription,
   IconStarFilled,
 } from "@tabler/icons-react";
@@ -85,7 +86,7 @@ export default function SyllabusViewerPage({ initialData }) {
             <section className="svp-empty"><IconFileDescription size={32} aria-hidden="true" /><h2>PDF unavailable</h2><p>The document isn't available for this syllabus.</p><Link className="svp-secondary" to={coursePath}>Browse other syllabi</Link></section>
           ) : (
             <section className="svp-document" aria-label="Syllabus document">
-              <div className="svp-document-toolbar"><span><IconFileDescription size={18} aria-hidden="true" />Syllabus PDF</span></div>
+              <div className="svp-document-toolbar"><span><IconFileDescription size={18} aria-hidden="true" />Syllabus PDF</span><a className="svp-open-pdf-mobile" href={syllabus.pdf_url} target="_blank" rel="noopener noreferrer">Open PDF in new tab<IconExternalLink size={16} aria-hidden="true" /></a></div>
               {previewError ? <div className="svp-empty" role="alert"><h2>Preview unavailable</h2><p>The document couldn't load. Please try again.</p><button type="button" className="svp-primary" onClick={() => { setPreviewError(false); setPreviewLoaded(false); setPreviewAttempt(value => value + 1); }}>Retry preview</button></div> : <div className="svp-preview" aria-busy={!previewLoaded}>
                 {!previewLoaded && <p className="svp-preview-loading" role="status">Loading PDF preview...</p>}
                 <iframe key={previewAttempt} src={syllabus.pdf_url} title={`${courseCode}: ${title}`} onLoad={() => setPreviewLoaded(true)} onError={() => { setPreviewLoaded(true); setPreviewError(true); }} />
