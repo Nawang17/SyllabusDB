@@ -6,7 +6,10 @@ import Footer from '../pages/Footer/Footer'
 import { ErrorPage, NotFoundPage } from '../components/RouteStates'
 import '../index.css'
 export const Route = createRootRoute({
-  head: () => ({ meta: [{ charSet: 'utf-8' }, { name: 'viewport', content: 'width=device-width, initial-scale=1' }, { title: 'SyllabusDB' }] }),
+  head: () => ({
+    meta: [{ charSet: 'utf-8' }, { name: 'viewport', content: 'width=device-width, initial-scale=1' }, { title: 'SyllabusDB' }],
+    links: [{ rel: 'icon', type: 'image/png', href: '/favicon.png' }],
+  }),
   component: Outlet,
   shellComponent: Root,
   notFoundComponent: NotFoundPage,
